@@ -6,5 +6,6 @@ install_requires=[
     'pillow',
     'torch',
     'torchvision',
-    'tqdm'
+    'tqdm',
+    'jamo'
   ]
