@@ -1,0 +1,11 @@
+install_requires=[
+    'accelerate',
+    'einops',
+    'ema-pytorch',
+    'lion-pytorch',
+    'pillow',
+    'torch',
+    'torchvision',
+    'tqdm',
+    'jamo'
+  ]
