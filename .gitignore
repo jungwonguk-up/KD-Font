@@ -1,0 +1,4 @@
+make_font/data/*
+models/*
+results/*
+wandb/*
