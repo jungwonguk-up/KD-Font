@@ -12,7 +12,7 @@ args.dataset_path = r"C:\Users\dome\datasets\landscape_img_folder"
 
 dataloader = get_data(args)
 
-diff = Diffusion(device="cpu")
+diff = Diffusion(device="gpu")
 
 image = next(iter(dataloader))[0]
 t = torch.Tensor([50, 100, 150, 200, 300, 600, 700, 999]).long()
