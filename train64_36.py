@@ -15,23 +15,24 @@ from PIL import Image
 from matplotlib import pyplot as plt
 
 from modules.diffusion import Diffusion
-from modules.model import UNet32
+from modules.model import UNet32,UNet64
 import gc
 
 import wandb
-
-# seed
-seed = 7777
+# # seed
+# seed = 7777
 
 # graphic number
-gpu_num = 0
+gpu_num = 1
 image_size = 1024
-input_size = 32
-batch_size = 128
-num_classes = 11172
+input_size = 64
+batch_size = 8
+num_classes = 36
 lr = 3e-4
-n_epochs = 200
+n_epochs = 300
+
 use_amp = True
+resume_train = False
 
 
 def save_images(images, path, **kwargs):
@@ -70,8 +71,9 @@ def plot_images(images):
 
 if __name__ == '__main__':
     #Set save file
-    result_image_path = os.path.join("results", 'font_noStrokeStyle_{}'.format(2))
-    result_model_path = os.path.join("models", 'font_noStrokeStyle_{}'.format(2))
+    file_number= "Unet64_image64_1"
+    result_image_path = os.path.join("results", 'font_noStrokeStyle_{}'.format(file_number))
+    result_model_path = os.path.join("models", 'font_noStrokeStyle_{}'.format(file_number))
     os.makedirs(result_image_path, exist_ok=True)
     os.makedirs(result_model_path, exist_ok=True)
 
@@ -85,21 +87,19 @@ if __name__ == '__main__':
 
 
     # Set random seed, deterministic
-    torch.cuda.manual_seed(seed)
-    torch.manual_seed(seed)
-    np.random.seed(seed)
-    random.seed(seed)
-    torch.backends.cudnn.deterministic = True
-    torch.backends.cudnn.benchmark = False
+    # torch.cuda.manual_seed(seed)
+    # torch.manual_seed(seed)
+    # np.random.seed(seed)
+    # random.seed(seed)
+    # torch.backends.cudnn.deterministic = True
+    # torch.backends.cudnn.benchmark = False
 
-
-    # os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "max_split_size_mb:28"
     # Set device(GPU/CPU)
     os.environ['CUDA_VISIBLE_DEVICES'] = str(gpu_num)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Set data directory
-    train_dirs = '/home/hojun/PycharmProjects/diffusion_font/code/make_font/Hangul_Characters_Image64'
+    train_dirs = '/home/hojun/PycharmProjects/diffusion_font/code/make_font/Hangul_Characters_Image64_36'
 
     # Set transform
     transforms = torchvision.transforms.Compose([
@@ -111,17 +111,35 @@ if __name__ == '__main__':
     dataset = torchvision.datasets.ImageFolder(train_dirs,transform=transforms)
 
     #test set
-    #n = range(0,len(dataset),5000)
-    #dataset = Subset(dataset, n)
+    # n = range(0,len(dataset),100)
+    # dataset = Subset(dataset, n)
 
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
-    #Set model
-    model = UNet32(num_classes=num_classes).to(device)
-    wandb.watch(model)
+    if resume_train:
+        #Set model
+        model = UNet64(num_classes=num_classes)
 
-    #Set optimizer
-    optimizer = optim.AdamW(model.parameters(), lr=lr)
+        #Set optimizer
+        optimizer = optim.AdamW(model.parameters(), lr=lr)
+
+        #load weight
+        model.load_state_dict(torch.load('/home/hojun/PycharmProjects/diffusion_font/code/diffusion/code/models/font_noStrokeStyle_2/ckpt_2.pt'))
+
+        #load optimzer
+        optimizer.load_state_dict(torch.load('/home/hojun/PycharmProjects/diffusion_font/code/diffusion/code/models/font_noStrokeStyle_2/optim_2.pt'))
+        for state in optimizer.state.values():
+            for k, v in state.items():
+                if isinstance(v, torch.Tensor):
+                    state[k] = v.to(device)
+        model = model.to(device)
+    else:
+        # Set model
+        model = UNet64(num_classes=num_classes).to(device)
+        # Set optimizer
+        optimizer = optim.AdamW(model.parameters(), lr=lr)
+
+    wandb.watch(model)
 
     #Set loss function
     loss_func = nn.MSELoss()
@@ -130,14 +148,17 @@ if __name__ == '__main__':
     diffusion = Diffusion(first_beta=1e-4,
                           end_beta=0.02,
                           noise_step=1000,
-                          beta_schedule_type='cosine',
+                          beta_schedule_type='linear',
                           img_size=input_size,
                           device=device)
 
 
     for epoch_id in range(n_epochs):
+        if resume_train:
+            epoch_id += 3
+
         print(f"Epoch {epoch_id}/{n_epochs} Train..")
-        
+
         pbar = tqdm(dataloader,desc=f"trian_{epoch_id}")
         tic = time()
         for i, (x, y) in enumerate(pbar):
@@ -163,13 +184,13 @@ if __name__ == '__main__':
         pbar.set_postfix(MSE=loss.item())
 
 
-        #if epoch_id % 10 == 0 :
-        labels = torch.arange(num_classes).long().to(device)
-        sampled_images = diffusion.portion_sampling(model, n=len(labels),sampleImage_len = 36)
-        plot_images(sampled_images)
-        save_images(sampled_images, os.path.join(result_image_path, f"{epoch_id}.jpg"))
-        torch.save(model,os.path.join(result_model_path,f"model_{epoch_id}.pt"))
-        torch.save(model.state_dict(), os.path.join(result_model_path, f"ckpt_{epoch_id}.pt"))
-        torch.save(optimizer.state_dict(), os.path.join(result_model_path, f"optim_{epoch_id}.pt"))
+        if epoch_id % 10 == 0 :
+            labels = torch.arange(num_classes).long().to(device)
+            sampled_images = diffusion.portion_sampling(model, n=len(labels),sampleImage_len = 36)
+            # plot_images(sampled_images)
+            save_images(sampled_images, os.path.join(result_image_path, f"{epoch_id}.jpg"))
+            torch.save(model,os.path.join(result_model_path,f"model_{epoch_id}.pt"))
+            torch.save(model.state_dict(), os.path.join(result_model_path, f"ckpt_{epoch_id}.pt"))
+            torch.save(optimizer.state_dict(), os.path.join(result_model_path, f"optim_{epoch_id}.pt"))
 
     wandb.finish()
