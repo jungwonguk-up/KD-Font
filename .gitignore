@@ -2,3 +2,6 @@ make_font/data/*
 models/*
 results/*
 wandb/*
+data
+checkpoints
+results
