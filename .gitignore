@@ -1,4 +1,5 @@
-make_font/data/*
-models/*
-results/*
-wandb/*
+hojun/make_font/data/*
+hojun/models/*
+hojun/results/*
+hojun/wandb/*/*
+hojun/wandb/*

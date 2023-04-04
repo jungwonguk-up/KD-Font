@@ -1,8 +1,7 @@
-import torch
+import wandb,math
 from tqdm import tqdm
+import torch
 from torch.utils.data import TensorDataset,DataLoader
-import wandb
-import math
 
 class Diffusion:
 

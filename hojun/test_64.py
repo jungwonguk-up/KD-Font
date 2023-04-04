@@ -3,7 +3,7 @@ import torch
 import os
 from matplotlib import pyplot as plt
 from modules.diffusion import Diffusion
-from modules.model import UNet_conditional
+from modules.model import UNet64
 
 def plot_images(images):
     plt.figure(figsize=(32, 32))
@@ -16,7 +16,7 @@ n = 36
 os.environ['CUDA_VISIBLE_DEVICES'] = str(0)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-model = UNet_conditional(num_classes=n).to(device)
+model = UNet64(num_classes=n).to(device)
 ckpt = torch.load("./models/font_noStrokeStyle_Unet64_image64_2/ckpt_20.pt")
 model.load_state_dict(ckpt)
 diffusion = Diffusion(img_size=64, device=device)

@@ -17,8 +17,8 @@ from matplotlib import pyplot as plt
 from modules.diffusion import Diffusion
 from modules.model import UNet32
 import gc
-
 import wandb
+
 
 # seed
 seed = 7777
