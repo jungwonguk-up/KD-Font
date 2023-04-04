@@ -45,19 +45,19 @@ class Diffusion:
 
 
     def alpha_t(self, t):
-        return self.alphas[t][:,None,None,None]
+        return self.alphas[t][:, None, None, None]
 
     def alpha_bar_t (self,t):
-        return self.alpha_bars[t][:,None,None,None]
+        return self.alpha_bars[t][:, None, None, None]
 
     def one_minus_alpha_bar(self,t):
-        return (1. - self.alpha_bars[t])[:,None,None,None]
+        return (1. - self.alpha_bars[t])[:, None, None, None]
 
     def beta_t(self,t):
-        return self.beta_list[t][:,None,None,None]
+        return self.beta_list[t][:, None, None, None]
 
     def noise_images(self,x,t):
-        epsilon = torch.rand_like(x)
+        epsilon = torch.randn_like(x)
         return torch.sqrt(self.alpha_bar_t(t)) * x + torch.sqrt(self.one_minus_alpha_bar(t)) * epsilon , epsilon
 
     def sampling(self, model, n, labels, cfg_scale=3):
@@ -100,6 +100,8 @@ class Diffusion:
         x = (x.clamp(-1, 1) + 1) / 2
         x = (x * 255).type(torch.uint8)
         return x
+
+
     def indexToChar(self,y):
         return chr(44032+y)
     def portion_sampling(self, model, n,sampleImage_len, cfg_scale=3):
