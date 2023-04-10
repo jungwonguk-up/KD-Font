@@ -9,21 +9,22 @@ from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 import numpy as np
 import os
+from tqdm import tqdm
+
 
 EPOCH = 100
 BATCH_SIZE = 64
-USE_CUDA = torch.cuda.is_availabe()
-DEVICE = torch.device("cuda" if USE_CUDA else "cpu")
+DEVICE = torch.device("cuda")
 run_name = "Style_Encoder"
 print("Using Device:", DEVICE)
 visualize = False
 
 input_size = 64
-batch_size = 8
+batch_size = 128
 device = "cuda"
 
 # Set data directory
-train_dirs = '/home/hojun/PycharmProjects/diffusion_font/code/make_font/Hangul_Characters_Image64'
+train_dirs = 'C:/works/data/Hangul_Characters_Image64/train'
 
 # Set transform
 transforms = torchvision.transforms.Compose([
@@ -86,10 +87,11 @@ def train(autoencoder, train_loader):
         optimizer.step() #최적화를 진행합니다.
 
 #학습하기
-model = autoencoder().to(device)
+
 for epoch in range(1, EPOCH+1):
-    train(model, train_loader)
-    torch.save(model.state_dict(), os.path.join("models", run_name, f"ckpt.pt"))
+    print(epoch)
+    train(autoencoder, tqdm(train_loader))
+    torch.save(autoencoder.state_dict(), os.path.join("models", run_name, f"ckpt.pt"))
 
 if visualize == True:
 
