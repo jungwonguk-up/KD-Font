@@ -14,3 +14,6 @@ def make_ocr_dataset(base_path = "./data/Hangul_Characters_Image64",to_file_path
             shutil.copyfile(os.path.join(base_path, folder_name, image_name), os.path.join(to_file_path, image_name))
 
     f.close()
+
+
+make_ocr_dataset()
