@@ -10,27 +10,36 @@ Jongsung_list = ['', 'ㄱ','ㄲ','ㄳ','ㄴ','ㄵ','ㄶ','ㄷ','ㄹ','ㄺ','ㄻ'
 
 Base_code, Chosung, Jungsung = 44032, 558, 28
 
-def separation_1(keyword: str) -> list(int):
+def separation_1(keyword: str) -> list:
     '''
     단어가 들어오면 초성, 중성, 종성으로 나눠서 embedding 해주는 함수
     '''
-    result = [0]*68
+    assert len(keyword) == 1
+
+    result = [0] * 68
+    str_result = ['0'] * 68
 
     #초성
     char_code = ord(keyword) - Base_code
     char1 = int(char_code/Chosung)
     result[char1] = 1
+    str_result[char1] = '1'
 
     #중성
     char2 = int((char_code-(Chosung*char1))/Jungsung)
     result[char2] = 1
+    str_result[char2] = '1'
 
     #종성
     char3 = int((char_code-(Chosung*char1)-(Jungsung*char2)))
     result[char3] = 1
+    str_result[char3] = '1'
 
-    print("".join(result))
+    print("".join(str_result))
     return result
 
 
-
+if __name__ == "__main__":
+    input_string = input()
+    # separation_1(input_string)
+    print(separation_1(input_string))
