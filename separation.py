@@ -14,7 +14,8 @@ def separation_1(keyword: str) -> list:
     '''
     단어가 들어오면 초성, 중성, 종성으로 나눠서 embedding 해주는 함수
     '''
-    assert len(keyword) == 1
+    assert len(keyword) == 1 # 글자 길이 검사
+    assert ord('가') <= ord(keyword) <= ord('힣') # keyword 가 한글 완성 문자인지 검사 44032 ~ 55203
 
     result = [0] * 68
     str_result = ['0'] * 68
@@ -40,6 +41,6 @@ def separation_1(keyword: str) -> list:
 
 
 if __name__ == "__main__":
-    input_string = input()
+    input_string = input("test input: ")
     # separation_1(input_string)
     print(separation_1(input_string))
