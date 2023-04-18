@@ -17,8 +17,8 @@ from matplotlib import pyplot as plt
 from modules.diffusion import Diffusion
 from modules.model import UNet32
 import gc
-
 import wandb
+
 
 # seed
 seed = 7777
@@ -48,25 +48,6 @@ def plot_images(images):
     ], dim=-2).permute(1, 2, 0).cpu())
     plt.show()
 
-# def memorydel(listobj):
-#     try:
-#         for obj in listobj:
-#             del obj
-#     except Exception as e:
-#         print(e)
-#     try:
-#         del listobj
-#     except Exception as e:
-#         print(e)
-#     gc.collect()
-# def memorydel_all(listobj):
-#     for x in listobj:
-#         try:
-#             memorydel(x)
-#         except Exception as e:
-#             print(e)
-#     gc.collect()
-#     torch.cuda.empty_cache()
 
 if __name__ == '__main__':
     #Set save file
@@ -99,7 +80,7 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Set data directory
-    train_dirs = '/home/hojun/PycharmProjects/diffusion_font/code/make_font/Hangul_Characters_Image64'
+    train_dirs = './make_font/data/Hangul_Characters_Image64'
 
     # Set transform
     transforms = torchvision.transforms.Compose([

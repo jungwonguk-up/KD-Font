@@ -5,3 +5,8 @@ wandb/*
 data
 checkpoints
 results
+hojun/make_font/data/*
+hojun/models/*
+hojun/results/*
+hojun/wandb/*/*
+hojun/wandb/*

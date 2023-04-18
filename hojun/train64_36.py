@@ -49,31 +49,14 @@ def plot_images(images):
     ], dim=-2).permute(1, 2, 0).cpu())
     plt.show()
 
-# def memorydel(listobj):
-#     try:
-#         for obj in listobj:
-#             del obj
-#     except Exception as e:
-#         print(e)
-#     try:
-#         del listobj
-#     except Exception as e:
-#         print(e)
-#     gc.collect()
-# def memorydel_all(listobj):
-#     for x in listobj:
-#         try:
-#             memorydel(x)
-#         except Exception as e:
-#             print(e)
-#     gc.collect()
-#     torch.cuda.empty_cache()
-
 if __name__ == '__main__':
     #Set save file
-    file_number= "Unet64_image64_1"
+    file_number= "Unet64_image64_2"
     result_image_path = os.path.join("results", 'font_noStrokeStyle_{}'.format(file_number))
     result_model_path = os.path.join("models", 'font_noStrokeStyle_{}'.format(file_number))
+    if os.path.exists(result_model_path):
+        print("file_exist")
+        exit()
     os.makedirs(result_image_path, exist_ok=True)
     os.makedirs(result_model_path, exist_ok=True)
 
@@ -86,20 +69,12 @@ if __name__ == '__main__':
     })
 
 
-    # Set random seed, deterministic
-    # torch.cuda.manual_seed(seed)
-    # torch.manual_seed(seed)
-    # np.random.seed(seed)
-    # random.seed(seed)
-    # torch.backends.cudnn.deterministic = True
-    # torch.backends.cudnn.benchmark = False
-
     # Set device(GPU/CPU)
     os.environ['CUDA_VISIBLE_DEVICES'] = str(gpu_num)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Set data directory
-    train_dirs = '/home/hojun/PycharmProjects/diffusion_font/code/make_font/Hangul_Characters_Image64_36'
+    train_dirs = './make_font/data/Hangul_Characters_Image64_36'
 
     # Set transform
     transforms = torchvision.transforms.Compose([
@@ -110,7 +85,7 @@ if __name__ == '__main__':
     ])
     dataset = torchvision.datasets.ImageFolder(train_dirs,transform=transforms)
 
-    #test set
+    ## test set
     # n = range(0,len(dataset),100)
     # dataset = Subset(dataset, n)
 
@@ -124,10 +99,10 @@ if __name__ == '__main__':
         optimizer = optim.AdamW(model.parameters(), lr=lr)
 
         #load weight
-        model.load_state_dict(torch.load('/home/hojun/PycharmProjects/diffusion_font/code/diffusion/code/models/font_noStrokeStyle_2/ckpt_2.pt'))
+        model.load_state_dict(torch.load('./models/font_noStrokeStyle_Unet64_image64_2/ckpt_90.pt'))
 
         #load optimzer
-        optimizer.load_state_dict(torch.load('/home/hojun/PycharmProjects/diffusion_font/code/diffusion/code/models/font_noStrokeStyle_2/optim_2.pt'))
+        optimizer.load_state_dict(torch.load('./models/font_noStrokeStyle_Unet64_image64_2/optim_90.pt'))
         for state in optimizer.state.values():
             for k, v in state.items():
                 if isinstance(v, torch.Tensor):
@@ -176,11 +151,7 @@ if __name__ == '__main__':
             optimizer.step()
         toc = time()
         wandb.log({"train_mse_loss": loss,'train_time':toc-tic})
-        # memorydel_all(x)
-        # # memorydel_all(y)
-        # # memorydel_all(t)
-        # memorydel_all(x_t)
-        # memorydel_all(predicted_noise)
+
         pbar.set_postfix(MSE=loss.item())
 
 

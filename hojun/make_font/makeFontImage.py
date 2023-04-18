@@ -27,7 +27,9 @@ def make_font_image(fonts_base_path,fonts_folder,font_size,unicodeChars,result_p
 
         # Set file name
         # file_name = os.path.join(result_path, ttf[:-4]+"_"+unicodeChars)
-        file_name = result_path + "/" + ttf[:-4] + "_" + unicodeChars
+        ttf_name = ttf[:-4].replace(" ","")
+        print(ttf[:-4],ttf_name)
+        file_name = result_path + "/" + ttf_name + "_" + unicodeChars
 
         # Save image
         font_image.save('{}.png'.format(file_name))
@@ -35,7 +37,7 @@ def make_font_image(fonts_base_path,fonts_folder,font_size,unicodeChars,result_p
 if __name__ == '__main__':
     # set base path
     fonts_base_path = "/usr/share/fonts/truetype"
-
+    base_path = "/home/hojun/PycharmProjects/diffusion_font/code/KoFont-Diffusion/hojun/make_font/data/temp/"
     # make list of font folder names
     fonts_folder_list = os.listdir(fonts_base_path)
     fonts_folder_list = [x for x in fonts_folder_list if x[0] != "."]
@@ -55,14 +57,14 @@ if __name__ == '__main__':
     for uni in tqdm(hangul_codePoint):
         unicodeChars = chr(int(uni, 16))
 
-        result_path = "/home/hojun/PycharmProjects/diffusion_font/code/make_font/Hangul_Characters_Image64/" + unicodeChars
+        result_path = os.path.join(base_path,unicodeChars)
 
         os.makedirs(result_path, exist_ok=True)
 
     # Generate each character's image with different font
     for uni in tqdm(hangul_codePoint):
         unicodeChars = chr(int(uni, 16))
-        result_path = "/home/hojun/PycharmProjects/diffusion_font/code/make_font/Hangul_Characters_Image64/" + unicodeChars
+        result_path = os.path.join(base_path,unicodeChars)
 
         for fonts_folder in fonts_folder_list:
             fonts = os.listdir(os.path.join(fonts_base_path,fonts_folder))
