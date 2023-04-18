@@ -1,8 +1,10 @@
 import torch
 import torch.nn.functional as F
 import torch.nn as nn
-
-
+from functools import partial
+import torch.nn as nn
+# from .modules import ConvBlock, GCBlock, CBAM
+from . import ConvBlock, GCBlock, CBAM
 class SelfAttention(nn.Module):
     def __init__(self, channels):
         super(SelfAttention, self).__init__()
@@ -47,7 +49,7 @@ class DoubleConv(nn.Module):
 
 
 class Down(nn.Module):
-    def __init__(self, in_channels, out_channels, emb_dim=256):
+    def __init__(self, in_channels, out_channels, time_dim=256, charAttr_dim=12456):
         super().__init__()
         self.maxpool_conv = nn.Sequential(
             nn.MaxPool2d(2),
@@ -55,22 +57,31 @@ class Down(nn.Module):
             DoubleConv(in_channels, out_channels),
         )
 
-        self.emb_layer = nn.Sequential(
+        self.time_layer = nn.Sequential(
             nn.SiLU(),
             nn.Linear(
-                emb_dim,
+                time_dim,
                 out_channels
             ),
         )
 
-    def forward(self, x, t):
+        self.condition_layer = nn.Sequential(
+            nn.SiLU(),
+            nn.Linear(
+                charAttr_dim,
+                out_channels
+            ),
+        )
+
+    def forward(self, x, t,charAttr):
         x = self.maxpool_conv(x)
-        emb = self.emb_layer(t)[:, :, None, None].repeat(1, 1, x.shape[-2], x.shape[-1])
-        return x + emb
+        emb = self.time_layer(t)[:, :, None, None].repeat(1, 1, x.shape[-2], x.shape[-1])
+        charAttr_emb = self.condition_layer(charAttr)[:, :, None, None].repeat(1, 1, x.shape[-2], x.shape[-1])
+        return x + emb + charAttr_emb
 
 
 class Up(nn.Module):
-    def __init__(self, in_channels, out_channels, emb_dim=256):
+    def __init__(self, in_channels, out_channels, time_dim=256, charAttr_dim=12456):
         super().__init__()
 
         self.up = nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True)
@@ -79,48 +90,59 @@ class Up(nn.Module):
             DoubleConv(in_channels, out_channels, in_channels // 2),
         )
 
-        self.emb_layer = nn.Sequential(
+        self.time_layer = nn.Sequential(
             nn.SiLU(),
             nn.Linear(
-                emb_dim,
+                time_dim,
+                out_channels
+            ),
+        )
+        self.condition_layer = nn.Sequential(
+            nn.SiLU(),
+            nn.Linear(
+                charAttr_dim,
                 out_channels
             ),
         )
 
-    def forward(self, x, skip_x, t):
+
+    def forward(self, x, skip_x, t, charAttr):
         x = self.up(x)
         x = torch.cat([skip_x, x], dim=1)
         x = self.conv(x)
-        emb = self.emb_layer(t)[:, :, None, None].repeat(1, 1, x.shape[-2], x.shape[-1])
-        return x + emb
+        time_emb = self.time_layer(t)[:, :, None, None].repeat(1, 1, x.shape[-2], x.shape[-1])
+        charAttr_emb = self.condition_layer(charAttr)[:, :, None, None].repeat(1, 1, x.shape[-2], x.shape[-1])
+        return x + time_emb + charAttr_emb
 
-class UNet64(nn.Module):
-    def __init__(self, c_in=3, c_out=3, time_dim=256, num_classes=None, device="cuda"):
+class UNet(nn.Module):
+    def __init__(self, c_in=3, c_out=3, time_dim=256, charAttr_dim = 12456, num_classes=None, device="cuda"):
         super().__init__()
         self.device = device
         self.time_dim = time_dim
+        self.charAttr_dim = charAttr_dim
+
         self.inc = DoubleConv(c_in, 64)
-        self.down1 = Down(64, 128)
+        self.down1 = Down(64, 128, time_dim=self.time_dim, charAttr_dim=self.charAttr_dim)
         self.sa1 = SelfAttention(128)
-        self.down2 = Down(128, 256)
+        self.down2 = Down(128, 256,time_dim=self.time_dim, charAttr_dim=self.charAttr_dim)
         self.sa2 = SelfAttention(256)
-        self.down3 = Down(256, 256)
+        self.down3 = Down(256, 256, time_dim=self.time_dim, charAttr_dim=self.charAttr_dim)
         self.sa3 = SelfAttention(256)
 
         self.bot1 = DoubleConv(256, 512)
         self.bot2 = DoubleConv(512, 512)
         self.bot3 = DoubleConv(512, 256)
 
-        self.up1 = Up(512, 128)
+        self.up1 = Up(512, 128, time_dim=self.time_dim, charAttr_dim=self.charAttr_dim)
         self.sa4 = SelfAttention(128)
-        self.up2 = Up(256, 64)
+        self.up2 = Up(256, 64, time_dim=self.time_dim, charAttr_dim=self.charAttr_dim)
         self.sa5 = SelfAttention(64)
-        self.up3 = Up(128, 64)
+        self.up3 = Up(128, 64, time_dim=self.time_dim, charAttr_dim=self.charAttr_dim)
         self.sa6 = SelfAttention(64)
         self.outc = nn.Conv2d(64, c_out, kernel_size=1)
 
         if num_classes is not None:
-            self.label_emb = nn.Embedding(num_classes, time_dim)
+            self.contents_emb = nn.Embedding(num_classes, time_dim)
 
     def pos_encoding(self, t, channels):
         inv_freq = 1.0 / (
@@ -132,97 +154,60 @@ class UNet64(nn.Module):
         pos_enc = torch.cat([pos_enc_a, pos_enc_b], dim=-1)
         return pos_enc
 
-    def forward(self, x, t, y):
-        t = t.unsqueeze(-1).type(torch.float)
-        t = self.pos_encoding(t, self.time_dim)
+    def forward(self, x, time, charAttr):
+        time = time.unsqueeze(-1).type(torch.float)
+        time = self.pos_encoding(time, self.time_dim)
 
-        if y is not None:
-            t += self.label_emb(y)
+        # if y is not None:
+        #     time += self.contents_emb(y)
+
 
         x1 = self.inc(x)
-        x2 = self.down1(x1, t)
+        x2 = self.down1(x1, time, charAttr)
         x2 = self.sa1(x2)
-        x3 = self.down2(x2, t)
+        x3 = self.down2(x2, time, charAttr)
         x3 = self.sa2(x3)
-        x4 = self.down3(x3, t)
+        x4 = self.down3(x3, time, charAttr)
         x4 = self.sa3(x4)
 
         x4 = self.bot1(x4)
         x4 = self.bot2(x4)
         x4 = self.bot3(x4)
 
-        x = self.up1(x4, x3, t)
+        x = self.up1(x4, x3, time, charAttr)
         x = self.sa4(x)
-        x = self.up2(x, x2, t)
+        x = self.up2(x, x2, time, charAttr)
         x = self.sa5(x)
-        x = self.up3(x, x1, t)
+        x = self.up3(x, x1, time, charAttr)
         x = self.sa6(x)
         output = self.outc(x)
         return output
 
 
-class UNet32(nn.Module):
-    def __init__(self, c_in=3, c_out=3, time_dim=256, num_classes=None, device="cuda"):
+
+class StyleEncoder(nn.Module):
+    def __init__(self, layers, out_shape):
         super().__init__()
-        self.device = device
-        self.time_dim = time_dim
-        self.inc = DoubleConv(c_in, 32)
-        self.down1 = Down(32, 64)
-        self.sa1 = SelfAttention(64)
-        self.down2 = Down(64, 128)
-        self.sa2 = SelfAttention(128)
-        self.down3 = Down(128, 128)
-        self.sa3 = SelfAttention(128)
 
-        self.bot1 = DoubleConv(128, 256)
-        self.bot2 = DoubleConv(256, 256)
-        self.bot3 = DoubleConv(256, 128)
+        self.layers = nn.Sequential(*layers)
+        self.out_shape = out_shape
 
-        self.up1 = Up(256, 64)
-        self.sa4 = SelfAttention(64)
-        self.up2 = Up(128, 32)
-        self.sa5 = SelfAttention(32)
-        self.up3 = Up(64, 32)
-        self.sa6 = SelfAttention(32)
-        self.outc = nn.Conv2d(32, c_out, kernel_size=1)
+    def forward(self, x):
+        style_feat = self.layers(x)
+        return style_feat
 
-        if num_classes is not None:
-            self.label_emb = nn.Embedding(num_classes, time_dim)
 
-    def pos_encoding(self, t, channels):
-        inv_freq = 1.0 / (
-            10000
-            ** (torch.arange(0, channels, 2, device=self.device).float() / channels)
-        )
-        pos_enc_a = torch.sin(t.repeat(1, channels // 2) * inv_freq)
-        pos_enc_b = torch.cos(t.repeat(1, channels // 2) * inv_freq)
-        pos_enc = torch.cat([pos_enc_a, pos_enc_b], dim=-1)
-        return pos_enc
+def style_enc_builder(C_in, C, norm='none', activ='relu', pad_type='reflect', skip_scale_var=False):
+    ConvBlk = partial(ConvBlock, norm=norm, activ=activ, pad_type=pad_type)
 
-    def forward(self, x, t, y):
-        t = t.unsqueeze(-1).type(torch.float)
-        t = self.pos_encoding(t, self.time_dim)
+    layers = [
+        ConvBlk(C_in, C, 3, 1, 1, norm='none', activ='none'),
+        ConvBlk(C * 1, C * 2, 3, 1, 1, downsample=True),
+        GCBlock(C * 2),
+        ConvBlk(C * 2, C * 4, 3, 1, 1, downsample=True),
+        CBAM(C * 4)
+    ]
 
-        if y is not None:
-            t += self.label_emb(y)
+    out_shape = (C * 4, 32, 32)
 
-        x1 = self.inc(x)
-        x2 = self.down1(x1, t)
-        x2 = self.sa1(x2)
-        x3 = self.down2(x2, t)
-        x3 = self.sa2(x3)
-        x4 = self.down3(x3, t)
-        x4 = self.sa3(x4)
-
-        x4 = self.bot1(x4)
-        x4 = self.bot2(x4)
-        x4 = self.bot3(x4)
-
-        x = self.up1(x4, x3, t)
-        x = self.sa4(x)
-        x = self.up2(x, x2, t)
-        x = self.sa5(x)
-        x = self.up3(x, x1, t)
-        x = self.sa6(x)
-        output = self.outc(x)
-        return output
+    return StyleEncoder(layers, out_shape)
