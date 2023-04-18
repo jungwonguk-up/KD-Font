@@ -18,7 +18,7 @@ learning_rate = 0.001
 
 # Download Data
 
-data_train = '' 
+data_train = 'C:/works/data/Hangul_Characters_Image64/train' 
 
 # Set Data Loader(input pipeline)
 
