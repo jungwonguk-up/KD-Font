@@ -1,3 +1,5 @@
+from torchvision import transforms as T, utils
+
 class Dataset(Dataset):
     def __init__(
         self,
