@@ -2,3 +2,15 @@ data
 checkpoints
 results
 hojun/wandb
+make_font/data/*
+models/*
+results/*
+wandb/*
+data
+checkpoints
+results
+hojun/make_font/data/*
+hojun/models/*
+hojun/results/*
+hojun/wandb/*/*
+hojun/wandb/*
