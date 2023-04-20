@@ -7,11 +7,7 @@ from tqdm import tqdm
 from utils import *
 from modules import UNet
 import logging
-# from torch.utils.tensorboard import SummaryWriter
 
-logging.basicConfig(format="%(asctime)s - %(levelname)s: %(massage)s", level=logging.INFO, datefmt="%I%M%S")
-
-device = "cuda" if torch.cuda.is_available() else "cpu"
 
 class Diffusion():
     def __init__(self,
@@ -19,7 +15,7 @@ class Diffusion():
                  beta_start=1e-4,
                  beta_end=0.02,
                  img_size=256,
-                 device=device):
+                 device="cuda"):
         self.noise_step = noise_steps
         self.beta_start = beta_start
         self.beta_end = beta_end
@@ -64,27 +60,4 @@ class Diffusion():
                     x = (x.clamp(-1, 1) + 1) / 2
                     x = (x * 255).type(torch.uint8)
                     return x
-
-
-def train(args):
-    setup_logging(args.run_name)
-
-    device = args.device
-    dataloader = get_data(args)
-    model = UNet().to(device)
-    optimizer = optim.AdamW(model.parameters(), lr=args.lr)
-    mse = nn.MSELoss()
-    diffusion = Diffusion(img_size=args.image_size, device=device)
-    
-    # logger = SummaryWriter(os.path.join("runs", args.run_name))logger
-    l = len(dataloader)
-
-    for epoch in range(args.epochs):
-        logging.info(f"Starting epoch {epoch}")
-
-        pbar = tqdm(dataloader)
-        for i, (images, _) in enumerate(pbar):
-            images = images.to(device)
-            t = diffusion.sample_timesteps()
-
-
+                
