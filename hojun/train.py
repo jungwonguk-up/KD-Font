@@ -29,7 +29,7 @@ import wandb
 gpu_num = 1 #####
 input_size = 64
 batch_size = 8 #####
-num_classes = 420 #####
+num_classes = 36 #####
 lr = 3e-4 #####
 n_epochs = 300 #####
 start_epoch = 10
@@ -43,9 +43,9 @@ resume_train = False
 
 if __name__ == '__main__':
     #Set save file
-    file_number= "Unet64_image420_1"
-    result_image_path = os.path.join("results", 'font_noStrokeStyle_{}'.format(file_number))
-    result_model_path = os.path.join("results","models", 'font_noStrokeStyle_{}'.format(file_number))
+    file_number= "Unet64_image420_2"
+    result_image_path = os.path.join("results", "images", 'font_noStrokeStyle_{}'.format(file_number))
+    result_model_path = os.path.join("results", "models", 'font_noStrokeStyle_{}'.format(file_number))
     if os.path.exists(result_model_path):
         print("file_exist")
         exit()
@@ -53,13 +53,13 @@ if __name__ == '__main__':
     os.makedirs(result_model_path, exist_ok=True)
 
     # wandb init
-    wandb.init(project="diffusion_font_32_test", config={
-        "learning_rate": 0.0003,
-        "architecture": "UNET",
-        "dataset": "HOJUN_KOREAN_FONT64",
-        "notes":"content, yes_stoke, non_style/ 64 x 64, 420 dataset"
-    }) #####
-    # wandb.init(mode="disabled")
+    # wandb.init(project="diffusion_font_32_test", config={
+    #     "learning_rate": 0.0003,
+    #     "architecture": "UNET",
+    #     "dataset": "HOJUN_KOREAN_FONT64",
+    #     "notes":"content, yes_stoke, non_style/ 64 x 64, 420 dataset"
+    # }) #####
+    wandb.init(mode="disabled")
 
 
     # Set device(GPU/CPU)
@@ -67,7 +67,7 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Set data directory
-    train_dirs = './make_font/data/Hangul_Characters_Image64_radomSampling' #####
+    train_dirs = './make_font/data/Hangul_Characters_Image64_36' #####
 
     # Set transform
     transforms = torchvision.transforms.Compose([
@@ -78,7 +78,7 @@ if __name__ == '__main__':
     ])
     dataset = torchvision.datasets.ImageFolder(train_dirs,transform=transforms)
 
-    ## test set
+    # test set
     # n = range(0,len(dataset),100)
     # dataset = Subset(dataset, n)
 
@@ -88,7 +88,7 @@ if __name__ == '__main__':
 
     if resume_train:
         #Set model
-        model = UNet(num_classes=num_classes)
+        model = UNet()
 
         #Set optimizer
         optimizer = optim.AdamW(model.parameters(), lr=lr)
@@ -105,7 +105,7 @@ if __name__ == '__main__':
         model = model.to(device)
     else:
         # Set model
-        model = UNet(num_classes=num_classes).to(device)
+        model = UNet().to(device)
         # Set optimizer
         optimizer = optim.AdamW(model.parameters(), lr=lr)
 
@@ -135,9 +135,9 @@ if __name__ == '__main__':
             images = images.to(device)
 
             contents = [dataset.classes[content_index] for content_index in contents_index]
-            charAttar = CharAttar(num_classes=num_classes,device=device,mode=mode,batch_size=batch_size)
+            charAttar = CharAttar(num_classes=num_classes,device=device)
 
-            charAttr_list = charAttar.make_charAttr(images, contents_index,contents).to(device)
+            charAttr_list = charAttar.make_charAttr(images, contents_index,contents,mode=2).to(device)
 
             t = diffusion.sample_t(images.shape[0]).to(device)
             x_t, noise = diffusion.noise_images(images, t)
@@ -156,7 +156,7 @@ if __name__ == '__main__':
 
         if epoch_id % 10 == 0 :
             labels = torch.arange(num_classes).long().to(device)
-            sampled_images = diffusion.portion_sampling(model, n=len(labels),sampleImage_len = 36)
+            sampled_images = diffusion.portion_sampling(model, n=len(labels),sampleImage_len = 36,dataset=dataset,mode =mode,charAttar=charAttar)
             # plot_images(sampled_images)
             save_images(sampled_images, os.path.join(result_image_path, f"{epoch_id}.jpg"))
             torch.save(model,os.path.join(result_model_path,f"model_{epoch_id}.pt"))

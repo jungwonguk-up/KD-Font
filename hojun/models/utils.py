@@ -115,7 +115,7 @@ class Up(nn.Module):
         return x + time_emb + charAttr_emb
 
 class UNet(nn.Module):
-    def __init__(self, c_in=3, c_out=3, time_dim=256, charAttr_dim = 12456, num_classes=None, device="cuda"):
+    def __init__(self, c_in=3, c_out=3, time_dim=256, charAttr_dim = 12456, device="cuda"):
         super().__init__()
         self.device = device
         self.time_dim = time_dim
@@ -140,9 +140,6 @@ class UNet(nn.Module):
         self.up3 = Up(128, 64, time_dim=self.time_dim, charAttr_dim=self.charAttr_dim)
         self.sa6 = SelfAttention(64)
         self.outc = nn.Conv2d(64, c_out, kernel_size=1)
-
-        if num_classes is not None:
-            self.contents_emb = nn.Embedding(num_classes, time_dim)
 
     def pos_encoding(self, t, channels):
         inv_freq = 1.0 / (
