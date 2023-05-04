@@ -1,6 +1,6 @@
 
 from fastapi import FastAPI, Request, File, UploadFile
-# from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse, FileResponse, Response
 # from fastapi.templating import Jinja2Templates
 
 from pydantic import BaseModel, Field
@@ -16,6 +16,9 @@ from inference import diffusion_model
 from db_models.form import RequestModel
 
 from db_models import mongodb
+
+import io
+from PIL import Image
 
 
 BASE_DIR = Path(__file__).resolve().parent # 절대경로
@@ -41,10 +44,17 @@ class RequestSampling(BaseModel):
     # requested_at: datetime = Field(default_factory=datetime.now)
 
 
-
-# # TODO : sampling 하기
-
-
+# 실행 테스트 페이지
+@app.get("/sampling/{char}")
+async def test_sampling(char: str):
+    if len(char) > 1:
+        return {"massage": "한 단어만 입력하세요"}
+    
+    img = diffusion_model.manual_sampling(char=char)
+    imgbytes = io.BytesIO()
+    img.save(imgbytes, format='png')
+    
+    return Response(content=imgbytes.getvalue(), media_type='image/png')
 
 
 @app.on_event("startup")
@@ -52,8 +62,9 @@ def on_app_start():
     """Before app start"""
     # TODO: connect DB
     # mongodb.connet()
-    # TODO: load diffusion checkpoint
-    # diffusion_model.load_state_dict(path=WEIGHT_PATH)
+    # load diffusion checkpoint
+    diffusion_model.load_state_dict(path=WEIGHT_PATH)
+    print("diffusion model loaded!")
 
 
 @app.on_event("shutdown")

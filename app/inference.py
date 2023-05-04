@@ -31,7 +31,7 @@ class DiffusionModel:
                                    img_size=self.input_size,
                                    device=self.device)
         
-    def load_state_dict(self, path):
+    def load_state_dict(self, path: str):
         """
         지정된 경로에서 weight 를 불러와 model 에 로드
 
@@ -41,9 +41,10 @@ class DiffusionModel:
         ckpt = torch.load(path)
         self.model.load_state_dict(ckpt)
 
-    def random_sampling(self, input_length: int = 1):
+    def random_sampling(self, input_length: int = 1) -> Image.Image:
         """
         input_length 만큼 임의로 문자 이미지를 생성
+        return : Image.Image 객체
 
         Args:
             input_length: int = 랜덤하게 생성할 문자의 수
@@ -65,19 +66,24 @@ class DiffusionModel:
         y = torch.cat([contents_emb, strokes, style_emb], dim=1).to(self.device)
         x = self.diffusion.test_sampling(self.model, input_length, y, cfg_scale=3)
 
+        img = Image.fromarray(x[0].permute(1, 2, 0).cpu().numpy())
 
-    def munual_sampling(self, char: str = None):
+        return img
+
+
+    def manual_sampling(self, char: str = None) -> Image.Image:
         """
         char 문자 이미지 생성
+        return : Image.Image 객체
 
         Args:
-            char: str = 생성하고 싶은 단어 또는 문자 (길이 < 10)
+            char: str = 생성하고 싶은 단어 또는 문자 (길이 = 1)
         """
 
         if char == None:
             raise ValueError("message: 글자를 넣으세요")
         
-        assert len(char) <= 10 # 임의로 제한
+        assert len(char) <= 1 # 임의로 제한
     
         input_length = len(char)
         char_list = []
@@ -90,14 +96,10 @@ class DiffusionModel:
         y = torch.cat([contents_emb, strokes, style_emb], dim=1).to(self.device)
         x = self.diffusion.test_sampling(self.model, len(strokes), y, cfg_scale=3)
 
-        # plot_images(x)
-        # folder_name = 'inference_test'
-        # test_save_images(x, char_list, folder_name)
-        # TODO: x 를 이미지로 변환 후 리턴(아마도)
-        # bytesio = BytesIO()
-        # for image in x:
-        #     im = Image.fromarray(image.permute(1,2,0).cpu().numpy())
-        return x
+        # TODO : 여러개의 이미지 반환
+        img = Image.fromarray(x[0].permute(1, 2, 0).cpu().numpy())
+
+        return img
 
 
 diffusion_model = DiffusionModel(device="cuda")
@@ -105,4 +107,4 @@ diffusion_model = DiffusionModel(device="cuda")
 
 if __name__ == "__main__":
     diffusion_model.load_state_dict(path="C:/Users/gih54/Desktop/diffusion/ckpt_290.pt")
-    diffusion_model.munual_sampling(char='캺')
+    diffusion_model.manual_sampling(char='캺')
