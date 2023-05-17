@@ -1,3 +1,6 @@
 hojun/make_font/data/*
 hojun/results/*
 hojun/wandb/*
+
+*.pyc
+*.png
