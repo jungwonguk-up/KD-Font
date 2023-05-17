@@ -148,6 +148,7 @@ if __name__ == '__main__':
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            
         toc = time()
         wandb.log({"train_mse_loss": loss,'train_time':toc-tic})
 

@@ -12,18 +12,18 @@ from models.utils import UNet
 
 
 num_classes = 420
-input_length = 100
+input_length = 1
 contents_dim = 100
 input_size = 64
-mode = "random"
-folder_name ="test_2"
+mode = "manual"
+folder_name ="ddim_test"
 
 if __name__ == '__main__':
     os.environ['CUDA_VISIBLE_DEVICES'] = str(0)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     model = UNet().to(device)
-    ckpt = torch.load("/home/hojun/PycharmProjects/diffusion_font/code/KoFont-Diffusion/hojun/results/models/font_noStrokeStyle_Unet64_image420_6/ckpt_90.pt")
+    ckpt = torch.load("C:/Users/gih0109/Desktop/ckpt_290.pt")
     model.load_state_dict(ckpt)
 
     diffusion = Diffusion(first_beta=1e-4,
@@ -52,11 +52,12 @@ if __name__ == '__main__':
         x = diffusion.test_sampling(model, input_length, y, cfg_scale=3)
 
     elif mode == "manual":
-        char_list = ['가,나,다,라,마,바,사,아,자,차,카,타,파,하']
+        char_list = ['가']
         contents_emb = torch.zeros(input_length, contents_dim)
         strokes = make_stroke(char_list)
+        strokes = torch.Tensor(strokes)
         style_emb = torch.zeros(input_length, 12288)
         y = torch.cat([contents_emb, strokes, style_emb], dim=1).to(device)
-        x = diffusion.test_sampling(model,len(strokes), y, cfg_scale=3)
+        x = diffusion.test_sampling(model,len(strokes), y, cfg_scale=3, sampling='ddim')
     # plot_images(x)
     test_save_images(x, char_list,folder_name)
