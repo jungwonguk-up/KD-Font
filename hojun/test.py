@@ -23,7 +23,7 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     model = UNet().to(device)
-    ckpt = torch.load("C:/Users/gih0109/Desktop/ckpt_290.pt")
+    ckpt = torch.load("C:/Users/gih54/Desktop/ckpt_290.pt")
     model.load_state_dict(ckpt)
 
     diffusion = Diffusion(first_beta=1e-4,
@@ -53,6 +53,7 @@ if __name__ == '__main__':
 
     elif mode == "manual":
         char_list = ['가']
+        input_length = len(char_list)
         contents_emb = torch.zeros(input_length, contents_dim)
         strokes = make_stroke(char_list)
         strokes = torch.Tensor(strokes)
