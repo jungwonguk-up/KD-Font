@@ -24,6 +24,35 @@ class SelfAttention(nn.Module):
         attention_value = attention_value + x
         attention_value = self.ff_self(attention_value) + attention_value
         return attention_value.swapaxes(2, 1).view(-1, self.channels, size, size)
+    
+
+class Attention(nn.Module):
+    """
+    Basic Transformer Block include self attention, cross attention, feed forward network
+    """
+    def __init__(self, channels):
+        super().__init__()
+        self.channels = channels
+        self.mha = nn.MultiheadAttention(channels, 4, batch_first=True)
+        self.ln = nn.LayerNorm([channels])
+        self.ff_self = nn.Sequential(
+            nn.LayerNorm([channels]),
+            nn.Linear(channels, channels),
+            nn.GELU(),
+            nn.Linear(channels, channels),
+        )
+
+    def forward(self, x, context):
+        size = x.shape[-1]
+        x = x.view(-1, self.channels, size * size).swapaxes(1, 2)
+        x_ln = self.ln(x)
+        attention_value1, _ = self.mha(x_ln, x_ln, x_ln) # self-attention
+        attention_value1 = attention_value1 + x
+        attention_value2, _ = self.mha(attention_value1, context, context) # cross-attention
+        attention_value2 = attention_value2 + attention_value1
+        attention_value2 = self.ff_self(attention_value2) + attention_value2
+        return attention_value2.swapaxes(2, 1).view(-1, self.channels, size, size)
+
 
 class DoubleConv(nn.Module):
     def __init__(self, in_channels, out_channels, mid_channels=None, residual=False):
@@ -93,6 +122,7 @@ class Up(nn.Module):
         x = self.conv(x)
         emb = self.emb_layer(t)[:, :, None, None].repeat(1, 1, x.shape[-2], x.shape[-1])
         return x + emb
+
 
 class UNet64(nn.Module):
     def __init__(self, c_in=3, c_out=3, time_dim=256, num_classes=None, device="cuda"):
