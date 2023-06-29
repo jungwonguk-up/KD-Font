@@ -1,6 +1,10 @@
 import torch
 import torch.nn.functional as F
 import torch.nn as nn
+from .style_encoder import style_enc_builder
+
+C = 32
+C_in = 3
 
 
 class SelfAttention(nn.Module):
@@ -94,7 +98,7 @@ class Up(nn.Module):
         emb = self.emb_layer(t)[:, :, None, None].repeat(1, 1, x.shape[-2], x.shape[-1])
         return x + emb
 
-class UNet64(nn.Module):
+class UNet128(nn.Module):
     def __init__(self, c_in=3, c_out=3, time_dim=256, num_classes=None, device="cuda"):
         super().__init__()
         self.device = device
@@ -121,6 +125,8 @@ class UNet64(nn.Module):
 
         if num_classes is not None:
             self.label_emb = nn.Embedding(num_classes, time_dim)
+            print("------------------ Set Sty_enc -----------------")
+            self.sty_encoder = style_enc_builder(C_in, C).to(device)
 
     def pos_encoding(self, t, channels):
         inv_freq = 1.0 / (
@@ -137,8 +143,27 @@ class UNet64(nn.Module):
         t = self.pos_encoding(t, self.time_dim)
 
         if y is not None:
+            print("t.size1 : ", t.size())
             t += self.label_emb(y)
+            print('------------------ sty + tim_emb ---------------------')
+            print('t.size2 : ' , t.size())
+            print('sty_size : ', self.sty_encoder(x).size())
+            sty_size = self.sty_encoder(x)
 
+            # new_sty_size를 CUDA 장치로 이동
+            print('t.device : ', t.device)
+            
+
+            # nn.Linear를 사용하여 new_sty_size의 shape를 t와 동일하게 맞추기
+            sty_size = sty_size.view(sty_size.size(0), -1)
+            linear = nn.Linear(sty_size.shape[1],t.shape[1]).to("cuda")
+            new_sty_size = linear(sty_size)
+
+            print('new_sty_size : ', new_sty_size.device)
+
+            t += new_sty_size
+            print('t.size3 : ' , t.size())
+        print('12345')
         x1 = self.inc(x)
         x2 = self.down1(x1, t)
         x2 = self.sa1(x2)

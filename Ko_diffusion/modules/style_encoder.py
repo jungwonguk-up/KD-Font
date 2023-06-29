@@ -6,7 +6,7 @@ MIT license
 
 from functools import partial
 import torch.nn as nn
-from ...modules.modules import ConvBlock, GCBlock, CBAM
+from utils import ConvBlock, GCBlock, CBAM
 
 
 class StyleEncoder(nn.Module):

@@ -15,7 +15,7 @@ from PIL import Image
 from matplotlib import pyplot as plt
 
 from modules.diffusion import Diffusion
-from modules.model import UNet32,UNet64
+from modules.model import UNet32,UNet128
 import gc
 
 import wandb
@@ -24,9 +24,9 @@ import wandb
 
 # graphic number
 gpu_num = 1
-image_size = 1024
-input_size = 64
-batch_size = 8
+image_size = 128
+input_size = 128
+batch_size = 1
 num_classes = 36
 lr = 3e-4
 n_epochs = 300

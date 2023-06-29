@@ -15,7 +15,7 @@ from PIL import Image
 from matplotlib import pyplot as plt
 
 from modules.diffusion import Diffusion
-from modules.model import UNet32
+from modules.model import UNet32,UNet128
 import gc
 import wandb
 
@@ -25,9 +25,9 @@ seed = 7777
 
 # graphic number
 gpu_num = 0
-image_size = 1024
+image_size = 128
 input_size = 32
-batch_size = 128
+batch_size = 32
 num_classes = 11172
 lr = 3e-4
 n_epochs = 200
@@ -80,7 +80,7 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Set data directory
-    train_dirs = './make_font/data/Hangul_Characters_Image64'
+    train_dirs = 'C:/Paper_Project/test_Data'
 
     # Set transform
     transforms = torchvision.transforms.Compose([
@@ -98,7 +98,7 @@ if __name__ == '__main__':
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
     #Set model
-    model = UNet32(num_classes=num_classes).to(device)
+    model = UNet128(num_classes=num_classes).to(device)
     wandb.watch(model)
 
     #Set optimizer
@@ -145,12 +145,15 @@ if __name__ == '__main__':
 
 
         #if epoch_id % 10 == 0 :
-        labels = torch.arange(num_classes).long().to(device)
-        sampled_images = diffusion.portion_sampling(model, n=len(labels),sampleImage_len = 36)
-        plot_images(sampled_images)
-        save_images(sampled_images, os.path.join(result_image_path, f"{epoch_id}.jpg"))
-        torch.save(model,os.path.join(result_model_path,f"model_{epoch_id}.pt"))
-        torch.save(model.state_dict(), os.path.join(result_model_path, f"ckpt_{epoch_id}.pt"))
-        torch.save(optimizer.state_dict(), os.path.join(result_model_path, f"optim_{epoch_id}.pt"))
+
+        # Save
+
+        # labels = torch.arange(num_classes).long().to(device)
+        # sampled_images = diffusion.portion_sampling(model, n=len(labels),sampleImage_len = 36)
+        # plot_images(sampled_images)
+        # save_images(sampled_images, os.path.join(result_image_path, f"{epoch_id}.jpg"))
+        # torch.save(model,os.path.join(result_model_path,f"model_{epoch_id}.pt"))
+        # torch.save(model.state_dict(), os.path.join(result_model_path, f"ckpt_{epoch_id}.pt"))
+        # torch.save(optimizer.state_dict(), os.path.join(result_model_path, f"optim_{epoch_id}.pt"))
 
     wandb.finish()
