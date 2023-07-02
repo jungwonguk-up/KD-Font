@@ -16,6 +16,8 @@ from matplotlib import pyplot as plt
 
 from modules.diffusion import Diffusion
 from modules.model import UNet32,UNet128
+import albumentations as A
+from albumentations.pytorch import ToTensorV2
 import gc
 import wandb
 
@@ -26,8 +28,8 @@ seed = 7777
 # graphic number
 gpu_num = 0
 image_size = 128
-input_size = 32
-batch_size = 32
+input_size = 64
+batch_size = 4
 num_classes = 11172
 lr = 3e-4
 n_epochs = 200
@@ -80,14 +82,15 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Set data directory
-    train_dirs = 'C:/Paper_Project/test_Data'
+    train_dirs = 'C:\Paper_Project\Hangul_Characters_Image64_GrayScale'
 
     # Set transform
     transforms = torchvision.transforms.Compose([
-        torchvision.transforms.Resize((input_size,input_size)),
-    # #     torchvision.transforms.RandomResizedCrop(input_size, scale=(0.8, 1.0)),
+        # torchvision.transforms.Resize((input_size,input_size)),
+        # torchvision.transforms.Grayscale(num_output_channels=1),
+    # # #     torchvision.transforms.RandomResizedCrop(input_size, scale=(0.8, 1.0)),
         torchvision.transforms.ToTensor(),
-        torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        # torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     ])
     dataset = torchvision.datasets.ImageFolder(train_dirs,transform=transforms)
 
@@ -95,7 +98,7 @@ if __name__ == '__main__':
     #n = range(0,len(dataset),5000)
     #dataset = Subset(dataset, n)
 
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True,num_workers=8)
 
     #Set model
     model = UNet128(num_classes=num_classes).to(device)
@@ -106,6 +109,20 @@ if __name__ == '__main__':
 
     #Set loss function
     loss_func = nn.MSELoss()
+
+    ### sty_encoder
+    sty_encoder_path = 'C:\Paper_Project\weight\style_enc.pth'
+    checkpoint = torch.load(sty_encoder_path, map_location='cpu')
+    tmp_dict = {}
+    for k, v in checkpoint.items():
+        if k in model.sty_encoder.state_dict():
+            tmp_dict[k] = v
+    model.sty_encoder.load_state_dict(tmp_dict)
+
+    # frozen sty_encoder
+    for p in model.sty_encoder.parameters():
+        p.requires_grad = False
+
 
     #Set diffusion
     diffusion = Diffusion(first_beta=1e-4,
@@ -122,12 +139,14 @@ if __name__ == '__main__':
         pbar = tqdm(dataloader,desc=f"trian_{epoch_id}")
         tic = time()
         for i, (x, y) in enumerate(pbar):
+            print('x1 : ', x.shape)
             x = x.to(device)
             y = y.to(device)
             t = diffusion.sample_t(x.shape[0]).to(device)
             x_t, noise = diffusion.noise_images(x, t)
             if np.random.random() < 0.3:
                 y = None
+            print('x2 : ', x.shape)
             predicted_noise = model(x_t, t, y)
             loss = loss_func(noise, predicted_noise)
 
