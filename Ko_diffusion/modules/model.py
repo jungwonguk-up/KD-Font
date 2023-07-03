@@ -34,7 +34,9 @@ class Attention(nn.Module):
         super().__init__()
         self.channels = channels
         self.mha = nn.MultiheadAttention(channels, 4, batch_first=True)
-        self.ln = nn.LayerNorm([channels])
+        self.norm1 = nn.LayerNorm([channels])
+        self.norm2 = nn.LayerNorm([channels])
+        self.norm3 = nn.LayerNorm([channels])
         self.ff_self = nn.Sequential(
             nn.LayerNorm([channels]),
             nn.Linear(channels, channels),
@@ -47,11 +49,13 @@ class Attention(nn.Module):
         # c_size = context.shape[-1]
         x = x.view(-1, self.channels, x_size * x_size).swapaxes(1, 2)
         # context = context.view(-1, self.channels, c_size * c_size).swapaxes(1, 2)
-        x_ln = self.ln(x)
+        x_ln = self.norm1(x)
         attention_value1, _ = self.mha(x_ln, x_ln, x_ln) # self-attention
         attention_value1 = attention_value1 + x
+        attention_value1 = self.norm2(attention_value1)
         attention_value2, _ = self.mha(attention_value1, context, context) # cross-attention
         attention_value2 = attention_value2 + attention_value1
+        attention_value2 = self.norm3(attention_value2)
         attention_value2 = self.ff_self(attention_value2) + attention_value2
         return attention_value2.swapaxes(2, 1).view(-1, self.channels, x_size, x_size)
 
@@ -144,7 +148,6 @@ class CrossAttnUNet128(nn.Module):
         self.bot2 = DoubleConv(512, 512)
         self.attn5 = Attention(512)
         self.bot3 = DoubleConv(512, 256)
-        self.attn6 = Attention(256)
 
         self.up1 = Up(512, 128)
         self.attn7 = Attention(128)
