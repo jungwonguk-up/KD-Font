@@ -16,7 +16,7 @@ class Attention(nn.Module):
         :query_dim: Dimension of query
         :context_dim: Dimension of context, None parameter works as Self-Attention (default=None)
         :num_heads: Number of Head (default=4)
-        :head_dim: Dimension of Head, None parameter define head dim as query dim (default=None)
+        :head_dim: Dimension of Head, None parameter define head_dim to query_dim (default=None)
         :dropout: DropOut Rate (default=0.)
         """
         assert query_dim 
@@ -34,8 +34,8 @@ class Attention(nn.Module):
         self.head_dim = head_dim
 
         self.to_q = nn.Linear(query_dim, inner_dim, bias=False)
-        self.to_k = nn.Linear(query_dim, inner_dim, bias=False)
-        self.to_v = nn.Linear(query_dim, inner_dim, bias=False)
+        self.to_k = nn.Linear(context_dim, inner_dim, bias=False)
+        self.to_v = nn.Linear(context_dim, inner_dim, bias=False)
 
         self.to_out = nn.Sequential(
             nn.Linear(inner_dim, query_dim),
