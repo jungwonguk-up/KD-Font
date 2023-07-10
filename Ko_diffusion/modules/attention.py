@@ -12,7 +12,7 @@ class GEGLU(nn.Module):
         self.proj = nn.Linear(dim_in, dim_out*2)
 
     def forward(self, x):
-        x, gate = self.proj(x).chunk(2, diim=-1)
+        x, gate = self.proj(x).chunk(2, dim=-1)
         return x * F.gelu(gate)
 
 
@@ -55,8 +55,8 @@ class Attention(nn.Module):
             nn.Linear(inner_dim, query_dim),
             nn.Dropout(p=dropout)
         )
-    
-    def forword(self, x, context=None):
+
+    def forward(self, x, context=None):
         if context is not None and self.cross == False:
             raise ValueError("context should None if context_dim is None")
 
@@ -66,8 +66,8 @@ class Attention(nn.Module):
 
         q = self.to_q(x)
         context = context if context is not None else x # if context is None, work self attn
-        k = self.to(context)
-        v = self.to(context)
+        k = self.to_k(context)
+        v = self.to_v(context)
 
         q, k, v = map(lambda t: t.view(b, -1, h, d).permute(0, 2, 1, 3).contiguous().view(b*h, -1, d), (q, k, v)) # b n (h d) -> (b h) n d
 
@@ -127,7 +127,7 @@ class SpatialTrasformerBlock(nn.Module):
     """
     Trasformer block for image-like data.
     """
-    def __init__(self, in_channels, num_head, head_dim, depth, dropout, context_dim):
+    def __init__(self, in_channels, num_head, head_dim, context_dim, depth, dropout):
         super().__init__()
 
     def forward(self, x, context=None):
@@ -148,22 +148,27 @@ class TrasformerBlock(nn.Module):
     def __init__(self, 
                  in_channels: int, 
                  num_heads: int, 
-                 head_dim: int, 
+                 head_dim: int = None, 
                  context_dim: int = None,
                  depth: int = 1, 
                  dropout: float = 0., 
                  use_spatial: bool = False,
                  ):
         super().__init__()
+        assert in_channels % num_heads == 0
+
+        if head_dim is None:
+            head_dim = in_channels // num_heads
+
         self.use_spatial = use_spatial
         self.norm = nn.GroupNorm(num_groups=32, num_channels=in_channels, eps=1e-6, affine=True)
 
         self.transformer_block = nn.ModuleList([])
         if use_spatial: # not use currently 
-            self.trasformer_block.append(SpatialTrasformerBlock(in_channels, num_heads, head_dim, depth, dropout, context_dim))
+            self.trasformer_block.append(SpatialTrasformerBlock(in_channels=in_channels, num_head=num_heads, head_dim=head_dim, context_dim=context_dim, depth=depth, dropout=dropout))
         else:
             for _ in range(depth):
-                self.transformer_block.append(BasicTransformerBlock(in_channels, num_heads, head_dim, dropout, context_dim))
+                self.transformer_block.append(BasicTransformerBlock(dim=in_channels, num_heads=num_heads, head_dim=head_dim, context_dim=context_dim, dropout=dropout))
 
     def forward(self, x, context=None):
         b, c, h, w = x.shape
