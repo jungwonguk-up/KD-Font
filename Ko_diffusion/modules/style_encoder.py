@@ -18,6 +18,7 @@ class StyleEncoder(nn.Module):
 
     def forward(self, x):
         style_feat = self.layers(x)
+        
         return style_feat
 
 
