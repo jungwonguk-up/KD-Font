@@ -87,7 +87,7 @@ class BasicTransformerBlock(nn.Module):
     :head_dim: Dimension of Attention Head
     :context_dim: Dimension of context
     :ff_dim_mult: Multiply Value of Feed Forward Network Inner Dimension (default=4)
-    :use_GEGLU: (default=True)
+    :use_GEGLU: Whether to use GEGLU or GELU (default=True)
     :dropout: DropOut Rate (default=0.)
     """
     def __init__(self,
@@ -143,11 +143,11 @@ class TrasformerBlock(nn.Module):
     :context_dim: Dimension of context
     :depth: Number of Transformer block Depth (default=1)
     :dropout: DropOut Rate (default=0.)
-    :use_spatial: use Spatial Trasformer Block 
+    :use_spatial: Whether to use Spatial Trasformer Block (defulat=False)
     """
     def __init__(self, 
                  in_channels: int, 
-                 num_heads: int, 
+                 num_heads: int = 4, 
                  head_dim: int = None, 
                  context_dim: int = None,
                  depth: int = 1, 
