@@ -22,3 +22,5 @@ mxfont-main
 *.pyc
 Hangul_Characters_Image128_Grayscale
 Hangul_Characters_Image64_GrayScale
+image
+*.ipynb

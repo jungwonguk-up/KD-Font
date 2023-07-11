@@ -20,6 +20,8 @@ import albumentations as A
 from albumentations.pytorch import ToTensorV2
 import gc
 import wandb
+import os
+
 
 
 # seed
@@ -27,13 +29,16 @@ seed = 7777
 
 # graphic number
 gpu_num = 0
-image_size = 128
+image_size = 64
 input_size = 64
-batch_size = 4
+batch_size = 16
 num_classes = 11172
 lr = 3e-4
 n_epochs = 200
 use_amp = True
+
+# os
+os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
 
 
 def save_images(images, path, **kwargs):
@@ -87,7 +92,7 @@ if __name__ == '__main__':
     # Set transform
     transforms = torchvision.transforms.Compose([
         # torchvision.transforms.Resize((input_size,input_size)),
-        # torchvision.transforms.Grayscale(num_output_channels=1),
+        torchvision.transforms.Grayscale(num_output_channels=1),
     # # #     torchvision.transforms.RandomResizedCrop(input_size, scale=(0.8, 1.0)),
         torchvision.transforms.ToTensor(),
         # torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
@@ -95,10 +100,10 @@ if __name__ == '__main__':
     dataset = torchvision.datasets.ImageFolder(train_dirs,transform=transforms)
 
     #test set
-    #n = range(0,len(dataset),5000)
-    #dataset = Subset(dataset, n)
+    n = range(0,len(dataset),5000)
+    dataset = Subset(dataset, n)
 
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True,num_workers=8)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 
     #Set model
     model = UNet128(num_classes=num_classes).to(device)
@@ -139,14 +144,14 @@ if __name__ == '__main__':
         pbar = tqdm(dataloader,desc=f"trian_{epoch_id}")
         tic = time()
         for i, (x, y) in enumerate(pbar):
-            print('x1 : ', x.shape)
+            # print('x1 : ', x.shape)
             x = x.to(device)
             y = y.to(device)
             t = diffusion.sample_t(x.shape[0]).to(device)
             x_t, noise = diffusion.noise_images(x, t)
             if np.random.random() < 0.3:
                 y = None
-            print('x2 : ', x.shape)
+            # print('x2 : ', x.shape)
             predicted_noise = model(x_t, t, y)
             loss = loss_func(noise, predicted_noise)
 
