@@ -124,6 +124,7 @@ class UNet128(nn.Module):
         self.outc = nn.Conv2d(64, c_out, kernel_size=1)
 
         if num_classes is not None:
+            # print("num_classes : ", num_classes)
             self.label_emb = nn.Embedding(num_classes, time_dim)
             # print("------------------ Set Sty_enc -----------------")
             self.sty_encoder = style_enc_builder(C_in, C).to(device)
@@ -143,12 +144,13 @@ class UNet128(nn.Module):
         t = self.pos_encoding(t, self.time_dim)
 
         if y is not None:
+            print('t , label , sty  :', t.size(), self.label_emb(y).size(), self.sty_encoder(x).size())
             # print("t.size1 : ", t.size())
             t += self.label_emb(y)
             # print('------------------ sty + tim_emb ---------------------')
             # print('t.size2 : ' , t.size())
-            # print('sty_size : ', self.sty_encoder(x).size())
-            print(x.shape)
+            print('sty_size : ', self.sty_encoder(x).size())
+            # print(x.shape)
             sty_size = self.sty_encoder(x)
 
             # new_sty_size를 CUDA 장치로 이동
@@ -157,10 +159,13 @@ class UNet128(nn.Module):
 
             # nn.Linear를 사용하여 new_sty_size의 shape를 t와 동일하게 맞추기
             sty_size = sty_size.view(sty_size.size(0), -1)
+            # print(sty_size.size())
+            # print(sty_size.shape[1])
+            # print(t.shape[1])
             linear = nn.Linear(sty_size.shape[1],t.shape[1]).to("cuda")
             new_sty_size = linear(sty_size)
 
-            # print('new_sty_size : ', new_sty_size.device)
+            # print('new_sty_size : ', new_sty_size.size())
 
             t += new_sty_size
         #     print('t.size3 : ' , t.size())
