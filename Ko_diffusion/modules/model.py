@@ -2,6 +2,8 @@ import torch
 import torch.nn.functional as F
 import torch.nn as nn
 
+from attention import TrasformerBlock
+
 
 class SelfAttention(nn.Module):
     def __init__(self, channels):
@@ -128,6 +130,80 @@ class Up(nn.Module):
         x = self.conv(x)
         emb = self.emb_layer(t)[:, :, None, None].repeat(1, 1, x.shape[-2], x.shape[-1])
         return x + emb
+    
+
+class TransformerUnet128(nn.Module):
+    def __init__(self, 
+                 c_in=1, 
+                 c_out=1, 
+                 time_dim=256, 
+                 context_dim=32,
+                 num_classes=None, 
+                 device="cuda"):
+        super().__init__()
+        self.device = device
+        self.time_dim = time_dim
+        self.inc = DoubleConv(c_in, 64)
+        self.down1 = Down(64, 128)
+        self.attn1 = TrasformerBlock(in_channels=128, context_dim=context_dim)
+        self.down2 = Down(128, 256)
+        self.attn2 = TrasformerBlock(in_channels=256, context_dim=context_dim)
+        self.down3 = Down(256, 256)
+        self.attn3 = TrasformerBlock(in_channels=256, context_dim=context_dim)
+
+        self.bot1 = DoubleConv(256, 512)
+        self.attn4 = TrasformerBlock(in_channels=512, context_dim=context_dim)
+        self.bot2 = DoubleConv(512, 512)
+        self.attn5 = TrasformerBlock(in_channels=512, context_dim=context_dim)
+        self.bot3 = DoubleConv(512, 256)
+
+        self.up1 = Up(512, 128)
+        self.attn6 = TrasformerBlock(in_channels=128, context_dim=context_dim)
+        self.up2 = Up(256, 64)
+        self.attn7 = TrasformerBlock(in_channels=64, context_dim=context_dim)
+        self.up3 = Up(128, 64)
+        self.attn8 = TrasformerBlock(in_channels=64, context_dim=context_dim)
+        self.outc = nn.Conv2d(64, c_out, kernel_size=1)
+
+        if num_classes is not None:
+            self.label_emb = nn.Embedding(num_classes, time_dim)
+
+    def pos_encoding(self, t, channels):
+        inv_freq = 1.0 / (
+            10000
+            ** (torch.arange(0, channels, 2, device=self.device).float() / channels)
+        )
+        pos_enc_a = torch.sin(t.repeat(1, channels // 2) * inv_freq)
+        pos_enc_b = torch.cos(t.repeat(1, channels // 2) * inv_freq)
+        pos_enc = torch.cat([pos_enc_a, pos_enc_b], dim=-1)
+        return pos_enc
+
+    def forward(self, x, t, context):
+        t = t.unsqueeze(-1).type(torch.float)
+        t = self.pos_encoding(t, self.time_dim)
+
+        x1 = self.inc(x)
+        x2 = self.down1(x1, t)
+        x2 = self.attn1(x2, context)
+        x3 = self.down2(x2, t)
+        x3 = self.attn2(x3, context)
+        x4 = self.down3(x3, t)
+        x4 = self.attn3(x4, context)
+
+        x4 = self.bot1(x4)
+        x4 = self.attn4(x4, context)
+        x4 = self.bot2(x4)
+        x4 = self.attn5(x4, context)
+        x4 = self.bot3(x4)
+
+        x = self.up1(x4, x3, t)
+        x = self.attn6(x, context)
+        x = self.up2(x, x2, t)
+        x = self.attn7(x, context)
+        x = self.up3(x, x1, t)
+        x = self.attn8(x, context)
+        output = self.outc(x)
+        return output
 
 
 class CrossAttnUNet128(nn.Module):
@@ -150,11 +226,11 @@ class CrossAttnUNet128(nn.Module):
         self.bot3 = DoubleConv(512, 256)
 
         self.up1 = Up(512, 128)
-        self.attn7 = Attention(128)
+        self.attn6 = Attention(128)
         self.up2 = Up(256, 64)
-        self.attn8 = Attention(64)
+        self.attn7 = Attention(64)
         self.up3 = Up(128, 64)
-        self.attn9 = Attention(64)
+        self.attn8 = Attention(64)
         self.outc = nn.Conv2d(64, c_out, kernel_size=1)
 
         if num_classes is not None:
@@ -183,18 +259,17 @@ class CrossAttnUNet128(nn.Module):
         x4 = self.attn3(x, context)
 
         x4 = self.bot1(x4)
-        x4 = self.att4(x, context)
+        x4 = self.attn4(x, context)
         x4 = self.bot2(x4)
         x4 = self.attn5(x, context)
         x4 = self.bot3(x4)
-        x4 = self.attn6(x, context)
 
         x = self.up1(x4, x3, t)
-        x = self.attn7(x, context)
+        x = self.attn6(x, context)
         x = self.up2(x, x2, t)
-        x = self.attn8(x, context)
+        x = self.attn7(x, context)
         x = self.up3(x, x1, t)
-        x = self.attn9(x, context)
+        x = self.attn8(x, context)
         output = self.outc(x)
         return output
 
