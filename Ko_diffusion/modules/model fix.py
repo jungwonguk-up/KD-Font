@@ -124,10 +124,15 @@ class UNet128(nn.Module):
         self.outc = nn.Conv2d(64, c_out, kernel_size=1)
 
         if num_classes is not None:
-            # print("num_classes : ", num_classes)
             self.label_emb = nn.Embedding(num_classes, time_dim)
-            # print("------------------ Set Sty_enc -----------------")
-            self.sty_encoder = style_enc_builder(C_in, C).to(device)
+            self.sty_encoder_1 = style_enc_builder(C_in, C).to(device)
+            self.sty_encoder_2 = nn.Sequentail(
+                nn.linear(1 , 1),
+                nn.SiLU(),
+                nn.linear( 1, 1)
+            )
+            self.stroke_emb = nn.Embedding(64, )
+
 
     def pos_encoding(self, t, channels):
         inv_freq = 1.0 / (
@@ -140,7 +145,6 @@ class UNet128(nn.Module):
         return pos_enc
 
     def forward(self, x, t, y):
-        print("y : ", y)
         t = t.unsqueeze(-1).type(torch.float)
         t = self.pos_encoding(t, self.time_dim)
 
