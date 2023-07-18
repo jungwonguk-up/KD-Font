@@ -1,6 +1,6 @@
 """
 DMFont
-Copyright (c) 2020-present NAVER Corp.
+Copyright (c) 2020-present NAVER Corp.  
 MIT license
 """
 import torch
