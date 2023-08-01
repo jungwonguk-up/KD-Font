@@ -69,12 +69,17 @@ class windows_tkinter:
         self.second_class = [[0 for _ in range(32)] for _ in range(11)]
 
     def next_button_action(self):
+        with open('ch_embedding.txt','a',encoding='utf-8') as f:
+            letter_embedding = f'{self.ch_letters[self.current_number]} {self.second_class}\n'
+            f.write(letter_embedding)
+        
         self.clear_button_action()
         self.current_number += 1
         letter_img = make_letter_image(self.image_size*2,self.ch_letters[self.current_number])
         letter_image = ImageTk.PhotoImage(letter_img)
         self.letter_image_label['image'] = letter_image
         self.letter_image_label.image=letter_image
+        
         
     def forget_class_buttons(self):
         for idx in range(11):
@@ -90,7 +95,6 @@ class windows_tkinter:
         self.click_second_class = scdx
         self.second_class[self.click_class][self.click_second_class] += 1
         self.second_class_value_info[self.click_second_class]['text'] = self.second_class[self.click_class][self.click_second_class]
-        print([self.second_class])
 
     def display_second_class_value_info_WCC(self,cdx):
         self.click_class = cdx
