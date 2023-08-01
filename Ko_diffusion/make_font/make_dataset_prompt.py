@@ -28,10 +28,11 @@ def make_letter_image(image_size, letter):
 
 
 class windows_tkinter:
-    def __init__(self,start_number,image_size=100):
+    def __init__(self,start_number,ch_letters,image_size=100):
         self.window = Tk()
         self.start_number= start_number
         self.current_number = start_number
+        self.ch_letters = ch_letters
         self.image_size = image_size
         
         self.class_width = 0.075
@@ -54,6 +55,7 @@ class windows_tkinter:
         self.click_class = 100
         self.click_second_class = 100
         self.second_class_value_info_on = False
+        self.letter_image_label = None
     
     def clear_button_action(self):
         for scbdx in range(32):
@@ -68,7 +70,12 @@ class windows_tkinter:
 
     def next_button_action(self):
         self.clear_button_action()
-
+        self.current_number += 1
+        letter_img = make_letter_image(self.image_size*2,self.ch_letters[self.current_number])
+        letter_image = ImageTk.PhotoImage(letter_img)
+        self.letter_image_label['image'] = letter_image
+        self.letter_image_label.image=letter_image
+        
     def forget_class_buttons(self):
         for idx in range(11):
             if self.class_buttons[idx] is not None:
@@ -106,7 +113,7 @@ class windows_tkinter:
     # def clear
     
 
-    def make_class_buttons(self, idx):
+    def place_class_buttons(self, idx):
         self.click_category = idx
         self.forget_class_buttons()
         
@@ -130,9 +137,9 @@ class windows_tkinter:
                 self.class_buttons[ydx].place(relx =self.class_relx+(ydx-8)*self.class_move_ratio,rely=self.class_rely)
 
     def display_window(self):
-        ch_label_path = 'ch_image'
+        ch_label_path = './ch_image'
         ch_label_image_name = os.listdir(ch_label_path)
-        self.window.title("계산기")
+        self.window.title("중국어 데이터셋 제작 툴")
         self.window.resizable(False,False)
         self.window.geometry(f"{self.image_size*10}x{self.image_size*10}")
         # self.window.config(padx=10,pady=10,bg=BG_COLOR)
@@ -144,13 +151,13 @@ class windows_tkinter:
 
 
 
-        letter_img = make_letter_image(self.image_size*2,'孔')
+        letter_img = make_letter_image(self.image_size*2,self.ch_letters[self.start_number])
         letter_image = ImageTk.PhotoImage(letter_img)
-        letter_image_label = Label(self.window,image=letter_image)
-        letter_image_label.image=letter_image
-        letter_image_label.place(relx=0.02,rely=0.21,relwidth=0.2)
+        self.letter_image_label = Label(self.window,image=letter_image)
+        self.letter_image_label.image=letter_image
+        self.letter_image_label.place(relx=0.02,rely=0.21,relwidth=0.2)
 
-        next_button = Button(self.window,text=f"NEXT",width = int(self.image_size*0.2),height=int(self.image_size*0.06),font=('나눔바른펜',int(self.image_size*0.1)),bg=BTN_COLOR)
+        next_button = Button(self.window,text=f"NEXT",width = int(self.image_size*0.2),height=int(self.image_size*0.06),font=('나눔바른펜',int(self.image_size*0.1)),bg=BTN_COLOR,command=lambda:self.next_button_action())
         next_button.place(relx=0.02,rely=0.02,relwidth=0.2,relheight=0.06)
         clear_button = Button(self.window,text=f"CLEAR",width = int(self.image_size*0.2),height=int(self.image_size*0.06),font=('나눔바른펜',int(self.image_size*0.1)),bg=BTN_COLOR,command=lambda:self.clear_button_action())
         clear_button.place(relx=0.02,rely=0.1,relwidth=0.2,relheight=0.06)
@@ -159,7 +166,7 @@ class windows_tkinter:
 
     
         for idx in range(5):
-            self.category_buttons[idx] = Button(self.window,text=f"{idx+1}번 Category",width = int(self.image_size*0.15),height=int(self.image_size*0.1),font=('나눔바른펜',int(self.image_size*0.1)),bg=BTN_COLOR,command=lambda ccdx = idx:self.make_class_buttons(ccdx))
+            self.category_buttons[idx] = Button(self.window,text=f"{idx+1}번 Category",width = int(self.image_size*0.15),height=int(self.image_size*0.1),font=('나눔바른펜',int(self.image_size*0.1)),bg=BTN_COLOR,command=lambda ccdx = idx:self.place_class_buttons(ccdx))
             self.category_buttons[idx].place(relx = 0.27+0.14*(idx),rely=0.02)
 
         for cdx in range(11):
@@ -176,7 +183,10 @@ class windows_tkinter:
 
 
 if __name__ == "__main__":
-
-    ss = windows_tkinter(1000,100)
+    ch_letters = ""
+    with open('ch_letter.txt','r',encoding='utf-8') as f:
+        ch_letters = f.read()
+    ss = windows_tkinter(1000,ch_letters,100)
     ss.display_window()
+
 
