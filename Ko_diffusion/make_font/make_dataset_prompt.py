@@ -58,6 +58,8 @@ class windows_tkinter:
         self.second_class_value_info_on = False
         self.letter_image_label = None
         self.counting_label = None
+        self.counting_label = None
+        self.click_second_class_label = None
     
     def clear_button_action(self):
         for scbdx in range(32):
@@ -70,6 +72,7 @@ class windows_tkinter:
         self.click_second_class = 100
         self.second_class_click_number = 0
         self.second_class = [[0 for _ in range(32)] for _ in range(11)]
+        self.counting_label['text'] = f"{self.second_class_click_number}획"
 
     def next_button_action(self):
         with open('ch_label.txt','a',encoding='utf-8') as f:
@@ -92,10 +95,13 @@ class windows_tkinter:
     def display_second_class_value_info_first(self,):
         for scbdx in range(32):
             self.second_class_value_info[scbdx].place(relx = 0.25 + (scbdx % 8) * 0.09,rely=0.6+(scbdx //8)*0.09)
-        print('first')
 
     def update_second_class_value_info_WSCC(self,scdx):
         self.click_second_class = scdx
+
+        self.click_second_class_label['image'] = self.second_class_images[self.click_second_class]
+        self.click_second_class_label.image = self.second_class_images[self.click_second_class]
+
         self.second_class[self.click_class][self.click_second_class] += 1
         self.second_class_value_info[self.click_second_class]['text'] = self.second_class[self.click_class][self.click_second_class]
         self.second_class_click_number +=1
@@ -153,11 +159,6 @@ class windows_tkinter:
         # self.window.config(padx=10,pady=10,bg=BG_COLOR)
         self.window.config(bg=BG_COLOR)
 
-        entry = Entry(self.window,font=('나눔바른펜',20),bg=BG_COLOR)
-
-
-
-        
         letter_img = make_letter_image(self.image_size*2,self.ch_letters_sum[self.start_number][0])
         letter_image = ImageTk.PhotoImage(letter_img)
         self.letter_image_label = Label(self.window,image=letter_image)
@@ -174,7 +175,9 @@ class windows_tkinter:
         clear_button = Button(self.window,text=f"CLEAR",width = int(self.image_size*0.2),height=int(self.image_size*0.06),font=('나눔바른펜',int(self.image_size*0.1)),bg=BTN_COLOR,command=lambda:self.clear_button_action())
         clear_button.place(relx=0.02,rely=0.1,relwidth=0.2,relheight=0.06)
 
-
+        self.click_second_class_label = Label(self.window,bg=BTN_COLOR)
+        self.click_second_class_label.place(relx=0.075,rely=0.85,relwidth=0.08,relheight=0.08)
+        
 
     
         for idx in range(5):
