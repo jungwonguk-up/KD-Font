@@ -85,6 +85,7 @@ class windows_tkinter:
         letter_image = ImageTk.PhotoImage(letter_img)
         self.letter_image_label['image'] = letter_image
         self.letter_image_label.image=letter_image
+        self.goal_counting_label['text'] = f"{self.ch_letters_sum[self.current_number][1]}획"
         
         
     def forget_class_buttons(self):
