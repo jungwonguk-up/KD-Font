@@ -204,7 +204,7 @@ if __name__ == "__main__":
         for line in f.readlines():
             ch_letters_sum.append(line.split())
     # print(ch_letters_sum)
-    ss = windows_tkinter(start_number=1000,ch_letters_sum=ch_letters_sum,image_size=100)
+    ss = windows_tkinter(start_number=4901,ch_letters_sum=ch_letters_sum,image_size=100)
     ss.display_window()
 
 
