@@ -143,6 +143,7 @@ class UNet128(nn.Module):
         t = self.pos_encoding(t, self.time_dim)
 
         if y is not None:
+            # class 로 넣고 한줄로 처리 -> 인자 하나더 받아서 처리해라! 
             stroke_embedding = StrokeEmbedding('C:\Paper_Project\storke_txt.txt')
             stroke_embedding = stroke_embedding.embedding(y)
             label = y.unsqueeze(1)
