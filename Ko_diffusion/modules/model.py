@@ -171,7 +171,8 @@ class TransformerUnet128(nn.Module):
         self.outc = nn.Conv2d(64, c_out, kernel_size=1)
 
         if num_classes is not None:
-            self.label_emb = nn.Embedding(num_classes, time_dim)
+            # self.label_emb = nn.Embedding(num_classes, time_dim)
+            self.sty_encoder = style_enc_builder(C_in, C).to(device)
 
     def pos_encoding(self, t, channels):
         inv_freq = 1.0 / (
@@ -183,9 +184,25 @@ class TransformerUnet128(nn.Module):
         pos_enc = torch.cat([pos_enc_a, pos_enc_b], dim=-1)
         return pos_enc
 
-    def forward(self, x, t, context):
+    def forward(self, x, t, y, context):
         t = t.unsqueeze(-1).type(torch.float)
         t = self.pos_encoding(t, self.time_dim)
+
+        if y is not None:
+            # class 로 넣고 한줄로 처리 -> 인자 하나더 받아서 처리해라! 
+            stroke_embedding = StrokeEmbedding('C:\Paper_Project\storke_txt.txt')
+            stroke_embedding = stroke_embedding.embedding(y)
+            label = y.unsqueeze(1)
+            sty = self.sty_encoder(x)
+            # Adjust the shapes of the tensors by repeating the necessary dimensions
+            stroke_embedding = stroke_embedding.unsqueeze(-1).unsqueeze(-1).repeat(1, 1, 16, 16).cuda()  # Expand and repeat to match shape with sty tensor
+            label = label.unsqueeze(-1).unsqueeze(-1).repeat(1, 1, 16, 16)  # Expand and repeat to match shape with sty tensor
+
+            # Concatenate the tensors along the second dimension (channels)
+            context = torch.cat((stroke_embedding, label, sty), dim=1)
+
+            print(context.shape)
+
 
         x1 = self.inc(x)
         x2 = self.down1(x1, t)
