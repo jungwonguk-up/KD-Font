@@ -7,7 +7,7 @@ from .stroke import StrokeEmbedding
 C = 32
 C_in = 1
 
-from attention import TrasformerBlock
+from .attention import TrasformerBlock
 
 
 class SelfAttention(nn.Module):
