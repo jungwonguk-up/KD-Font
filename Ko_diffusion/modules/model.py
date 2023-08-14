@@ -2,6 +2,7 @@ import torch
 import torch.nn.functional as F
 import torch.nn as nn
 from .style_encoder import style_enc_builder
+from .stroke import StrokeEmbedding
 
 C = 32
 C_in = 1
@@ -304,9 +305,7 @@ class UNet128(nn.Module):
         self.outc = nn.Conv2d(64, c_out, kernel_size=1)
 
         if num_classes is not None:
-            # print("num_classes : ", num_classes)
-            self.label_emb = nn.Embedding(num_classes, time_dim)
-            # print("------------------ Set Sty_enc -----------------")
+            # self.label_emb = nn.Embedding(num_classes, time_dim)
             self.sty_encoder = style_enc_builder(C_in, C).to(device)
 
     def pos_encoding(self, t, channels):
@@ -320,37 +319,25 @@ class UNet128(nn.Module):
         return pos_enc
 
     def forward(self, x, t, y):
-        print("y : ", y)
         t = t.unsqueeze(-1).type(torch.float)
         t = self.pos_encoding(t, self.time_dim)
 
         if y is not None:
-            print('t , label , sty  :', t.size(), self.label_emb(y).size(), self.sty_encoder(x).size())
-            # print("t.size1 : ", t.size())
-            t += self.label_emb(y)
-            # print('------------------ sty + tim_emb ---------------------')
-            # print('t.size2 : ' , t.size())
-            print('sty_size : ', self.sty_encoder(x).size())
-            # print(x.shape)
-            sty_size = self.sty_encoder(x)
+            # class 로 넣고 한줄로 처리 -> 인자 하나더 받아서 처리해라! 
+            stroke_embedding = StrokeEmbedding('C:\Paper_Project\storke_txt.txt')
+            stroke_embedding = stroke_embedding.embedding(y)
+            label = y.unsqueeze(1)
+            sty = self.sty_encoder(x)
+            # Adjust the shapes of the tensors by repeating the necessary dimensions
+            stroke_embedding = stroke_embedding.unsqueeze(-1).unsqueeze(-1).repeat(1, 1, 16, 16).cuda()  # Expand and repeat to match shape with sty tensor
+            label = label.unsqueeze(-1).unsqueeze(-1).repeat(1, 1, 16, 16)  # Expand and repeat to match shape with sty tensor
 
-            # new_sty_size를 CUDA 장치로 이동
-            # print('t.device : ', t.device)
-            
+            # Concatenate the tensors along the second dimension (channels)
+            context = torch.cat((stroke_embedding, label, sty), dim=1)
 
-            # nn.Linear를 사용하여 new_sty_size의 shape를 t와 동일하게 맞추기
-            sty_size = sty_size.view(sty_size.size(0), -1)
-            # print(sty_size.size())
-            # print(sty_size.shape[1])
-            # print(t.shape[1])
-            linear = nn.Linear(sty_size.shape[1],t.shape[1]).to("cuda")
-            new_sty_size = linear(sty_size)
+            print(context.shape)
 
-            # print('new_sty_size : ', new_sty_size.size())
 
-            t += new_sty_size
-        #     print('t.size3 : ' , t.size())
-        # print('12345')
         x1 = self.inc(x)
         x2 = self.down1(x1, t)
         x2 = self.sa1(x2)

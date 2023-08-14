@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 
-class StrokeEmbedding(nn.Module):
+class StrokeEmbedding():
     def __init__(self,txt_path):
         self.emd_stroke_list = self.read_stroke_txt(txt_path)
 
@@ -22,7 +22,6 @@ class StrokeEmbedding(nn.Module):
                 for i in check:
                     tmp.append(int(i))
             stroke_embedding.append(tmp)
-            print(stroke_embedding)
         stroke_embedding = torch.Tensor(stroke_embedding)
         return stroke_embedding
 
