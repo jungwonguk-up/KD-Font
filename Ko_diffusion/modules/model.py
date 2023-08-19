@@ -201,7 +201,7 @@ class TransformerUnet128(nn.Module):
             # Concatenate the tensors along the second dimension (channels)
             context = torch.cat((stroke_embedding, label, sty), dim=1)
 
-            print(context.shape)
+            # print(context.shape)
 
 
         x1 = self.inc(x)
@@ -352,7 +352,7 @@ class UNet128(nn.Module):
             # Concatenate the tensors along the second dimension (channels)
             context = torch.cat((stroke_embedding, label, sty), dim=1)
 
-            print(context.shape)
+            # print(context.shape)
 
 
         x1 = self.inc(x)

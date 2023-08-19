@@ -36,6 +36,7 @@ num_classes = 11172
 lr = 3e-4
 n_epochs = 200
 use_amp = True
+resume_train = False
 
 # os
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
@@ -87,7 +88,7 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Set data directory
-    train_dirs = 'C:\Paper_Project\Hangul_Characters_Image64_GrayScale'
+    train_dirs = 'C:\Paper_Project\Hangul_Characters_Image64_radomSampling420_GrayScale'
 
     # Set transform
     transforms = torchvision.transforms.Compose([
@@ -100,18 +101,36 @@ if __name__ == '__main__':
     dataset = torchvision.datasets.ImageFolder(train_dirs,transform=transforms)
 
     #test set
-    n = range(0,len(dataset),5000)
-    dataset = Subset(dataset, n)
+    # n = range(0,len(dataset),5000)
+    # dataset = Subset(dataset, n)
 
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 
-    #Set model
-    model = UNet128(num_classes=num_classes).to(device)
-    wandb.watch(model)
+    if resume_train:
+        #Set model
+        model = UNet128(num_classes=num_classes).to(device)
+        wandb.watch(model)
 
-    #Set optimizer
-    optimizer = optim.AdamW(model.parameters(), lr=lr)
+        #Set optimizer
+        optimizer = optim.AdamW(model.parameters(), lr=lr)
 
+        #load weight
+        model.load_state_dict(torch.load('./models/font_noStrokeStyle_2/ckpt_10.pt'))
+
+        #load optimzer
+        optimizer.load_state_dict(torch.load('./models/font_noStrokeStyle_2/optim_10.pt'))
+        for state in optimizer.state.values():
+            for k, v in state.items():
+                if isinstance(v, torch.Tensor):
+                    state[k] = v.to(device)
+        model = model.to(device)
+    else:
+        #Set model
+        model = UNet128(num_classes=num_classes).to(device)
+        wandb.watch(model)
+
+        #Set optimizer
+        optimizer = optim.AdamW(model.parameters(), lr=lr)
     #Set loss function
     loss_func = nn.MSELoss()
 
@@ -172,12 +191,12 @@ if __name__ == '__main__':
 
         # Save
 
-        # labels = torch.arange(num_classes).long().to(device)
-        # sampled_images = diffusion.portion_sampling(model, n=len(labels),sampleImage_len = 36)
-        # plot_images(sampled_images)
-        # save_images(sampled_images, os.path.join(result_image_path, f"{epoch_id}.jpg"))
-        # torch.save(model,os.path.join(result_model_path,f"model_{epoch_id}.pt"))
-        # torch.save(model.state_dict(), os.path.join(result_model_path, f"ckpt_{epoch_id}.pt"))
-        # torch.save(optimizer.state_dict(), os.path.join(result_model_path, f"optim_{epoch_id}.pt"))
+        labels = torch.arange(num_classes).long().to(device)
+        sampled_images = diffusion.portion_sampling(model, n=len(labels),sampleImage_len = 36)
+        plot_images(sampled_images)
+        save_images(sampled_images, os.path.join(result_image_path, f"{epoch_id}.jpg"))
+        torch.save(model,os.path.join(result_model_path,f"model_{epoch_id}.pt"))
+        torch.save(model.state_dict(), os.path.join(result_model_path, f"ckpt_{epoch_id}.pt"))
+        torch.save(optimizer.state_dict(), os.path.join(result_model_path, f"optim_{epoch_id}.pt"))
 
     wandb.finish()
