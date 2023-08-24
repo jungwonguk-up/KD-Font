@@ -15,7 +15,7 @@ from PIL import Image
 from matplotlib import pyplot as plt
 
 from modules.diffusion import Diffusion
-from modules.model import UNet32,UNet128
+from modules.model import UNet128,TransformerUnet128
 import albumentations as A
 from albumentations.pytorch import ToTensorV2
 import gc
@@ -36,7 +36,7 @@ num_classes = 11172
 lr = 3e-4
 n_epochs = 200
 use_amp = True
-resume_train = True
+resume_train = False
 
 # os
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
@@ -96,7 +96,7 @@ if __name__ == '__main__':
         torchvision.transforms.Grayscale(num_output_channels=1),
     # # #     torchvision.transforms.RandomResizedCrop(input_size, scale=(0.8, 1.0)),
         torchvision.transforms.ToTensor(),
-        torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        torchvision.transforms.Normalize((0.5), (0.5))
     ])
     dataset = torchvision.datasets.ImageFolder(train_dirs,transform=transforms)
 
@@ -108,7 +108,7 @@ if __name__ == '__main__':
 
     if resume_train:
         #Set model
-        model = UNet128(num_classes=num_classes).to(device)
+        model = TransformerUnet128(num_classes=num_classes).to(device)
         wandb.watch(model)
 
         #Set optimizer
@@ -138,9 +138,10 @@ if __name__ == '__main__':
                     state[k] = v.to(device)
         model = model.to(device)
 
+
     else:
         #Set model
-        model = UNet128(num_classes=num_classes).to(device)
+        model = TransformerUnet128(num_classes=num_classes).to(device)
         wandb.watch(model)
 
         #Set optimizer
@@ -180,7 +181,7 @@ if __name__ == '__main__':
     diffusion = Diffusion(first_beta=1e-4,
                           end_beta=0.02,
                           noise_step=1000,
-                          beta_schedule_type='cosine',
+                          beta_schedule_type='cosine', # stable diffusion 확인
                           img_size=input_size,
                           device=device)
 
@@ -199,7 +200,7 @@ if __name__ == '__main__':
             if np.random.random() < 0.3:
                 y = None
             # print('x2 : ', x.shape)
-            predicted_noise = model(x_t, t, y)
+            predicted_noise = model(x_t, t, y, x) # 원래 이미지 -> 스타일 인코더
             loss = loss_func(noise, predicted_noise)
 
             optimizer.zero_grad()

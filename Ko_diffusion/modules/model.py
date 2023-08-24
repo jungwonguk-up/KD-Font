@@ -144,7 +144,8 @@ class TransformerUnet128(nn.Module):
                  time_dim=256, 
                  context_dim=32,
                  num_classes=None, 
-                 device="cuda"):
+                 device="cuda",
+                 ):
         super().__init__()
         self.device = device
         self.time_dim = time_dim
@@ -169,8 +170,9 @@ class TransformerUnet128(nn.Module):
         self.up3 = Up(128, 64)
         self.attn8 = TrasformerBlock(in_channels=64, context_dim=context_dim)
         self.outc = nn.Conv2d(64, c_out, kernel_size=1)
+       
 
-        if num_classes is not None:
+        if num_classes is not None: # 스타일 인코더 스위치 
             # self.label_emb = nn.Embedding(num_classes, time_dim)
             self.sty_encoder = style_enc_builder(C_in, C).to(device)
 
@@ -184,7 +186,7 @@ class TransformerUnet128(nn.Module):
         pos_enc = torch.cat([pos_enc_a, pos_enc_b], dim=-1)
         return pos_enc
 
-    def forward(self, x, t, y, context):
+    def forward(self, x, t, y, sample_img):
         t = t.unsqueeze(-1).type(torch.float)
         t = self.pos_encoding(t, self.time_dim)
 
@@ -193,7 +195,7 @@ class TransformerUnet128(nn.Module):
             stroke_embedding = StrokeEmbedding('C:\Paper_Project\storke_txt.txt')
             stroke_embedding = stroke_embedding.embedding(y)
             label = y.unsqueeze(1)
-            sty = self.sty_encoder(x)
+            sty = self.sty_encoder(sample_img)
             # Adjust the shapes of the tensors by repeating the necessary dimensions
             stroke_embedding = stroke_embedding.unsqueeze(-1).unsqueeze(-1).repeat(1, 1, 16, 16).cuda()  # Expand and repeat to match shape with sty tensor
             label = label.unsqueeze(-1).unsqueeze(-1).repeat(1, 1, 16, 16)  # Expand and repeat to match shape with sty tensor
@@ -226,75 +228,6 @@ class TransformerUnet128(nn.Module):
         x = self.attn8(x, context)
         output = self.outc(x)
         return output
-
-
-class CrossAttnUNet128(nn.Module):
-    def __init__(self, c_in=3, c_out=3, time_dim=256, num_classes=None, device="cuda"):
-        super().__init__()
-        self.device = device
-        self.time_dim = time_dim
-        self.inc = DoubleConv(c_in, 64)
-        self.down1 = Down(64, 128)
-        self.attn1 = Attention(128)
-        self.down2 = Down(128, 256)
-        self.attn2 = Attention(256)
-        self.down3 = Down(256, 256)
-        self.attn3 = Attention(256)
-
-        self.bot1 = DoubleConv(256, 512)
-        self.attn4 = Attention(512)
-        self.bot2 = DoubleConv(512, 512)
-        self.attn5 = Attention(512)
-        self.bot3 = DoubleConv(512, 256)
-
-        self.up1 = Up(512, 128)
-        self.attn6 = Attention(128)
-        self.up2 = Up(256, 64)
-        self.attn7 = Attention(64)
-        self.up3 = Up(128, 64)
-        self.attn8 = Attention(64)
-        self.outc = nn.Conv2d(64, c_out, kernel_size=1)
-
-        if num_classes is not None:
-            self.label_emb = nn.Embedding(num_classes, time_dim)
-
-    def pos_encoding(self, t, channels):
-        inv_freq = 1.0 / (
-            10000
-            ** (torch.arange(0, channels, 2, device=self.device).float() / channels)
-        )
-        pos_enc_a = torch.sin(t.repeat(1, channels // 2) * inv_freq)
-        pos_enc_b = torch.cos(t.repeat(1, channels // 2) * inv_freq)
-        pos_enc = torch.cat([pos_enc_a, pos_enc_b], dim=-1)
-        return pos_enc
-
-    def forward(self, x, t, context):
-        t = t.unsqueeze(-1).type(torch.float)
-        t = self.pos_encoding(t, self.time_dim)
-
-        x1 = self.inc(x)
-        x2 = self.down1(x1, t)
-        x2 = self.attn1(x, context)
-        x3 = self.down2(x2, t)
-        x3 = self.attn2(x, context)
-        x4 = self.down3(x3, t)
-        x4 = self.attn3(x, context)
-
-        x4 = self.bot1(x4)
-        x4 = self.attn4(x, context)
-        x4 = self.bot2(x4)
-        x4 = self.attn5(x, context)
-        x4 = self.bot3(x4)
-
-        x = self.up1(x4, x3, t)
-        x = self.attn6(x, context)
-        x = self.up2(x, x2, t)
-        x = self.attn7(x, context)
-        x = self.up3(x, x1, t)
-        x = self.attn8(x, context)
-        output = self.outc(x)
-        return output
-
 
 class UNet128(nn.Module):
     def __init__(self, c_in=1, c_out=1, time_dim=256, num_classes=None, device="cuda", sample_img=None):
@@ -358,73 +291,6 @@ class UNet128(nn.Module):
 
             # print(context.shape)
 
-
-        x1 = self.inc(x)
-        x2 = self.down1(x1, t)
-        x2 = self.sa1(x2)
-        x3 = self.down2(x2, t)
-        x3 = self.sa2(x3)
-        x4 = self.down3(x3, t)
-        x4 = self.sa3(x4)
-
-        x4 = self.bot1(x4)
-        x4 = self.bot2(x4)
-        x4 = self.bot3(x4)
-
-        x = self.up1(x4, x3, t)
-        x = self.sa4(x)
-        x = self.up2(x, x2, t)
-        x = self.sa5(x)
-        x = self.up3(x, x1, t)
-        x = self.sa6(x)
-        output = self.outc(x)
-        return output
-
-
-class UNet32(nn.Module):
-    def __init__(self, c_in=3, c_out=3, time_dim=256, num_classes=None, device="cuda"):
-        super().__init__()
-        self.device = device
-        self.time_dim = time_dim
-        self.inc = DoubleConv(c_in, 32)
-        self.down1 = Down(32, 64)
-        self.sa1 = SelfAttention(64)
-        self.down2 = Down(64, 128)
-        self.sa2 = SelfAttention(128)
-        self.down3 = Down(128, 128)
-        self.sa3 = SelfAttention(128)
-
-        self.bot1 = DoubleConv(128, 256)
-        self.bot2 = DoubleConv(256, 256)
-        self.bot3 = DoubleConv(256, 128)
-
-        self.up1 = Up(256, 64)
-        self.sa4 = SelfAttention(64)
-        self.up2 = Up(128, 32)
-        self.sa5 = SelfAttention(32)
-        self.up3 = Up(64, 32)
-        self.sa6 = SelfAttention(32)
-        self.outc = nn.Conv2d(32, c_out, kernel_size=1)
-
-        if num_classes is not None:
-            self.label_emb = nn.Embedding(num_classes, time_dim)
-
-    def pos_encoding(self, t, channels):
-        inv_freq = 1.0 / (
-            10000
-            ** (torch.arange(0, channels, 2, device=self.device).float() / channels)
-        )
-        pos_enc_a = torch.sin(t.repeat(1, channels // 2) * inv_freq)
-        pos_enc_b = torch.cos(t.repeat(1, channels // 2) * inv_freq)
-        pos_enc = torch.cat([pos_enc_a, pos_enc_b], dim=-1)
-        return pos_enc
-
-    def forward(self, x, t, y):
-        t = t.unsqueeze(-1).type(torch.float)
-        t = self.pos_encoding(t, self.time_dim)
-
-        if y is not None:
-            t += self.label_emb(y)
 
         x1 = self.inc(x)
         x2 = self.down1(x1, t)
