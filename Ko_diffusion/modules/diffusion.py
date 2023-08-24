@@ -61,11 +61,11 @@ class Diffusion:
     def sampling(self, model, n, labels, cfg_scale=3):
         model.eval()
         with torch.no_grad():
-            x = torch.randn((n, 3, self.img_size, self.img_size)).to(self.device)
+            x = torch.randn((n, 1, self.img_size, self.img_size)).to(self.device)
             pbar = tqdm(list(reversed(range(1, self.noise_step))))
             for i in pbar:
                 dataset = TensorDataset(x,labels)
-                batch_size= 8
+                batch_size= 16
                 dataloader = DataLoader(dataset,batch_size=batch_size,shuffle=False)
                 predicted_noise = torch.tensor([]).to(self.device)
                 uncond_predicted_noise = torch.tensor([]).to(self.device)
@@ -102,11 +102,11 @@ class Diffusion:
 
     def indexToChar(self,y):
         return chr(44032+y)
-    def portion_sampling(self, model, n,sampleImage_len, cfg_scale=3):
+    def portion_sampling(self, model, n,sampleImage_len, cfg_scale=3,):
         example_images = []
         model.eval()
         with torch.no_grad():
-            x_list = torch.randn((sampleImage_len, 3, self.img_size, self.img_size)).to(self.device)
+            x_list = torch.randn((sampleImage_len, 1, self.img_size, self.img_size)).to(self.device)
             y_idx = list(range(n))[::math.ceil(n/sampleImage_len)]
             y_list = torch.Tensor(y_idx).long().to(self.device)
             pbar = tqdm(list(reversed(range(1, self.noise_step))),desc="sampling")

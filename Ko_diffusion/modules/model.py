@@ -297,7 +297,7 @@ class CrossAttnUNet128(nn.Module):
 
 
 class UNet128(nn.Module):
-    def __init__(self, c_in=1, c_out=1, time_dim=256, num_classes=None, device="cuda"):
+    def __init__(self, c_in=1, c_out=1, time_dim=256, num_classes=None, device="cuda", sample_img=None):
         super().__init__()
         self.device = device
         self.time_dim = time_dim
@@ -320,6 +320,7 @@ class UNet128(nn.Module):
         self.up3 = Up(128, 64)
         self.sa6 = SelfAttention(64)
         self.outc = nn.Conv2d(64, c_out, kernel_size=1)
+        self.sample_img = sample_img
 
         if num_classes is not None:
             # self.label_emb = nn.Embedding(num_classes, time_dim)
@@ -336,6 +337,8 @@ class UNet128(nn.Module):
         return pos_enc
 
     def forward(self, x, t, y):
+        # print(x.shape)
+        # print(self.sample_img.shape)
         t = t.unsqueeze(-1).type(torch.float)
         t = self.pos_encoding(t, self.time_dim)
 
@@ -344,7 +347,8 @@ class UNet128(nn.Module):
             stroke_embedding = StrokeEmbedding('C:\Paper_Project\storke_txt.txt')
             stroke_embedding = stroke_embedding.embedding(y)
             label = y.unsqueeze(1)
-            sty = self.sty_encoder(x)
+            # sty = self.sty_encoder(x) # 여기서 error
+            sty = self.sty_encoder(self.sample_img) # 여기서 error
             # Adjust the shapes of the tensors by repeating the necessary dimensions
             stroke_embedding = stroke_embedding.unsqueeze(-1).unsqueeze(-1).repeat(1, 1, 16, 16).cuda()  # Expand and repeat to match shape with sty tensor
             label = label.unsqueeze(-1).unsqueeze(-1).repeat(1, 1, 16, 16)  # Expand and repeat to match shape with sty tensor

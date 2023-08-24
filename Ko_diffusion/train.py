@@ -36,7 +36,7 @@ num_classes = 11172
 lr = 3e-4
 n_epochs = 200
 use_amp = True
-resume_train = False
+resume_train = True
 
 # os
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
@@ -63,7 +63,7 @@ if __name__ == '__main__':
     result_model_path = os.path.join("models", 'font_noStrokeStyle_{}'.format(2))
     os.makedirs(result_image_path, exist_ok=True)
     os.makedirs(result_model_path, exist_ok=True)
-
+ 
     # wandb init
     wandb.init(project="diffusion_font_32_test", config={
         "learning_rate": 0.0003,
@@ -96,12 +96,12 @@ if __name__ == '__main__':
         torchvision.transforms.Grayscale(num_output_channels=1),
     # # #     torchvision.transforms.RandomResizedCrop(input_size, scale=(0.8, 1.0)),
         torchvision.transforms.ToTensor(),
-        # torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
     ])
     dataset = torchvision.datasets.ImageFolder(train_dirs,transform=transforms)
 
     #test set
-    # n = range(0,len(dataset),5000)
+    # n = range(0,len(dataset),50)
     # dataset = Subset(dataset, n)
 
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=4)
@@ -114,16 +114,30 @@ if __name__ == '__main__':
         #Set optimizer
         optimizer = optim.AdamW(model.parameters(), lr=lr)
 
+        ### sty_encoder
+        sty_encoder_path = 'C:\Paper_Project\weight\style_enc.pth'
+        checkpoint = torch.load(sty_encoder_path, map_location='cpu')
+        tmp_dict = {}
+        for k, v in checkpoint.items():
+            if k in model.sty_encoder.state_dict():
+                tmp_dict[k] = v
+        model.sty_encoder.load_state_dict(tmp_dict)
+
+        # frozen sty_encoder
+        for p in model.sty_encoder.parameters():
+            p.requires_grad = False
+
         #load weight
-        model.load_state_dict(torch.load('./models/font_noStrokeStyle_2/ckpt_10.pt'))
+        model.load_state_dict(torch.load('./models/font_noStrokeStyle_2/ckpt_69.pt'))
 
         #load optimzer
-        optimizer.load_state_dict(torch.load('./models/font_noStrokeStyle_2/optim_10.pt'))
+        optimizer.load_state_dict(torch.load('./models/font_noStrokeStyle_2/optim_69.pt'))
         for state in optimizer.state.values():
             for k, v in state.items():
                 if isinstance(v, torch.Tensor):
                     state[k] = v.to(device)
         model = model.to(device)
+
     else:
         #Set model
         model = UNet128(num_classes=num_classes).to(device)
@@ -131,21 +145,35 @@ if __name__ == '__main__':
 
         #Set optimizer
         optimizer = optim.AdamW(model.parameters(), lr=lr)
+
+        ### sty_encoder
+        sty_encoder_path = 'C:\Paper_Project\weight\style_enc.pth'
+        checkpoint = torch.load(sty_encoder_path, map_location='cpu')
+        tmp_dict = {}
+        for k, v in checkpoint.items():
+            if k in model.sty_encoder.state_dict():
+                tmp_dict[k] = v
+        model.sty_encoder.load_state_dict(tmp_dict)
+
+        # frozen sty_encoder
+        for p in model.sty_encoder.parameters():
+            p.requires_grad = False
+
     #Set loss function
     loss_func = nn.MSELoss()
 
-    ### sty_encoder
-    sty_encoder_path = 'C:\Paper_Project\weight\style_enc.pth'
-    checkpoint = torch.load(sty_encoder_path, map_location='cpu')
-    tmp_dict = {}
-    for k, v in checkpoint.items():
-        if k in model.sty_encoder.state_dict():
-            tmp_dict[k] = v
-    model.sty_encoder.load_state_dict(tmp_dict)
+    # ### sty_encoder
+    # sty_encoder_path = 'C:\Paper_Project\weight\style_enc.pth'
+    # checkpoint = torch.load(sty_encoder_path, map_location='cpu')
+    # tmp_dict = {}
+    # for k, v in checkpoint.items():
+    #     if k in model.sty_encoder.state_dict():
+    #         tmp_dict[k] = v
+    # model.sty_encoder.load_state_dict(tmp_dict)
 
-    # frozen sty_encoder
-    for p in model.sty_encoder.parameters():
-        p.requires_grad = False
+    # # frozen sty_encoder
+    # for p in model.sty_encoder.parameters():
+    #     p.requires_grad = False
 
 
     #Set diffusion
@@ -157,7 +185,7 @@ if __name__ == '__main__':
                           device=device)
 
 
-    for epoch_id in range(n_epochs):
+    for epoch_id in range(70,n_epochs):
         print(f"Epoch {epoch_id}/{n_epochs} Train..")
         
         pbar = tqdm(dataloader,desc=f"trian_{epoch_id}")
@@ -191,10 +219,10 @@ if __name__ == '__main__':
 
         # Save
 
-        labels = torch.arange(num_classes).long().to(device)
-        sampled_images = diffusion.portion_sampling(model, n=len(labels),sampleImage_len = 36)
-        plot_images(sampled_images)
-        save_images(sampled_images, os.path.join(result_image_path, f"{epoch_id}.jpg"))
+        # labels = torch.arange(num_classes).long().to(device)
+        # sampled_images = diffusion.portion_sampling(model, n=len(labels),sampleImage_len = 36)
+        # plot_images(sampled_images)
+        # save_images(sampled_images, os.path.join(result_image_path, f"{epoch_id}.jpg"))
         torch.save(model,os.path.join(result_model_path,f"model_{epoch_id}.pt"))
         torch.save(model.state_dict(), os.path.join(result_model_path, f"ckpt_{epoch_id}.pt"))
         torch.save(optimizer.state_dict(), os.path.join(result_model_path, f"optim_{epoch_id}.pt"))
