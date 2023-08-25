@@ -141,7 +141,7 @@ if __name__ == '__main__':
 
     else:
         #Set model
-        model = TransformerUnet128(num_classes=num_classes).to(device)
+        model = TransformerUnet128(num_classes=num_classes, context_dim=256).to(device)
         wandb.watch(model)
 
         #Set optimizer
