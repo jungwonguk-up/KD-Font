@@ -108,10 +108,10 @@ class Down(nn.Module):
     def forward(self, x, t, context):
         x = self.maxpool_conv(x)
         emb = self.emb_layer(t)[:, :, None, None].repeat(1, 1, x.shape[-2], x.shape[-1])
-        print('x.shape : ', x.shape)
-        print('t.shape : ', t.shape)
-        print('emb.shape : ', emb.shape)
-        print('context.shape: ', context.shape)
+        # print('x.shape : ', x.shape)
+        # print('t.shape : ', t.shape)
+        # print('emb.shape : ', emb.shape)
+        # print('context.shape: ', context.shape)
         return x + emb
 
 
@@ -204,14 +204,14 @@ class TransformerUnet128(nn.Module):
 
         if y is not None:
             # class 로 넣고 한줄로 처리 -> 인자 하나더 받아서 처리해라! 
-            stroke_embedding = StrokeEmbedding('C:\Paper_Project\storke_txt.txt')
+            stroke_embedding = StrokeEmbedding('data/storke_txt.txt')
             stroke_embedding = stroke_embedding.embedding(y)
-            print('stroke_embedding : ',stroke_embedding.shape)
+            # print('stroke_embedding : ',stroke_embedding.shape)
             label = y.unsqueeze(1)
             # print('label : ', label.shape)
             sty = self.sty_encoder(sample_img)
             # Adjust the shapes of the tensors by repeating the necessary dimensions
-            stroke_embedding = stroke_embedding.unsqueeze(-1).unsqueeze(-1).repeat(1, 1, 16, 16).cuda()  # Expand and repeat to match shape with sty tensor
+            stroke_embedding = stroke_embedding.unsqueeze(-1).unsqueeze(-1).repeat(1, 1, 16, 16).to(self.device)  # Expand and repeat to match shape with sty tensor
             label = label.unsqueeze(-1).unsqueeze(-1).repeat(1, 1, 16, 16)  # Expand and repeat to match shape with sty tensor
 
             # Concatenate the tensors along the second dimension (channels)
@@ -220,7 +220,7 @@ class TransformerUnet128(nn.Module):
             c_b, c_c, _, _ = context.shape
             context = context.view(c_b, c_c, -1)
             # print('context : ', context.shape)
-            # context = torch.zeros(c_b, c_c, 256).cuda()
+            # context = torch.zeros(c_b, c_c, 256).to(self.device)
             # print('context2 : ', context.shape)
             
             
@@ -228,21 +228,21 @@ class TransformerUnet128(nn.Module):
         
         else: # 수정 필요!!!!!! -> y = None 일때 동일 쉐이프 만들기
             # class 로 넣고 한줄로 처리 -> 인자 하나더 받아서 처리해라! 
-            stroke_embedding = StrokeEmbedding('C:\Paper_Project\storke_txt.txt')
-            stroke_embedding = torch.zeros(18,68).cuda()
+            stroke_embedding = StrokeEmbedding('data/storke_txt.txt')
+            stroke_embedding = torch.zeros(18,68).to(self.device)
             # print('stroke_embedding_None : ',stroke_embedding.shape)
             # label = y.unsqueeze(1) # 이거 아무리 생각해도 0으로 밀면 안될거 같은데?
-            label = torch.zeros(18,1).cuda()
+            label = torch.zeros(18,1).to(self.device)
             sty = self.sty_encoder(sample_img)
             # Adjust the shapes of the tensors by repeating the necessary dimensions
-            stroke_embedding = stroke_embedding.unsqueeze(-1).unsqueeze(-1).repeat(1, 1, 16, 16).cuda()  # Expand and repeat to match shape with sty tensor
+            stroke_embedding = stroke_embedding.unsqueeze(-1).unsqueeze(-1).repeat(1, 1, 16, 16).to(self.device)  # Expand and repeat to match shape with sty tensor
             label = label.unsqueeze(-1).unsqueeze(-1).repeat(1, 1, 16, 16)  # Expand and repeat to match shape with sty tensor
 
             # Concatenate the tensors along the second dimension (channels)
             context = torch.cat((stroke_embedding, label, sty), dim=1)
             c_b, c_c, _, _ = context.shape
             context = context.view(c_b, c_c, -1)
-            # context = torch.zeros(c_b, c_c, 256).cuda()
+            # context = torch.zeros(c_b, c_c, 256).to(self.device)
             # print(context.shape)
 
 
@@ -318,13 +318,13 @@ class UNet128(nn.Module):
 
         if y is not None:
             # class 로 넣고 한줄로 처리 -> 인자 하나더 받아서 처리해라! 
-            stroke_embedding = StrokeEmbedding('C:\Paper_Project\storke_txt.txt')
+            stroke_embedding = StrokeEmbedding('data/storke_txt.txt')
             stroke_embedding = stroke_embedding.embedding(y)
             label = y.unsqueeze(1)
             # sty = self.sty_encoder(x) # 여기서 error
             sty = self.sty_encoder(self.sample_img) # 여기서 error
             # Adjust the shapes of the tensors by repeating the necessary dimensions
-            stroke_embedding = stroke_embedding.unsqueeze(-1).unsqueeze(-1).repeat(1, 1, 16, 16).cuda()  # Expand and repeat to match shape with sty tensor
+            stroke_embedding = stroke_embedding.unsqueeze(-1).unsqueeze(-1).repeat(1, 1, 16, 16).to(self.device) # Expand and repeat to match shape with sty tensor
             label = label.unsqueeze(-1).unsqueeze(-1).repeat(1, 1, 16, 16)  # Expand and repeat to match shape with sty tensor
 
             # Concatenate the tensors along the second dimension (channels)

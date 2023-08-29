@@ -16,12 +16,12 @@ from matplotlib import pyplot as plt
 
 from modules.diffusion import Diffusion
 from modules.model import UNet128,TransformerUnet128
-import albumentations as A
-from albumentations.pytorch import ToTensorV2
 import gc
 import wandb
 import os
 
+# import albumentations as A
+# from albumentations.pytorch import ToTensorV2
 
 
 # seed
@@ -37,6 +37,7 @@ lr = 3e-4
 n_epochs = 200
 use_amp = True
 resume_train = False
+file_number= 3
 
 # os
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
@@ -59,19 +60,19 @@ def plot_images(images):
 
 if __name__ == '__main__':
     #Set save file
-    result_image_path = os.path.join("results", 'font_noStrokeStyle_{}'.format(2))
-    result_model_path = os.path.join("models", 'font_noStrokeStyle_{}'.format(2))
+    result_image_path = os.path.join("results", 'font_noStrokeStyle_{}'.format(file_number))
+    result_model_path = os.path.join("models", 'font_noStrokeStyle_{}'.format(file_number))
     os.makedirs(result_image_path, exist_ok=True)
     os.makedirs(result_model_path, exist_ok=True)
  
     # wandb init
-    wandb.init(project="diffusion_font_32_test", config={
-        "learning_rate": 0.0003,
-        "architecture": "UNET",
-        "dataset": "HOJUN_KOREAN_FONT64",
-        "notes":"content, non_stoke, non_style/ 32 x 32"
-    })
-
+    # wandb.init(project="diffusion_font_32_test", config={
+    #     "learning_rate": 0.0003,
+    #     "architecture": "UNET",
+    #     "dataset": "HOJUN_KOREAN_FONT64",
+    #     "notes":"content, non_stoke, non_style/ 32 x 32"
+    # })
+    wandb.init(mode='disabled')
 
     # Set random seed, deterministic
     torch.cuda.manual_seed(seed)
@@ -88,7 +89,7 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Set data directory
-    train_dirs = 'C:\Paper_Project\Hangul_Characters_Image64_radomSampling420_GrayScale'
+    train_dirs = '/home/hojun/PycharmProjects/diffusion_font/code/KoFont-Diffusion/hojun/make_font/data/Hangul_Characters_Image64_radomSampling420_GrayScale'
 
     # Set transform
     transforms = torchvision.transforms.Compose([
@@ -115,7 +116,7 @@ if __name__ == '__main__':
         optimizer = optim.AdamW(model.parameters(), lr=lr)
 
         ### sty_encoder
-        sty_encoder_path = 'C:\Paper_Project\weight\style_enc.pth'
+        sty_encoder_path = '../weight/style_enc.pth'
         checkpoint = torch.load(sty_encoder_path, map_location='cpu')
         tmp_dict = {}
         for k, v in checkpoint.items():
@@ -141,14 +142,14 @@ if __name__ == '__main__':
 
     else:
         #Set model
-        model = TransformerUnet128(num_classes=num_classes, context_dim=256).to(device) # 여기는 왜 256이지?
+        model = TransformerUnet128(num_classes=num_classes, context_dim=256,device=device).to(device) # 여기는 왜 256이지?
         wandb.watch(model)
 
         #Set optimizer
         optimizer = optim.AdamW(model.parameters(), lr=lr)
 
         ### sty_encoder
-        sty_encoder_path = 'C:\Paper_Project\weight\style_enc.pth'
+        sty_encoder_path = '../weight/style_enc.pth'
         checkpoint = torch.load(sty_encoder_path, map_location='cpu')
         tmp_dict = {}
         for k, v in checkpoint.items():

@@ -102,7 +102,7 @@ class Diffusion:
 
     def indexToChar(self,y):
         return chr(44032+y)
-    def portion_sampling(self, model, n,sampleImage_len, cfg_scale=0, sty_img = None):
+    def portion_sampling(self, model, n,sampleImage_len, cfg_scale=1, sty_img = None):
         example_images = []
         model.eval()
         with torch.no_grad():
@@ -112,8 +112,8 @@ class Diffusion:
             pbar = tqdm(list(reversed(range(1, self.noise_step))),desc="sampling")
             for i in pbar:
                 dataset = TensorDataset(x_list,y_list)
-                batch_size= 18
-                dataloader = DataLoader(dataset,batch_size=batch_size,shuffle=False)
+                batch_size= 16
+                dataloader = DataLoader(dataset,batch_size=batch_size,shuffle=False,num_workers=4)
                 predicted_noise = torch.tensor([]).to(self.device)
                 uncond_predicted_noise = torch.tensor([]).to(self.device)
                 for batch_x, batch_labels in dataloader:
@@ -121,7 +121,7 @@ class Diffusion:
                     batch_noise = model(batch_x, batch_t, batch_labels, sty_img)
                     predicted_noise = torch.cat([predicted_noise,batch_noise],dim=0)
                     #uncodition
-                    uncond_batch_noise = model(batch_x, batch_t, None, sty_img)
+                    uncond_batch_noise = model(batch_x, batch_t, torch.zeros_like(batch_labels), sty_img)
                     uncond_predicted_noise = torch.cat([uncond_predicted_noise,uncond_batch_noise],dim = 0)
 
                 if cfg_scale > 0:
@@ -142,9 +142,9 @@ class Diffusion:
                     b_t) * noise
         for sample_image,sample_y in zip(x_list,y_list):
             example_images.append(wandb.Image(sample_image, caption=f"Sample:{self.indexToChar(sample_y)}"))
-        wandb.log({
-            "Examples": example_images
-        })
+        # wandb.log({
+        #     "Examples": example_images
+        # })
         model.train()
         x_list = (x_list.clamp(-1, 1) + 1) / 2
         x_list = (x_list * 255).type(torch.uint8)
