@@ -178,5 +178,6 @@ class TrasformerBlock(nn.Module):
         for block in self.transformer_block:
             x = block(x, context=context)
         x = x.view(b, h, w, c).permute(0, 3, 1, 2) # b (h w) c -> b c h w
-        x = x + x_in if self.use_spatial else x
+        # x = x + x_in if self.use_spatial else x
+        x = x + x_in 
         return x

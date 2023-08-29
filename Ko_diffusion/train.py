@@ -101,8 +101,8 @@ if __name__ == '__main__':
     dataset = torchvision.datasets.ImageFolder(train_dirs,transform=transforms)
 
     #test set
-    # n = range(0,len(dataset),50)
-    # dataset = Subset(dataset, n)
+    n = range(0,len(dataset),50)
+    dataset = Subset(dataset, n)
 
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=4)
 
@@ -141,7 +141,7 @@ if __name__ == '__main__':
 
     else:
         #Set model
-        model = TransformerUnet128(num_classes=num_classes, context_dim=256).to(device)
+        model = TransformerUnet128(num_classes=num_classes, context_dim=256).to(device) # 여기는 왜 256이지?
         wandb.watch(model)
 
         #Set optimizer
@@ -186,7 +186,7 @@ if __name__ == '__main__':
                           device=device)
 
 
-    for epoch_id in range(70,n_epochs):
+    for epoch_id in range(0,n_epochs):
         print(f"Epoch {epoch_id}/{n_epochs} Train..")
         
         pbar = tqdm(dataloader,desc=f"trian_{epoch_id}")
@@ -197,8 +197,8 @@ if __name__ == '__main__':
             y = y.to(device)
             t = diffusion.sample_t(x.shape[0]).to(device)
             x_t, noise = diffusion.noise_images(x, t)
-            if np.random.random() < 0.3:
-                y = None
+            # if np.random.random() < 0.3:
+            #     y = None
             # print('x2 : ', x.shape)
             predicted_noise = model(x_t, t, y, x) # 원래 이미지 -> 스타일 인코더
             loss = loss_func(noise, predicted_noise)
@@ -224,8 +224,8 @@ if __name__ == '__main__':
         # sampled_images = diffusion.portion_sampling(model, n=len(labels),sampleImage_len = 36)
         # plot_images(sampled_images)
         # save_images(sampled_images, os.path.join(result_image_path, f"{epoch_id}.jpg"))
-        torch.save(model,os.path.join(result_model_path,f"model_{epoch_id}.pt"))
-        torch.save(model.state_dict(), os.path.join(result_model_path, f"ckpt_{epoch_id}.pt"))
-        torch.save(optimizer.state_dict(), os.path.join(result_model_path, f"optim_{epoch_id}.pt"))
+        torch.save(model,os.path.join(result_model_path,f"model_2_{epoch_id}.pt"))
+        torch.save(model.state_dict(), os.path.join(result_model_path, f"ckpt_2_{epoch_id}.pt"))
+        torch.save(optimizer.state_dict(), os.path.join(result_model_path, f"optim_2_{epoch_id}.pt"))
 
     wandb.finish()

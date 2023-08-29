@@ -102,7 +102,7 @@ class Diffusion:
 
     def indexToChar(self,y):
         return chr(44032+y)
-    def portion_sampling(self, model, n,sampleImage_len, cfg_scale=3,):
+    def portion_sampling(self, model, n,sampleImage_len, cfg_scale=0, sty_img = None):
         example_images = []
         model.eval()
         with torch.no_grad():
@@ -118,10 +118,10 @@ class Diffusion:
                 uncond_predicted_noise = torch.tensor([]).to(self.device)
                 for batch_x, batch_labels in dataloader:
                     batch_t = (torch.ones(len(batch_x)) * i).long().to(self.device)
-                    batch_noise = model(batch_x, batch_t, batch_labels)
+                    batch_noise = model(batch_x, batch_t, batch_labels, sty_img)
                     predicted_noise = torch.cat([predicted_noise,batch_noise],dim=0)
                     #uncodition
-                    uncond_batch_noise = model(batch_x, batch_t, None)
+                    uncond_batch_noise = model(batch_x, batch_t, None, sty_img)
                     uncond_predicted_noise = torch.cat([uncond_predicted_noise,uncond_batch_noise],dim = 0)
 
                 if cfg_scale > 0:

@@ -3,7 +3,7 @@ import torch, torchvision
 import os
 from matplotlib import pyplot as plt
 from modules.diffusion import Diffusion
-from modules.model import UNet128
+from modules.model import UNet128, TransformerUnet128
 from PIL import Image
 import wandb
 
@@ -52,8 +52,8 @@ n = 36
 os.environ['CUDA_VISIBLE_DEVICES'] = str(0)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-model = UNet128(num_classes=n, sample_img=sample_img).to(device)
-ckpt = torch.load("C:/Paper_Project/Ko_diffusion/models/font_noStrokeStyle_2/ckpt_69.pt")
+model = TransformerUnet128(num_classes=n, context_dim=256).to(device)
+ckpt = torch.load("C:/Paper_Project/Ko_diffusion/models/font_noStrokeStyle_2/ckpt_2_150.pt")
 model.load_state_dict(ckpt)
 diffusion = Diffusion(first_beta=1e-4,
                           end_beta=0.02,
@@ -65,6 +65,6 @@ diffusion = Diffusion(first_beta=1e-4,
 # x = diffusion.sampling(model, n, y, cfg_scale=3)
 
 labels = torch.arange(num_classes).long().to(device)
-sampled_images = diffusion.portion_sampling(model, n=len(labels),sampleImage_len = 36)
+sampled_images = diffusion.portion_sampling(model, n=len(labels),sampleImage_len = 36, sty_img = sample_img)
 plot_images(sampled_images)
 save_images(sampled_images, os.path.join(result_image_path, f"{epoch_id}"))
