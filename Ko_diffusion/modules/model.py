@@ -133,14 +133,6 @@ class Up(nn.Module):
             ),
         )
 
-        self.emb_layer = nn.Sequential(
-            nn.SiLU(),
-            nn.Linear(
-                emb_dim,
-                out_channels
-            ),
-        )
-
     def forward(self, x, skip_x, t):
         x = self.up(x)
         x = torch.cat([skip_x, x], dim=1)
@@ -182,11 +174,10 @@ class TransformerUnet128(nn.Module):
         self.up3 = Up(128, 64)
         self.attn8 = TrasformerBlock(in_channels=64, context_dim=context_dim)
         self.outc = nn.Conv2d(64, c_out, kernel_size=1)
-       
 
         if num_classes is not None: # 스타일 인코더 스위치 
             # self.label_emb = nn.Embedding(num_classes, time_dim)
-            self.sty_encoder = style_enc_builder(C_in, C).to(device)
+            self.sty_encoder = style_enc_builder(C_in, C)
 
     def pos_encoding(self, t, channels):
         inv_freq = 1.0 / (
@@ -201,50 +192,47 @@ class TransformerUnet128(nn.Module):
     def forward(self, x, t, y, sample_img):
         t = t.unsqueeze(-1).type(torch.float)
         t = self.pos_encoding(t, self.time_dim)
+    
 
         if y is not None:
             # class 로 넣고 한줄로 처리 -> 인자 하나더 받아서 처리해라! 
+            #stroke
             stroke_embedding = StrokeEmbedding('C:\Paper_Project\storke_txt.txt')
             stroke_embedding = stroke_embedding.embedding(y)
-            print('stroke_embedding : ',stroke_embedding.shape)
+            stroke_emb = stroke_embedding.flatten(1).to(self.device)
+     
+            #label
             label = y.unsqueeze(1)
+            label = label.flatten(1)
+ 
             # print('label : ', label.shape)
             sty = self.sty_encoder(sample_img)
-            # Adjust the shapes of the tensors by repeating the necessary dimensions
-            stroke_embedding = stroke_embedding.unsqueeze(-1).unsqueeze(-1).repeat(1, 1, 16, 16).cuda()  # Expand and repeat to match shape with sty tensor
-            label = label.unsqueeze(-1).unsqueeze(-1).repeat(1, 1, 16, 16)  # Expand and repeat to match shape with sty tensor
-
-            # Concatenate the tensors along the second dimension (channels)
-            context = torch.cat((stroke_embedding, label, sty), dim=1)
-            context = stroke_embedding
-            c_b, c_c, _, _ = context.shape
-            context = context.view(c_b, c_c, -1)
-            # print('context : ', context.shape)
-            # context = torch.zeros(c_b, c_c, 256).cuda()
-            # print('context2 : ', context.shape)
-            
-            
-            # print(context.shape)
+            sty = sty.flatten(1)
+   
+            context = torch.cat([stroke_emb,label,sty], dim = 1)
+            context_linear = nn.Linear(context.shape[1], t.shape[1]).to(self.device)
+            context = context_linear(context)
+  
+            t += context
+            print(f"t.shape : {t.shape}")
         
         else: # 수정 필요!!!!!! -> y = None 일때 동일 쉐이프 만들기
             # class 로 넣고 한줄로 처리 -> 인자 하나더 받아서 처리해라! 
             stroke_embedding = StrokeEmbedding('C:\Paper_Project\storke_txt.txt')
-            stroke_embedding = torch.zeros(18,68).cuda()
-            # print('stroke_embedding_None : ',stroke_embedding.shape)
-            # label = y.unsqueeze(1) # 이거 아무리 생각해도 0으로 밀면 안될거 같은데?
-            label = torch.zeros(18,1).cuda()
+            stroke_embedding = torch.zeros(18,68)
+            stroke_emb = stroke_embedding.flatten(1)
+
+            label = torch.zeros(18,1)
+            label = label.flatten(1).cpu()
+
             sty = self.sty_encoder(sample_img)
-            # Adjust the shapes of the tensors by repeating the necessary dimensions
-            stroke_embedding = stroke_embedding.unsqueeze(-1).unsqueeze(-1).repeat(1, 1, 16, 16).cuda()  # Expand and repeat to match shape with sty tensor
-            label = label.unsqueeze(-1).unsqueeze(-1).repeat(1, 1, 16, 16)  # Expand and repeat to match shape with sty tensor
+            sty = sty.flatten(1)
+          
+            context = torch.cat([stroke_emb,label,sty], dim = 1)
 
-            # Concatenate the tensors along the second dimension (channels)
-            context = torch.cat((stroke_embedding, label, sty), dim=1)
-            c_b, c_c, _, _ = context.shape
-            context = context.view(c_b, c_c, -1)
-            # context = torch.zeros(c_b, c_c, 256).cuda()
-            # print(context.shape)
-
+            context_linear = nn.Linear(context.shape[0], t.shape[0])
+            context = context_linear(context)
+            t += context
 
         # print(y)
         x1 = self.inc(x)

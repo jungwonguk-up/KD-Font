@@ -11,7 +11,6 @@ class StrokeEmbedding():
         read_txt = open(txt_path, 'r')
         for emd in read_txt:
             emd_stroke_list.append(emd[:-1])
-
         return emd_stroke_list
 
     def embedding(self, label):
