@@ -43,7 +43,7 @@ resume_train = False
 
 if __name__ == '__main__':
     #Set save file
-    file_number= "Unet64_image420_2"
+    file_number= "Unet64_image420_3"
     result_image_path = os.path.join("results", "images", 'font_noStrokeStyle_{}'.format(file_number))
     result_model_path = os.path.join("results", "models", 'font_noStrokeStyle_{}'.format(file_number))
     if os.path.exists(result_model_path):
@@ -82,7 +82,7 @@ if __name__ == '__main__':
     # n = range(0,len(dataset),100)
     # dataset = Subset(dataset, n)
 
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True,num_workers=32)
 
 
 
@@ -137,7 +137,7 @@ if __name__ == '__main__':
             contents = [dataset.classes[content_index] for content_index in contents_index]
             charAttar = CharAttar(num_classes=num_classes,device=device)
 
-            charAttr_list = charAttar.make_charAttr(images, contents_index,contents,mode=2).to(device)
+            charAttr_list = charAttar.make_charAttr(images, contents_index,contents,mode=mode).to(device)
 
             t = diffusion.sample_t(images.shape[0]).to(device)
             x_t, noise = diffusion.noise_images(images, t)

@@ -24,12 +24,6 @@ class make_sampling_data:
         return chr((index_list[0] * 588) + (index_list[1] * 28) + (index_list[2]) + 44032)
     
     def check_data_is_representative(self,max_l2nrom):
-        # print(np.std(self.first_consonant_letters_count) * np.sqrt(
-        #     len(self.first_consonant_letters_count)) / self.max_consonant_letter_count)
-        # print(np.std(self.middle_consonant_letters_count) * np.sqrt(
-        #     len(self.middle_consonant_letters_count)) / self.max_consonant_letter_count)
-        # print(np.std(self.last_consonant_letters_count) * np.sqrt(
-        #     len(self.last_consonant_letters_count)) / self.max_consonant_letter_count)
         if len(self.pick_letter_list) == len(set(self.pick_letter_list)):
             if np.std(self.first_consonant_letters_count)*np.sqrt(len(self.first_consonant_letters_count))/self.max_consonant_letter_count <= max_l2nrom:
                 if np.std(self.middle_consonant_letters_count)*np.sqrt(len(self.middle_consonant_letters_count))/self.max_consonant_letter_count <= max_l2nrom:
@@ -55,24 +49,31 @@ class make_sampling_data:
                 max_first_consonant_letter_count = math.ceil(self.max_consonant_letter_count * self.last_consonant_letter_number / self.first_consonant_letter_number )
                 max_middle_consonant_letter_count = math.ceil(self.max_consonant_letter_count * self.last_consonant_letter_number / self.middle_consonant_letter_number)
                 for last_consonant_letter_index in range(self.last_consonant_letter_number):
+                    picked_numbers = []
                     while self.last_consonant_letters_count[last_consonant_letter_index] < self.max_consonant_letter_count:
                         first_consonant_letter_index =  random.randrange(0,self.first_consonant_letter_number)
                         middle_consonant_letter_index =  random.randrange(0,self.middle_consonant_letter_number)
-                        if self.first_consonant_letters_count[first_consonant_letter_index] < max_first_consonant_letter_count and self.middle_consonant_letters_count[middle_consonant_letter_index] < max_middle_consonant_letter_count:
+
+                        if self.first_consonant_letters_count[first_consonant_letter_index] < max_first_consonant_letter_count and self.middle_consonant_letters_count[middle_consonant_letter_index] < max_middle_consonant_letter_count\
+                            and [first_consonant_letter_index,middle_consonant_letter_index,last_consonant_letter_index] not in picked_numbers:
                             self.pick_letter_list.append(self.get_letter_by_unicode([first_consonant_letter_index, middle_consonant_letter_index, last_consonant_letter_index]))
                             # pick_unicode_list.append([first_consonant_letter_index, middle_consonant_letter_index, last_consonant_letter_index])
                             self.first_consonant_letters_count[first_consonant_letter_index] += 1
                             self.middle_consonant_letters_count[middle_consonant_letter_index] += 1
                             self.last_consonant_letters_count[last_consonant_letter_index] += 1
+                            picked_numbers.append([first_consonant_letter_index,middle_consonant_letter_index,last_consonant_letter_index])
 
             elif self.criteria_consonant_letter == "middle":
                 max_first_consonant_letter_count = math.ceil(self.max_consonant_letter_count * self.middle_consonant_letter_number / self.first_consonant_letter_number )
                 max_last_consonant_letter_count = math.ceil(self.max_consonant_letter_count * self.middle_consonant_letter_number / self.last_consonant_letter_number)
                 for middle_consonant_letter_index in range(self.middle_consonant_letter_number):
+                    picked_numbers = []
                     while self.middle_consonant_letters_count[middle_consonant_letter_index] < self.max_consonant_letter_count:
                         first_consonant_letter_index = random.randrange(0,self.first_consonant_letter_number)
                         last_consonant_letter_index = random.randrange(0,self.last_consonant_letter_number)
-                        if self.first_consonant_letters_count[first_consonant_letter_index] < max_first_consonant_letter_count and self.last_consonant_letters_count[last_consonant_letter_index] < max_last_consonant_letter_count:
+                            
+                        if self.first_consonant_letters_count[first_consonant_letter_index] < max_first_consonant_letter_count and self.last_consonant_letters_count[last_consonant_letter_index] < max_last_consonant_letter_count\
+                            and [first_consonant_letter_index,middle_consonant_letter_index,last_consonant_letter_index] not in picked_numbers:
                             self.pick_letter_list.append(self.get_letter_by_unicode([first_consonant_letter_index, middle_consonant_letter_index, last_consonant_letter_index]))
                             # pick_unicode_list.append([first_consonant_letter_index, middle_consonant_letter_index, last_consonant_letter_index])
                             self.first_consonant_letters_count[first_consonant_letter_index] += 1
@@ -83,10 +84,13 @@ class make_sampling_data:
                 max_middle_consonant_letter_count = math.ceil(self.max_consonant_letter_count * self.first_consonant_letter_number / self.middle_consonant_letter_number)
                 max_last_consonant_letter_count = math.ceil(self.max_consonant_letter_count * self.first_consonant_letter_number / self.last_consonant_letter_number)
                 for first_consonant_letter_index in range(self.first_consonant_letter_number):
+                    picked_numbers = []
                     while self.first_consonant_letters_count[first_consonant_letter_index] < self.max_consonant_letter_count:
                         middle_consonant_letter_index =  random.randrange(0,self.middle_consonant_letter_number)
                         last_consonant_letter_index = random.randrange(0,self.last_consonant_letter_number)
-                        if self.middle_consonant_letters_count[middle_consonant_letter_index] < max_middle_consonant_letter_count and self.last_consonant_letters_count[last_consonant_letter_index] < max_last_consonant_letter_count:
+                        if self.middle_consonant_letters_count[middle_consonant_letter_index] < max_middle_consonant_letter_count and self.last_consonant_letters_count[last_consonant_letter_index] < max_last_consonant_letter_count\
+                            and [first_consonant_letter_index,middle_consonant_letter_index,last_consonant_letter_index] not in picked_numbers:
+                            
                             self.pick_letter_list.append(self.get_letter_by_unicode([first_consonant_letter_index, middle_consonant_letter_index, last_consonant_letter_index]))
                             # pick_unicode_list.append([first_consonant_letter_index, middle_consonant_letter_index, last_consonant_letter_index])
                             self.first_consonant_letters_count[first_consonant_letter_index] += 1
@@ -113,7 +117,11 @@ class make_sampling_data:
             shutil.copytree(os.path.join(from_path,letter),os.path.join(to_path,letter))
 
 if __name__ == "__main__":
-    data = make_sampling_data(max_consonant_letter_count=20,criteria_consonant_letter="middle")
+    data = make_sampling_data(max_consonant_letter_count=30,criteria_consonant_letter="last")
     sampling_letter = data.letter_random_sampling()
+    sampling_letter = sorted(sampling_letter)
     print(sampling_letter)
+    # with open('./sampling_text.txt','w') as f:
+    #     f.write("".join(sampling_letter))
+    
     data.cp_sampling_file()

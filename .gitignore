@@ -1,3 +1,5 @@
 hojun/make_font/data/*
 hojun/results/*
 hojun/wandb/*
+*.pyc*
+hojun/make_font/temp.ipynb

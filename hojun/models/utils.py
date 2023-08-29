@@ -194,7 +194,7 @@ class StyleEncoder(nn.Module):
         return style_feat
 
 
-def style_enc_builder(C_in, C, norm='none', activ='relu', pad_type='reflect', skip_scale_var=False):
+def style_enc_builder(C_in, C, norm='in', activ='relu', pad_type='zero', skip_scale_var=False):
     ConvBlk = partial(ConvBlock, norm=norm, activ=activ, pad_type=pad_type)
 
     layers = [

@@ -82,18 +82,8 @@ class CharAttar:
     def make_charAttr(self,images,contents_index, contents,mode):
         input_length = images.shape[0]
         # contents_index = [int(content_index) for content_index in contents_index]
-        style_encoder = style_enc_builder(3,3).to(self.device)
-        style_econder_dict = torch.load('/home/hojun/PycharmProjects/diffusion_font/code/KoFont-Diffusion/hojun/results/models/style_weight/style_encoder_weight.pth',map_location=torch.device(self.device))
-        style_econder_dict = style_econder_dict
-        print(style_econder_dict)
-        change_style_econder_dict = OrderedDict()
-        # for key,weight in style_econder_dict.items():
-        #     name = ".".join(key.split('.')[1:])
-        #     change_style_econder_dict[name] = weight
-        #     if "layers.2.gc.k_proj.weight" in key:
-        # print(name,key)
-        # style_encoder.load_state_dict(change_style_econder_dict,strict=False)
-        style_encoder.load_state_dict(style_econder_dict)
+        # style_encoder = style_enc_builder(1,32).to(self.device)
+
         contents_emb = None
         stroke =  None
         style_emb = None
@@ -113,6 +103,21 @@ class CharAttar:
             style_emb = torch.zeros(input_length,12288)
 
         elif mode == 2:
+            style_encoder = style_enc_builder(3, 3).to(self.device)
+            style_econder_dict = torch.load(
+                '/home/hojun/PycharmProjects/diffusion_font/code/KoFont-Diffusion/hojun/results/models/style_weight/style_encoder_weight.pth',
+                map_location=torch.device(self.device))
+            style_econder_dict = style_econder_dict
+            print(style_econder_dict)
+            change_style_econder_dict = OrderedDict()
+            for key, weight in style_econder_dict.items():
+                name = ".".join(key.split('.')[1:])
+                change_style_econder_dict[name] = weight
+            #     if "layers.2.gc.k_proj.weight" in key:
+            # # print(name,key)
+            style_encoder.load_state_dict(change_style_econder_dict, strict=False)
+            # style_encoder.load_state_dict(style_econder_dict)
+
             if contents_p < 0.3:
                 contents_emb = torch.zeros(input_length,self.contents_dim)
             else:
