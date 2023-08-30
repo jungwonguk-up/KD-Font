@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 import torch.nn as nn
 from .style_encoder import style_enc_builder
-from .stroke import StrokeEmbedding
+from .condition import Korean_StrokeEmbedding
 
 C = 32
 C_in = 1
@@ -106,7 +106,7 @@ class Down(nn.Module):
             ),
         )
 
-    def forward(self, x, t, context):
+    def forward(self, x, t, condition):
         x = self.maxpool_conv(x)
         emb = self.emb_layer(t)[:, :, None, None].repeat(1, 1, x.shape[-2], x.shape[-1])
         # print('x.shape : ', x.shape)
@@ -178,7 +178,7 @@ class TransformerUnet128(nn.Module):
 
         if num_classes is not None: # 스타일 인코더 스위치 
             # self.label_emb = nn.Embedding(num_classes, time_dim)
-            self.sty_encoder = style_enc_builder(C_in, C)
+            pass
 
     def pos_encoding(self, t, channels):
         inv_freq = 1.0 / (
@@ -190,83 +190,83 @@ class TransformerUnet128(nn.Module):
         pos_enc = torch.cat([pos_enc_a, pos_enc_b], dim=-1)
         return pos_enc
 
-    def forward(self, x, t, y, sample_img):
+    def forward(self, x, condition,t):
         t = t.unsqueeze(-1).type(torch.float)
         t = self.pos_encoding(t, self.time_dim)
-    
-
-        if y is not None:
-            # class 로 넣고 한줄로 처리 -> 인자 하나더 받아서 처리해라! 
-            #stroke
-            stroke_embedding = StrokeEmbedding('../storke_txt.txt')
-            stroke_embedding = stroke_embedding.embedding(y)
-            stroke_emb = stroke_embedding.flatten(1).cpu()
-     
-            #label
-            label = y.unsqueeze(1)
-            label = label.flatten(1).cpu()
- 
-            # print('label : ', label.shape)
-            sty = self.sty_encoder(sample_img)
-            sty = sty.flatten(1).cpu()
-   
-            context = torch.cat([stroke_emb,label,sty], dim = 1).to(self.device)
-            
-            context_linear = nn.Sequential(
-                        nn.SiLU(),
-                        nn.Linear(context.shape[1], t.shape[1]),
-                        nn.LayerNorm(t.shape[1])
-            ).to(self.device)
-            
-            context = context_linear(context)
-            
-            t += context
-            # print(f"t.shape : {t.shape}")
         
-        else: # 수정 필요!!!!!! -> y = None 일때 동일 쉐이프 만들기
-            # class 로 넣고 한줄로 처리 -> 인자 하나더 받아서 처리해라! 
-            stroke_embedding = StrokeEmbedding('../storke_txt.txt')
-            stroke_embedding = torch.zeros(18,68)
-            stroke_emb = stroke_embedding.flatten(1).cpu()
+        # if y is not None:
+        #     # class 로 넣고 한줄로 처리 -> 인자 하나더 받아서 처리해라! 
+     
+        #     #label
+        #     label = label.flatten(1)
+ 
+        #     # print('label : ', label.shape)
+        #     style_emb = style_emb.flatten(1)
+   
+        #     context = torch.cat([stroke_emb,label,sty], dim = 1).to(self.device)
+            
+        #     context_linear = nn.Sequential(
+        #                 nn.SiLU(),
+        #                 nn.Linear(context.shape[1], t.shape[1]),
+        #                 nn.LayerNorm(t.shape[1])
+        #     ).to(self.device)
+            
+        #     context = context_linear(context)
+            
+        #     t += context
+        #     # print(f"t.shape : {t.shape}")
+        
+        # else: # 수정 필요!!!!!! -> y = None 일때 동일 쉐이프 만들기
+        #     # class 로 넣고 한줄로 처리 -> 인자 하나더 받아서 처리해라! 
+        #     stroke_embedding = Korean_StrokeEmbedding('../storke_txt.txt')
+        #     stroke_embedding = torch.zeros(18,68)
+        #     stroke_emb = stroke_embedding.flatten(1).cpu()
 
-            label = torch.zeros(18,1)
-            label = label.flatten(1).cpu()
+        #     label = torch.zeros(18,1)
+        #     label = label.flatten(1).cpu()
 
-            sty = self.sty_encoder(sample_img)
-            sty = sty.flatten(1).cpu()
+        #     sty = self.sty_encoder(sample_img)
+        #     sty = sty.flatten(1).cpu()
           
-            context = torch.cat([stroke_emb,label,sty], dim = 1).to(self.device)
+        #     context = torch.cat([stroke_emb,label,sty], dim = 1).to(self.device)
 
-            context_linear = nn.Sequential(
+        #     context_linear = nn.Sequential(
+        #                 nn.SiLU(),
+        #                 nn.Linear(context.shape[1], t.shape[1]),
+        #                 nn.LayerNorm(t.shape[1])
+        #     ).to(self.device)
+        #     context = context_linear(context)
+        #     t += context
+        condition_linear = nn.Sequential(
                         nn.SiLU(),
-                        nn.Linear(context.shape[1], t.shape[1]),
+                        nn.Linear(condition.shape[1], t.shape[1]),
                         nn.LayerNorm(t.shape[1])
             ).to(self.device)
-            context = context_linear(context)
-            t += context
-
+        condition = condition_linear(condition)
+            
+        t += condition
 
         # print(y)
         x1 = self.inc(x)
-        x2 = self.down1(x1, t, context)
-        x2 = self.attn1(x2, context)
-        x3 = self.down2(x2, t, context)
-        x3 = self.attn2(x3, context)
-        x4 = self.down3(x3, t, context)
-        x4 = self.attn3(x4, context)
+        x2 = self.down1(x1, t, condition)
+        x2 = self.attn1(x2, condition)
+        x3 = self.down2(x2, t, condition)
+        x3 = self.attn2(x3, condition)
+        x4 = self.down3(x3, t, condition)
+        x4 = self.attn3(x4, condition)
 
         x4 = self.bot1(x4)
-        x4 = self.attn4(x4, context)
+        x4 = self.attn4(x4, condition)
         x4 = self.bot2(x4)
-        x4 = self.attn5(x4, context)
+        x4 = self.attn5(x4, condition)
         x4 = self.bot3(x4)
 
         x = self.up1(x4, x3, t)
-        x = self.attn6(x, context)
+        x = self.attn6(x, condition)
         x = self.up2(x, x2, t)
-        x = self.attn7(x, context)
+        x = self.attn7(x, condition)
         x = self.up3(x, x1, t)
-        x = self.attn8(x, context)
+        x = self.attn8(x, condition)
         output = self.outc(x)
         return output
 
@@ -318,7 +318,7 @@ class UNet128(nn.Module):
 
         if y is not None:
             # class 로 넣고 한줄로 처리 -> 인자 하나더 받아서 처리해라! 
-            stroke_embedding = StrokeEmbedding('../storke_txt.txt')
+            stroke_embedding = Korean_StrokeEmbedding('../storke_txt.txt')
             stroke_embedding = stroke_embedding.embedding(y)
             label = y.unsqueeze(1)
             # sty = self.sty_encoder(x) # 여기서 error

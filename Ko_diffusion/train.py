@@ -16,19 +16,19 @@ from matplotlib import pyplot as plt
 
 from modules.diffusion import Diffusion
 from modules.model import UNet128,TransformerUnet128
+from modules.condition import MakeCondition
+from modules.style_encoder import style_enc_builder
 # import albumentations as A
 # from albumentations.pytorch import ToTensorV2
 import gc
 import wandb
 import os
 
-
-
 # seed
 seed = 7777
 
 # graphic number
-gpu_num = 1
+gpu_num = 0
 image_size = 64
 input_size = 64
 batch_size = 16
@@ -37,7 +37,9 @@ lr = 3e-4
 n_epochs = 200
 use_amp = True
 resume_train = False
-file_num = 9
+file_num = 11
+stroke_text_path = "/home/hojun/Documents/code/Kofont2/KoFont-Diffusion/storke_txt.txt"
+style_enc_path = "/home/hojun/Documents/code/Kofont2/KoFont-Diffusion/weight/style_enc.pth"
 
 # os
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
@@ -116,19 +118,6 @@ if __name__ == '__main__':
         #Set optimizer
         optimizer = optim.AdamW(model.parameters(), lr=lr)
 
-        ### sty_encoder
-        sty_encoder_path = '../weight/style_enc.pth'
-        checkpoint = torch.load(sty_encoder_path, map_location='cpu')
-        tmp_dict = {}
-        for k, v in checkpoint.items():
-            if k in model.sty_encoder.state_dict():
-                tmp_dict[k] = v
-        model.sty_encoder.load_state_dict(tmp_dict)
-
-        # frozen sty_encoder
-        for p in model.sty_encoder.parameters():
-            p.requires_grad = False
-
         #load weight
         model.load_state_dict(torch.load('./models/font_noStrokeStyle_2/ckpt_69.pt'))
 
@@ -140,7 +129,6 @@ if __name__ == '__main__':
                     state[k] = v.to(device)
         model = model.to(device)
 
-
     else:
         #Set model
         model = TransformerUnet128(num_classes=num_classes, context_dim=256).to(device) # 여기는 왜 256이지?
@@ -149,36 +137,18 @@ if __name__ == '__main__':
         #Set optimizer
         optimizer = optim.AdamW(model.parameters(), lr=lr)
 
-        ### sty_encoder
-        sty_encoder_path = '../weight/style_enc.pth'
-        checkpoint = torch.load(sty_encoder_path, map_location='cpu')
-        tmp_dict = {}
-        for k, v in checkpoint.items():
-            if k in model.sty_encoder.state_dict():
-                tmp_dict[k] = v
-        model.sty_encoder.load_state_dict(tmp_dict)
-
-        # frozen sty_encoder
-        for p in model.sty_encoder.parameters():
-            p.requires_grad = False
-
     #Set loss function
     loss_func = nn.MSELoss()
 
-    # ### sty_encoder
-    # sty_encoder_path = 'C:\Paper_Project\weight\style_enc.pth'
-    # checkpoint = torch.load(sty_encoder_path, map_location='cpu')
-    # tmp_dict = {}
-    # for k, v in checkpoint.items():
-    #     if k in model.sty_encoder.state_dict():
-    #         tmp_dict[k] = v
-    # model.sty_encoder.load_state_dict(tmp_dict)
-
-    # # frozen sty_encoder
-    # for p in model.sty_encoder.parameters():
-    #     p.requires_grad = False
-
-
+    ### stroke
+    make_condition = MakeCondition(num_classes=num_classes,
+                                    stroke_text_path=stroke_text_path,
+                                    style_enc_path=style_enc_path,
+                                    data_classes=dataset.dataset.classes,
+                                    language='korean',
+                                    device=device
+                                )
+    
     #Set diffusion
     diffusion = Diffusion(first_beta=1e-4,
                           end_beta=0.02,
@@ -186,23 +156,20 @@ if __name__ == '__main__':
                           beta_schedule_type='cosine', # stable diffusion 확인
                           img_size=input_size,
                           device=device)
-
-
+    
     for epoch_id in range(0,n_epochs):
         print(f"Epoch {epoch_id}/{n_epochs} Train..")
         
         pbar = tqdm(dataloader,desc=f"trian_{epoch_id}")
         tic = time()
-        for i, (x, y) in enumerate(pbar):
+        for i, (image, content) in enumerate(pbar):
             # print('x1 : ', x.shape)
-            x = x.to(device)
-            y = y.to(device)
-            t = diffusion.sample_t(x.shape[0]).to(device)
-            x_t, noise = diffusion.noise_images(x, t)
-            # if np.random.random() < 0.3:
-            #     y = None
-            # print('x2 : ', x.shape)
-            predicted_noise = model(x_t, t, y, x) # 원래 이미지 -> 스타일 인코더
+            image = image.to(device)
+            condition = make_condition.make_condition(images = image,indexs = content,mode=1).to(device)
+            
+            t = diffusion.sample_t(image.shape[0]).to(device)
+            image_t, noise = diffusion.noise_images(image, t)
+            predicted_noise = model(x = image_t, condition = condition, t= t) # 원래 이미지 -> 스타일 인코더
             loss = loss_func(noise, predicted_noise)
 
             optimizer.zero_grad()
