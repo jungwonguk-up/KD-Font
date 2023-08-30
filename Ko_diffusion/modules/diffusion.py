@@ -121,8 +121,8 @@ class Diffusion:
                     batch_noise = model(batch_x, batch_t, batch_labels, sty_img)
                     predicted_noise = torch.cat([predicted_noise,batch_noise],dim=0)
                     #uncodition
-                    uncond_batch_noise = model(batch_x, batch_t, None, sty_img)
-                    uncond_predicted_noise = torch.cat([uncond_predicted_noise,uncond_batch_noise],dim = 0)
+                    # uncond_batch_noise = model(batch_x, batch_t, None, sty_img)
+                    # uncond_predicted_noise = torch.cat([uncond_predicted_noise,uncond_batch_noise],dim = 0)
 
                 if cfg_scale > 0:
                     predicted_noise = torch.lerp(uncond_predicted_noise, predicted_noise, cfg_scale)

@@ -108,10 +108,10 @@ class Down(nn.Module):
     def forward(self, x, t, context):
         x = self.maxpool_conv(x)
         emb = self.emb_layer(t)[:, :, None, None].repeat(1, 1, x.shape[-2], x.shape[-1])
-        print('x.shape : ', x.shape)
-        print('t.shape : ', t.shape)
-        print('emb.shape : ', emb.shape)
-        print('context.shape: ', context.shape)
+        # print('x.shape : ', x.shape)
+        # print('t.shape : ', t.shape)
+        # print('emb.shape : ', emb.shape)
+        # print('context.shape: ', context.shape)
         return x + emb
 
 
@@ -197,7 +197,7 @@ class TransformerUnet128(nn.Module):
         if y is not None:
             # class 로 넣고 한줄로 처리 -> 인자 하나더 받아서 처리해라! 
             #stroke
-            stroke_embedding = StrokeEmbedding('C:\Paper_Project\storke_txt.txt')
+            stroke_embedding = StrokeEmbedding('../storke_txt.txt')
             stroke_embedding = stroke_embedding.embedding(y)
             stroke_emb = stroke_embedding.flatten(1).to(self.device)
      
@@ -214,11 +214,11 @@ class TransformerUnet128(nn.Module):
             context = context_linear(context)
   
             t += context
-            print(f"t.shape : {t.shape}")
+            # print(f"t.shape : {t.shape}")
         
         else: # 수정 필요!!!!!! -> y = None 일때 동일 쉐이프 만들기
             # class 로 넣고 한줄로 처리 -> 인자 하나더 받아서 처리해라! 
-            stroke_embedding = StrokeEmbedding('C:\Paper_Project\storke_txt.txt')
+            stroke_embedding = StrokeEmbedding('../storke_txt.txt')
             stroke_embedding = torch.zeros(18,68)
             stroke_emb = stroke_embedding.flatten(1)
 
@@ -306,7 +306,7 @@ class UNet128(nn.Module):
 
         if y is not None:
             # class 로 넣고 한줄로 처리 -> 인자 하나더 받아서 처리해라! 
-            stroke_embedding = StrokeEmbedding('C:\Paper_Project\storke_txt.txt')
+            stroke_embedding = StrokeEmbedding('../storke_txt.txt')
             stroke_embedding = stroke_embedding.embedding(y)
             label = y.unsqueeze(1)
             # sty = self.sty_encoder(x) # 여기서 error
