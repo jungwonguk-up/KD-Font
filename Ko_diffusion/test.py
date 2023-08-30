@@ -4,14 +4,18 @@ import os
 from matplotlib import pyplot as plt
 from modules.diffusion import Diffusion
 from modules.model import UNet128, TransformerUnet128
+from modules.condition import MakeCondition
 from PIL import Image
 import wandb
 
-gpu_num = 0
-file_num = 9
-epoch_id = 9
+gpu_num = 1
+file_num = 12
+epoch_id = 1
 num_classes = 11172
 n = 36
+stroke_text_path = "/home/hojun/Documents/code/Kofont2/KoFont-Diffusion/storke_txt.txt"
+style_enc_path = "/home/hojun/Documents/code/Kofont2/KoFont-Diffusion/weight/style_enc.pth"
+
 # os
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
 
@@ -43,7 +47,19 @@ if __name__ == '__main__':
     result_image_path = os.path.join("results", 'font_noStrokeStyle_{}'.format(file_num))
     os.environ['CUDA_VISIBLE_DEVICES'] = str(gpu_num)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
+    
+    
+    train_dirs = '/home/hojun/PycharmProjects/diffusion_font/code/KoFont-Diffusion/hojun/make_font/data/Hangul_Characters_Image64_radomSampling420_GrayScale'
+    dataset = torchvision.datasets.ImageFolder(train_dirs)
+    
+    make_condition = MakeCondition(num_classes=num_classes,
+                                    stroke_text_path=stroke_text_path,
+                                    style_enc_path=style_enc_path,
+                                    data_classes=dataset.classes,
+                                    language='korean',
+                                    device=device
+                                )
+    
     # sample path
     sample_img_path = '/home/hojun/PycharmProjects/diffusion_font/code/KoFont-Diffusion/hojun/make_font/data/Hangul_Characters_Image64_radomSampling420_GrayScale/갊/62570_갊.png'
     sample_img = Image.open(sample_img_path)
@@ -56,10 +72,10 @@ if __name__ == '__main__':
         ])
     sample_img = trans(sample_img).to(device)
     sample_img = torch.unsqueeze(sample_img,1)
-    sample_img = sample_img.repeat(18, 1,1,1)
+    sample_img = sample_img.repeat(18, 1, 1, 1)
 
     model = TransformerUnet128(num_classes=n, context_dim=256,device=device).to(device)
-    ckpt = torch.load(f"/home/hojun/Documents/code/KoFont-Diffusion/Ko_diffusion/models/font_noStrokeStyle_{file_num}/ckpt_2_{epoch_id}.pt")
+    ckpt = torch.load(f"/home/hojun/Documents/code/Kofont2/KoFont-Diffusion/Ko_diffusion/models/font_noStrokeStyle_{file_num}/ckpt_2_{epoch_id}.pt")
     model.load_state_dict(ckpt)
     diffusion = Diffusion(first_beta=1e-4,
                             end_beta=0.02,
@@ -71,6 +87,6 @@ if __name__ == '__main__':
     # x = diffusion.sampling(model, n, y, cfg_scale=3)
 
     labels = torch.arange(num_classes).long().to(device)
-    sampled_images = diffusion.portion_sampling(model, n=len(labels),sampleImage_len = 36, sty_img = sample_img)
+    sampled_images = diffusion.portion_sampling(model, n=len(dataset.classes),sampleImage_len = 36, sty_img = sample_img, make_condition= make_condition)
     plot_images(sampled_images)
     save_images(sampled_images, os.path.join(result_image_path, f"{epoch_id}"))

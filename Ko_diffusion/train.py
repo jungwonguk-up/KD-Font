@@ -37,7 +37,7 @@ lr = 3e-4
 n_epochs = 200
 use_amp = True
 resume_train = False
-file_num = 11
+file_num = 12
 stroke_text_path = "/home/hojun/Documents/code/Kofont2/KoFont-Diffusion/storke_txt.txt"
 style_enc_path = "/home/hojun/Documents/code/Kofont2/KoFont-Diffusion/weight/style_enc.pth"
 
