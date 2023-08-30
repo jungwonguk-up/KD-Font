@@ -92,6 +92,7 @@ class Down(nn.Module):
     def __init__(self, in_channels, out_channels, emb_dim=256):
         super().__init__()
         self.maxpool_conv = nn.Sequential(
+            # nn.AvgPool2d(2),
             nn.MaxPool2d(2),
             DoubleConv(in_channels, in_channels, residual=True),
             DoubleConv(in_channels, out_channels),
@@ -199,20 +200,26 @@ class TransformerUnet128(nn.Module):
             #stroke
             stroke_embedding = StrokeEmbedding('../storke_txt.txt')
             stroke_embedding = stroke_embedding.embedding(y)
-            stroke_emb = stroke_embedding.flatten(1).to(self.device)
+            stroke_emb = stroke_embedding.flatten(1).cpu()
      
             #label
             label = y.unsqueeze(1)
-            label = label.flatten(1)
+            label = label.flatten(1).cpu()
  
             # print('label : ', label.shape)
             sty = self.sty_encoder(sample_img)
-            sty = sty.flatten(1)
+            sty = sty.flatten(1).cpu()
    
-            context = torch.cat([stroke_emb,label,sty], dim = 1)
-            context_linear = nn.Linear(context.shape[1], t.shape[1]).to(self.device)
+            context = torch.cat([stroke_emb,label,sty], dim = 1).to(self.device)
+            
+            context_linear = nn.Sequential(
+                        nn.SiLU(),
+                        nn.Linear(context.shape[1], t.shape[1]),
+                        nn.LayerNorm(t.shape[1])
+            ).to(self.device)
+            
             context = context_linear(context)
-  
+            
             t += context
             # print(f"t.shape : {t.shape}")
         
@@ -220,19 +227,24 @@ class TransformerUnet128(nn.Module):
             # class 로 넣고 한줄로 처리 -> 인자 하나더 받아서 처리해라! 
             stroke_embedding = StrokeEmbedding('../storke_txt.txt')
             stroke_embedding = torch.zeros(18,68)
-            stroke_emb = stroke_embedding.flatten(1)
+            stroke_emb = stroke_embedding.flatten(1).cpu()
 
             label = torch.zeros(18,1)
             label = label.flatten(1).cpu()
 
             sty = self.sty_encoder(sample_img)
-            sty = sty.flatten(1)
+            sty = sty.flatten(1).cpu()
           
-            context = torch.cat([stroke_emb,label,sty], dim = 1)
+            context = torch.cat([stroke_emb,label,sty], dim = 1).to(self.device)
 
-            context_linear = nn.Linear(context.shape[0], t.shape[0])
+            context_linear = nn.Sequential(
+                        nn.SiLU(),
+                        nn.Linear(context.shape[1], t.shape[1]),
+                        nn.LayerNorm(t.shape[1])
+            ).to(self.device)
             context = context_linear(context)
             t += context
+
 
         # print(y)
         x1 = self.inc(x)

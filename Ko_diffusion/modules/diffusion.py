@@ -113,7 +113,7 @@ class Diffusion:
             for i in pbar:
                 dataset = TensorDataset(x_list,y_list)
                 batch_size= 18
-                dataloader = DataLoader(dataset,batch_size=batch_size,shuffle=False)
+                dataloader = DataLoader(dataset,batch_size=batch_size,num_workers=0,shuffle=False)
                 predicted_noise = torch.tensor([]).to(self.device)
                 uncond_predicted_noise = torch.tensor([]).to(self.device)
                 for batch_x, batch_labels in dataloader:

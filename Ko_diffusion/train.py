@@ -28,7 +28,7 @@ import os
 seed = 7777
 
 # graphic number
-gpu_num = 0
+gpu_num = 1
 image_size = 64
 input_size = 64
 batch_size = 16
@@ -37,7 +37,7 @@ lr = 3e-4
 n_epochs = 200
 use_amp = True
 resume_train = False
-file_num = 4
+file_num = 9
 
 # os
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
@@ -102,10 +102,11 @@ if __name__ == '__main__':
     dataset = torchvision.datasets.ImageFolder(train_dirs,transform=transforms)
 
     #test set
-    n = range(0,len(dataset),50)
+    n = range(0,len(dataset),10)
+    print("len : ",n)
     dataset = Subset(dataset, n)
 
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=12)
 
     if resume_train:
         #Set model
