@@ -119,7 +119,7 @@ class Diffusion:
                 uncond_predicted_noise = torch.tensor([]).to(self.device)
                 for batch_x, batch_labels in dataloader:
                     batch_t = (torch.ones(len(batch_x)) * i).long().to(self.device)
-                    batch_condition = make_condition.make_condition(batch_x,batch_labels,mode=1).to(self.device)
+                    batch_condition = make_condition.make_condition(sty_img,batch_labels,mode=3).to(self.device)
                     batch_noise = model(x = batch_x, condition = batch_condition, t = batch_t)
                     predicted_noise = torch.cat([predicted_noise,batch_noise],dim=0)
                     #uncodition

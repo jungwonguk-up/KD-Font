@@ -95,11 +95,14 @@ class MakeCondition:
             else:
                 stroke =  torch.FloatTensor(self.korean_stroke_emb.embedding(indexs))
             
-            style = torch.zeros(input_length,32768).flatten(1).cpu()
+            style = torch.zeros(input_length,32768).cpu()
 
 
         elif mode == 3: #test
-            contents = torch.FloatTensor(self.korean_index_to_uni_diff(indexs))
+            uni_diff_list = torch.LongTensor(self.korean_index_to_uni_diff(indexs))
+            contents = torch.FloatTensor(self.contents_emb(uni_diff_list))
             stroke =  torch.FloatTensor(self.korean_stroke_emb.embedding(indexs))
             style = self.style_enc(images).flatten(1).cpu()
         return torch.cat([contents,stroke,style],dim=1)
+    
+    
