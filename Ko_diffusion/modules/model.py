@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 import torch.nn as nn
 from .style_encoder import style_enc_builder
-from .stroke import StrokeEmbedding
+from .condition import Korean_StrokeEmbedding
 
 C = 32
 C_in = 1
@@ -92,6 +92,7 @@ class Down(nn.Module):
     def __init__(self, in_channels, out_channels, emb_dim=256):
         super().__init__()
         self.maxpool_conv = nn.Sequential(
+            # nn.AvgPool2d(2),
             nn.MaxPool2d(2),
             DoubleConv(in_channels, in_channels, residual=True),
             DoubleConv(in_channels, out_channels),
@@ -108,6 +109,10 @@ class Down(nn.Module):
     def forward(self, x, t):
         x = self.maxpool_conv(x)
         emb = self.emb_layer(t)[:, :, None, None].repeat(1, 1, x.shape[-2], x.shape[-1])
+        # print('x.shape : ', x.shape)
+        # print('t.shape : ', t.shape)
+        # print('emb.shape : ', emb.shape)
+        # print('context.shape: ', context.shape)
         return x + emb
 
 
@@ -131,7 +136,7 @@ class Up(nn.Module):
 
     def forward(self, x, skip_x, t):
         x = self.up(x)
-        x = torch.cat([skip_x, x], dim=1)
+        x = torch.cat([x,skip_x], dim=1)
         x = self.conv(x)
         emb = self.emb_layer(t)[:, :, None, None].repeat(1, 1, x.shape[-2], x.shape[-1])
         return x + emb
@@ -163,18 +168,17 @@ class TransformerUnet128(nn.Module):
         self.attn5 = TrasformerBlock(in_channels=512, context_dim=context_dim)
         self.bot3 = DoubleConv(512, 256)
 
-        self.up1 = Up(512, 128)
-        self.attn6 = TrasformerBlock(in_channels=128, context_dim=context_dim)
-        self.up2 = Up(256, 64)
-        self.attn7 = TrasformerBlock(in_channels=64, context_dim=context_dim)
-        self.up3 = Up(128, 64)
-        self.attn8 = TrasformerBlock(in_channels=64, context_dim=context_dim)
+        self.up1 = Up(512, 128)#1024,256
+        self.attn6 = TrasformerBlock(in_channels=128, context_dim=context_dim)#256
+        self.up2 = Up(256, 64)#512,128
+        self.attn7 = TrasformerBlock(in_channels=64, context_dim=context_dim)#128
+        self.up3 = Up(128, 64)#256,128
+        self.attn8 = TrasformerBlock(in_channels=64, context_dim=context_dim)#128
         self.outc = nn.Conv2d(64, c_out, kernel_size=1)
-       
 
         if num_classes is not None: # 스타일 인코더 스위치 
             # self.label_emb = nn.Embedding(num_classes, time_dim)
-            self.sty_encoder = style_enc_builder(C_in, C).to(device)
+            pass
 
     def pos_encoding(self, t, channels):
         inv_freq = 1.0 / (
@@ -186,46 +190,39 @@ class TransformerUnet128(nn.Module):
         pos_enc = torch.cat([pos_enc_a, pos_enc_b], dim=-1)
         return pos_enc
 
-    def forward(self, x, t, y, sample_img):
+    def forward(self, x, condition,t):
         t = t.unsqueeze(-1).type(torch.float)
         t = self.pos_encoding(t, self.time_dim)
+        
+        condition_linear = nn.Sequential(
+                        nn.SiLU(),
+                        nn.Linear(condition.shape[1], t.shape[1]),
+            ).to(self.device)
+        condition = condition_linear(condition)
+            
+        t += condition
 
-        if y is not None:
-            # class 로 넣고 한줄로 처리 -> 인자 하나더 받아서 처리해라! 
-            stroke_embedding = StrokeEmbedding('C:\Paper_Project\storke_txt.txt')
-            stroke_embedding = stroke_embedding.embedding(y)
-            label = y.unsqueeze(1)
-            sty = self.sty_encoder(sample_img)
-            # Adjust the shapes of the tensors by repeating the necessary dimensions
-            stroke_embedding = stroke_embedding.unsqueeze(-1).unsqueeze(-1).repeat(1, 1, 16, 16).cuda()  # Expand and repeat to match shape with sty tensor
-            label = label.unsqueeze(-1).unsqueeze(-1).repeat(1, 1, 16, 16)  # Expand and repeat to match shape with sty tensor
-
-            # Concatenate the tensors along the second dimension (channels)
-            context = torch.cat((stroke_embedding, label, sty), dim=1)
-
-            # print(context.shape)
-
-
+        # print(y)
         x1 = self.inc(x)
         x2 = self.down1(x1, t)
-        x2 = self.attn1(x2, context)
+        x2 = self.attn1(x2, condition)
         x3 = self.down2(x2, t)
-        x3 = self.attn2(x3, context)
+        x3 = self.attn2(x3, condition)
         x4 = self.down3(x3, t)
-        x4 = self.attn3(x4, context)
+        x4 = self.attn3(x4, condition)
 
-        x4 = self.bot1(x4)
-        x4 = self.attn4(x4, context)
-        x4 = self.bot2(x4)
-        x4 = self.attn5(x4, context)
-        x4 = self.bot3(x4)
+        x5 = self.bot1(x4)
+        x5 = self.attn4(x5, condition)
+        x5 = self.bot2(x5)
+        x5 = self.attn5(x5, condition)
+        x5 = self.bot3(x5)
 
-        x = self.up1(x4, x3, t)
-        x = self.attn6(x, context)
+        x = self.up1(x5, x3, t)
+        x = self.attn6(x, condition)
         x = self.up2(x, x2, t)
-        x = self.attn7(x, context)
+        x = self.attn7(x, condition)
         x = self.up3(x, x1, t)
-        x = self.attn8(x, context)
+        x = self.attn8(x, condition)
         output = self.outc(x)
         return output
 
@@ -269,27 +266,20 @@ class UNet128(nn.Module):
         pos_enc = torch.cat([pos_enc_a, pos_enc_b], dim=-1)
         return pos_enc
 
-    def forward(self, x, t, y):
+    def forward(self, x, condition,t):
         # print(x.shape)
         # print(self.sample_img.shape)
         t = t.unsqueeze(-1).type(torch.float)
         t = self.pos_encoding(t, self.time_dim)
-
-        if y is not None:
-            # class 로 넣고 한줄로 처리 -> 인자 하나더 받아서 처리해라! 
-            stroke_embedding = StrokeEmbedding('C:\Paper_Project\storke_txt.txt')
-            stroke_embedding = stroke_embedding.embedding(y)
-            label = y.unsqueeze(1)
-            # sty = self.sty_encoder(x) # 여기서 error
-            sty = self.sty_encoder(self.sample_img) # 여기서 error
-            # Adjust the shapes of the tensors by repeating the necessary dimensions
-            stroke_embedding = stroke_embedding.unsqueeze(-1).unsqueeze(-1).repeat(1, 1, 16, 16).cuda()  # Expand and repeat to match shape with sty tensor
-            label = label.unsqueeze(-1).unsqueeze(-1).repeat(1, 1, 16, 16)  # Expand and repeat to match shape with sty tensor
-
-            # Concatenate the tensors along the second dimension (channels)
-            context = torch.cat((stroke_embedding, label, sty), dim=1)
-
-            # print(context.shape)
+        
+        condition_linear = nn.Sequential(
+                                nn.SiLU(),
+                                nn.Linear(condition.shape[1], t.shape[1]),
+                                nn.LayerNorm(t.shape[1])
+                    ).to(self.device)
+        condition = condition_linear(condition)
+                    
+        t += condition
 
 
         x1 = self.inc(x)

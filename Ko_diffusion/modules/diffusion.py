@@ -74,8 +74,8 @@ class Diffusion:
                     batch_noise = model(batch_x, batch_t, batch_labels)
                     predicted_noise = torch.cat([predicted_noise,batch_noise],dim=0)
                     #uncodition
-                    uncond_batch_noise = model(batch_x, batch_t, None)
-                    uncond_predicted_noise = torch.cat([uncond_predicted_noise,uncond_batch_noise],dim = 0)
+                    # uncond_batch_noise = model(batch_x, batch_t, None)
+                    # uncond_predicted_noise = torch.cat([uncond_predicted_noise,uncond_batch_noise],dim = 0)
 
                 if cfg_scale > 0:
                     predicted_noise = torch.lerp(uncond_predicted_noise, predicted_noise, cfg_scale)
@@ -102,27 +102,29 @@ class Diffusion:
 
     def indexToChar(self,y):
         return chr(44032+y)
-    def portion_sampling(self, model, n,sampleImage_len, cfg_scale=3,):
+    def portion_sampling(self, model, n,sampleImage_len, cfg_scale=0, sty_img = None, make_condition = None):
         example_images = []
         model.eval()
         with torch.no_grad():
             x_list = torch.randn((sampleImage_len, 1, self.img_size, self.img_size)).to(self.device)
-            y_idx = list(range(n))[::math.ceil(n/sampleImage_len)]
+            y_idx = list(range(n))[::math.floor(n/sampleImage_len)][:sampleImage_len]
             y_list = torch.Tensor(y_idx).long().to(self.device)
+            print(y_idx)
             pbar = tqdm(list(reversed(range(1, self.noise_step))),desc="sampling")
             for i in pbar:
                 dataset = TensorDataset(x_list,y_list)
-                batch_size= 18
-                dataloader = DataLoader(dataset,batch_size=batch_size,shuffle=False)
+                batch_size = 18
+                dataloader = DataLoader(dataset,batch_size=batch_size,num_workers=0,shuffle=False)
                 predicted_noise = torch.tensor([]).to(self.device)
                 uncond_predicted_noise = torch.tensor([]).to(self.device)
                 for batch_x, batch_labels in dataloader:
                     batch_t = (torch.ones(len(batch_x)) * i).long().to(self.device)
-                    batch_noise = model(batch_x, batch_t, batch_labels)
+                    batch_condition = make_condition.make_condition(sty_img,batch_labels,mode=3).to(self.device)
+                    batch_noise = model(x = batch_x, condition = batch_condition, t = batch_t)
                     predicted_noise = torch.cat([predicted_noise,batch_noise],dim=0)
                     #uncodition
-                    uncond_batch_noise = model(batch_x, batch_t, None)
-                    uncond_predicted_noise = torch.cat([uncond_predicted_noise,uncond_batch_noise],dim = 0)
+                    # uncond_batch_noise = model(x = batch_x, t = batch_t, condition = torch.zeros_like(batch_condition))
+                    # uncond_predicted_noise = torch.cat([uncond_predicted_noise,uncond_batch_noise],dim = 0)
 
                 if cfg_scale > 0:
                     predicted_noise = torch.lerp(uncond_predicted_noise, predicted_noise, cfg_scale)

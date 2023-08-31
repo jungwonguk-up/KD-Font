@@ -16,19 +16,19 @@ from matplotlib import pyplot as plt
 
 from modules.diffusion import Diffusion
 from modules.model import UNet128,TransformerUnet128
-import albumentations as A
-from albumentations.pytorch import ToTensorV2
+from modules.condition import MakeCondition
+from modules.style_encoder import style_enc_builder
+# import albumentations as A
+# from albumentations.pytorch import ToTensorV2
 import gc
 import wandb
 import os
-
-
 
 # seed
 seed = 7777
 
 # graphic number
-gpu_num = 0
+gpu_num = 1
 image_size = 64
 input_size = 64
 batch_size = 16
@@ -37,6 +37,10 @@ lr = 3e-4
 n_epochs = 200
 use_amp = True
 resume_train = False
+file_num = 13
+stroke_text_path = "/home/hojun/Documents/code/Kofont2/KoFont-Diffusion/storke_txt.txt"
+style_enc_path = "/home/hojun/Documents/code/Kofont2/KoFont-Diffusion/weight/style_enc.pth"
+start_epoch = 0
 
 # os
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
@@ -59,8 +63,8 @@ def plot_images(images):
 
 if __name__ == '__main__':
     #Set save file
-    result_image_path = os.path.join("results", 'font_noStrokeStyle_{}'.format(2))
-    result_model_path = os.path.join("models", 'font_noStrokeStyle_{}'.format(2))
+    result_image_path = os.path.join("results", 'font_noStrokeStyle_{}'.format(file_num))
+    result_model_path = os.path.join("models", 'font_noStrokeStyle_{}'.format(file_num))
     os.makedirs(result_image_path, exist_ok=True)
     os.makedirs(result_model_path, exist_ok=True)
  
@@ -88,7 +92,7 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Set data directory
-    train_dirs = 'C:\Paper_Project\Hangul_Characters_Image64_radomSampling420_GrayScale'
+    train_dirs = '/home/hojun/PycharmProjects/diffusion_font/code/KoFont-Diffusion/hojun/make_font/data/Hangul_Characters_Image64_radomSampling420_GrayScale'
 
     # Set transform
     transforms = torchvision.transforms.Compose([
@@ -101,82 +105,61 @@ if __name__ == '__main__':
     dataset = torchvision.datasets.ImageFolder(train_dirs,transform=transforms)
 
     #test set
-    # n = range(0,len(dataset),50)
-    # dataset = Subset(dataset, n)
+    n = range(0,len(dataset),10)
+    print("len : ",n)
+    dataset = Subset(dataset, n)
 
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=4)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=12)
+    
+    #sample_img
+    sample_img_path = '/home/hojun/PycharmProjects/diffusion_font/code/KoFont-Diffusion/hojun/make_font/data/Hangul_Characters_Image64_radomSampling420_GrayScale/갊/62570_갊.png'
+    sample_img = Image.open(sample_img_path)
+    sample_img = transforms(sample_img).to(device)
+    sample_img = torch.unsqueeze(sample_img,1)
+    sample_img = sample_img.repeat(18, 1, 1, 1)
 
     if resume_train:
         #Set model
-        model = TransformerUnet128(num_classes=num_classes).to(device)
+        model = TransformerUnet128(num_classes=num_classes,device = device).to(device)
+        # model = UNet128(num_classes=num_classes).to(device)
         wandb.watch(model)
 
         #Set optimizer
         optimizer = optim.AdamW(model.parameters(), lr=lr)
 
-        ### sty_encoder
-        sty_encoder_path = 'C:\Paper_Project\weight\style_enc.pth'
-        checkpoint = torch.load(sty_encoder_path, map_location='cpu')
-        tmp_dict = {}
-        for k, v in checkpoint.items():
-            if k in model.sty_encoder.state_dict():
-                tmp_dict[k] = v
-        model.sty_encoder.load_state_dict(tmp_dict)
-
-        # frozen sty_encoder
-        for p in model.sty_encoder.parameters():
-            p.requires_grad = False
-
         #load weight
-        model.load_state_dict(torch.load('./models/font_noStrokeStyle_2/ckpt_69.pt'))
+        start_epoch = 9
+        model.load_state_dict(torch.load(f'/home/hojun/Documents/code/Kofont2/KoFont-Diffusion/Ko_diffusion/models/font_noStrokeStyle_12/ckpt_2_{start_epoch}.pt'))
 
         #load optimzer
-        optimizer.load_state_dict(torch.load('./models/font_noStrokeStyle_2/optim_69.pt'))
+        optimizer.load_state_dict(torch.load(f'/home/hojun/Documents/code/Kofont2/KoFont-Diffusion/Ko_diffusion/models/font_noStrokeStyle_12/ckpt_2_{start_epoch}.pt'))
         for state in optimizer.state.values():
             for k, v in state.items():
                 if isinstance(v, torch.Tensor):
                     state[k] = v.to(device)
         model = model.to(device)
 
-
     else:
         #Set model
-        model = TransformerUnet128(num_classes=num_classes).to(device)
+        model = TransformerUnet128(num_classes=num_classes, context_dim=256,device = device).to(device) # 여기는 왜 256이지?
+        # model = UNet128(num_classes=num_classes).to(device)
         wandb.watch(model)
 
         #Set optimizer
         optimizer = optim.AdamW(model.parameters(), lr=lr)
 
-        ### sty_encoder
-        sty_encoder_path = 'C:\Paper_Project\weight\style_enc.pth'
-        checkpoint = torch.load(sty_encoder_path, map_location='cpu')
-        tmp_dict = {}
-        for k, v in checkpoint.items():
-            if k in model.sty_encoder.state_dict():
-                tmp_dict[k] = v
-        model.sty_encoder.load_state_dict(tmp_dict)
-
-        # frozen sty_encoder
-        for p in model.sty_encoder.parameters():
-            p.requires_grad = False
-
     #Set loss function
     loss_func = nn.MSELoss()
 
-    # ### sty_encoder
-    # sty_encoder_path = 'C:\Paper_Project\weight\style_enc.pth'
-    # checkpoint = torch.load(sty_encoder_path, map_location='cpu')
-    # tmp_dict = {}
-    # for k, v in checkpoint.items():
-    #     if k in model.sty_encoder.state_dict():
-    #         tmp_dict[k] = v
-    # model.sty_encoder.load_state_dict(tmp_dict)
-
-    # # frozen sty_encoder
-    # for p in model.sty_encoder.parameters():
-    #     p.requires_grad = False
-
-
+    ### stroke
+    make_condition = MakeCondition(num_classes=num_classes,
+                                    stroke_text_path=stroke_text_path,
+                                    style_enc_path=style_enc_path,
+                                    data_classes=dataset.dataset.classes,
+                                    language='korean',
+                                    device=device
+                                )
+    
     #Set diffusion
     diffusion = Diffusion(first_beta=1e-4,
                           end_beta=0.02,
@@ -184,23 +167,20 @@ if __name__ == '__main__':
                           beta_schedule_type='cosine', # stable diffusion 확인
                           img_size=input_size,
                           device=device)
-
-
-    for epoch_id in range(70,n_epochs):
+    
+    for epoch_id in range(start_epoch,n_epochs):
         print(f"Epoch {epoch_id}/{n_epochs} Train..")
         
         pbar = tqdm(dataloader,desc=f"trian_{epoch_id}")
         tic = time()
-        for i, (x, y) in enumerate(pbar):
+        for i, (image, content) in enumerate(pbar):
             # print('x1 : ', x.shape)
-            x = x.to(device)
-            y = y.to(device)
-            t = diffusion.sample_t(x.shape[0]).to(device)
-            x_t, noise = diffusion.noise_images(x, t)
-            if np.random.random() < 0.3:
-                y = None
-            # print('x2 : ', x.shape)
-            predicted_noise = model(x_t, t, y, x) # 원래 이미지 -> 스타일 인코더
+            image = image.to(device)
+            condition = make_condition.make_condition(images = image,indexs = content,mode=1).to(device)
+            
+            t = diffusion.sample_t(image.shape[0]).to(device)
+            image_t, noise = diffusion.noise_images(image, t)
+            predicted_noise = model(x = image_t, condition = condition, t= t) # 원래 이미지 -> 스타일 인코더
             loss = loss_func(noise, predicted_noise)
 
             optimizer.zero_grad()
@@ -208,24 +188,17 @@ if __name__ == '__main__':
             optimizer.step()
         toc = time()
         wandb.log({"train_mse_loss": loss,'train_time':toc-tic})
-        # memorydel_all(x)
-        # # memorydel_all(y)
-        # # memorydel_all(t)
-        # memorydel_all(x_t)
-        # memorydel_all(predicted_noise)
         pbar.set_postfix(MSE=loss.item())
 
 
-        #if epoch_id % 10 == 0 :
-
+        if epoch_id % 10 == 0 :
         # Save
-
-        # labels = torch.arange(num_classes).long().to(device)
-        # sampled_images = diffusion.portion_sampling(model, n=len(labels),sampleImage_len = 36)
-        # plot_images(sampled_images)
-        # save_images(sampled_images, os.path.join(result_image_path, f"{epoch_id}.jpg"))
-        torch.save(model,os.path.join(result_model_path,f"model_{epoch_id}.pt"))
-        torch.save(model.state_dict(), os.path.join(result_model_path, f"ckpt_{epoch_id}.pt"))
-        torch.save(optimizer.state_dict(), os.path.join(result_model_path, f"optim_{epoch_id}.pt"))
+            labels = torch.arange(num_classes).long().to(device)
+            sampled_images = diffusion.portion_sampling(model, n=len(dataset.dataset.classes),sampleImage_len = 36, sty_img = sample_img, make_condition= make_condition)
+            plot_images(sampled_images)
+            save_images(sampled_images, os.path.join(result_image_path, f"{epoch_id}.jpg"))
+            torch.save(model,os.path.join(result_model_path,f"model_2_{epoch_id}.pt"))
+            torch.save(model.state_dict(), os.path.join(result_model_path, f"ckpt_2_{epoch_id}.pt"))
+            torch.save(optimizer.state_dict(), os.path.join(result_model_path, f"optim_2_{epoch_id}.pt"))
 
     wandb.finish()
