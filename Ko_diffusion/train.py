@@ -28,7 +28,7 @@ import os
 seed = 7777
 
 # graphic number
-gpu_num = 0
+gpu_num = 1
 image_size = 64
 input_size = 64
 batch_size = 16
@@ -37,9 +37,10 @@ lr = 3e-4
 n_epochs = 200
 use_amp = True
 resume_train = False
-file_num = 12
-stroke_text_path = "C:\Paper_Project\storke_txt.txt"
-style_enc_path = "C:\Paper_Project\weight\style_enc.pth"
+file_num = 13
+stroke_text_path = "/home/hojun/Documents/code/Kofont2/KoFont-Diffusion/storke_txt.txt"
+style_enc_path = "/home/hojun/Documents/code/Kofont2/KoFont-Diffusion/weight/style_enc.pth"
+start_epoch = 0
 
 # os
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
@@ -116,20 +117,29 @@ if __name__ == '__main__':
     dataset = Subset(dataset, n)
 
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=12)
+    
+    #sample_img
+    sample_img_path = '/home/hojun/PycharmProjects/diffusion_font/code/KoFont-Diffusion/hojun/make_font/data/Hangul_Characters_Image64_radomSampling420_GrayScale/갊/62570_갊.png'
+    sample_img = Image.open(sample_img_path)
+    sample_img = transforms(sample_img).to(device)
+    sample_img = torch.unsqueeze(sample_img,1)
+    sample_img = sample_img.repeat(18, 1, 1, 1)
 
     if resume_train:
         #Set model
-        model = TransformerUnet128(num_classes=num_classes).to(device)
+        model = TransformerUnet128(num_classes=num_classes,device = device).to(device)
+        # model = UNet128(num_classes=num_classes).to(device)
         wandb.watch(model)
 
         #Set optimizer
         optimizer = optim.AdamW(model.parameters(), lr=lr)
 
         #load weight
-        model.load_state_dict(torch.load('./models/font_noStrokeStyle_2/ckpt_69.pt'))
+        start_epoch = 9
+        model.load_state_dict(torch.load(f'/home/hojun/Documents/code/Kofont2/KoFont-Diffusion/Ko_diffusion/models/font_noStrokeStyle_12/ckpt_2_{start_epoch}.pt'))
 
         #load optimzer
-        optimizer.load_state_dict(torch.load('./models/font_noStrokeStyle_2/optim_69.pt'))
+        optimizer.load_state_dict(torch.load(f'/home/hojun/Documents/code/Kofont2/KoFont-Diffusion/Ko_diffusion/models/font_noStrokeStyle_12/ckpt_2_{start_epoch}.pt'))
         for state in optimizer.state.values():
             for k, v in state.items():
                 if isinstance(v, torch.Tensor):
@@ -138,7 +148,8 @@ if __name__ == '__main__':
 
     else:
         #Set model
-        model = TransformerUnet128(num_classes=num_classes, context_dim=256).to(device) # 여기는 왜 256이지?
+        model = TransformerUnet128(num_classes=num_classes, context_dim=256,device = device).to(device) # 여기는 왜 256이지?
+        # model = UNet128(num_classes=num_classes).to(device)
         wandb.watch(model)
 
         #Set optimizer
@@ -164,7 +175,7 @@ if __name__ == '__main__':
                           img_size=input_size,
                           device=device)
     
-    for epoch_id in range(0,n_epochs):
+    for epoch_id in range(start_epoch,n_epochs):
         print(f"Epoch {epoch_id}/{n_epochs} Train..")
         
         pbar = tqdm(dataloader,desc=f"trian_{epoch_id}")
@@ -184,11 +195,6 @@ if __name__ == '__main__':
             optimizer.step()
         toc = time()
         wandb.log({"train_mse_loss": loss,'train_time':toc-tic})
-        # memorydel_all(x)
-        # # memorydel_all(y)
-        # # memorydel_all(t)
-        # memorydel_all(x_t)
-        # memorydel_all(predicted_noise)
         pbar.set_postfix(MSE=loss.item())
 
 

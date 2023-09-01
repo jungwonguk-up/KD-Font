@@ -92,8 +92,8 @@ class Down(nn.Module):
     def __init__(self, in_channels, out_channels, emb_dim=256):
         super().__init__()
         self.maxpool_conv = nn.Sequential(
-            nn.AvgPool2d(2),
-            # nn.MaxPool2d(2),
+            # nn.AvgPool2d(2),
+            nn.MaxPool2d(2),
             DoubleConv(in_channels, in_channels, residual=True),
             DoubleConv(in_channels, out_channels),
         )
@@ -135,8 +135,8 @@ class Up(nn.Module):
         )
 
     def forward(self, x, skip_x, t):
-        x = torch.cat([x,skip_x], dim=1)
         x = self.up(x)
+        x = torch.cat([x,skip_x], dim=1)
         x = self.conv(x)
         emb = self.emb_layer(t)[:, :, None, None].repeat(1, 1, x.shape[-2], x.shape[-1])
         return x + emb
@@ -170,9 +170,9 @@ class TransformerUnet128(nn.Module):
 
         self.up1 = Up(512, 128)#1024,256
         self.attn6 = TrasformerBlock(in_channels=128, context_dim=context_dim)#256
-        self.up2 = Up(384, 64)#512,128
+        self.up2 = Up(256, 64)#512,128
         self.attn7 = TrasformerBlock(in_channels=64, context_dim=context_dim)#128
-        self.up3 = Up(192, 64)#256,128
+        self.up3 = Up(128, 64)#256,128
         self.attn8 = TrasformerBlock(in_channels=64, context_dim=context_dim)#128
         self.outc = nn.Conv2d(64, c_out, kernel_size=1)
 
@@ -215,11 +215,11 @@ class TransformerUnet128(nn.Module):
         x5 = self.attn5(x5, condition)
         x5 = self.bot3(x5)
 
-        x = self.up1(x5, x4, t)
+        x = self.up1(x5, x3, t)
         x = self.attn6(x, condition)
-        x = self.up2(x, x3, t)
+        x = self.up2(x, x2, t)
         x = self.attn7(x, condition)
-        x = self.up3(x, x2, t)
+        x = self.up3(x, x1, t)
         x = self.attn8(x, condition)
         output = self.outc(x)
         return output
@@ -264,27 +264,20 @@ class UNet128(nn.Module):
         pos_enc = torch.cat([pos_enc_a, pos_enc_b], dim=-1)
         return pos_enc
 
-    def forward(self, x, t, y):
+    def forward(self, x, condition,t):
         # print(x.shape)
         # print(self.sample_img.shape)
         t = t.unsqueeze(-1).type(torch.float)
         t = self.pos_encoding(t, self.time_dim)
-
-        if y is not None:
-            # class 로 넣고 한줄로 처리 -> 인자 하나더 받아서 처리해라! 
-            stroke_embedding = Korean_StrokeEmbedding('../storke_txt.txt')
-            stroke_embedding = stroke_embedding.embedding(y)
-            label = y.unsqueeze(1)
-            # sty = self.sty_encoder(x) # 여기서 error
-            sty = self.sty_encoder(self.sample_img) # 여기서 error
-            # Adjust the shapes of the tensors by repeating the necessary dimensions
-            stroke_embedding = stroke_embedding.unsqueeze(-1).unsqueeze(-1).repeat(1, 1, 16, 16).cuda()  # Expand and repeat to match shape with sty tensor
-            label = label.unsqueeze(-1).unsqueeze(-1).repeat(1, 1, 16, 16)  # Expand and repeat to match shape with sty tensor
-
-            # Concatenate the tensors along the second dimension (channels)
-            context = torch.cat((stroke_embedding, label, sty), dim=1)
-
-            # print(context.shape)
+        
+        condition_linear = nn.Sequential(
+                                nn.SiLU(),
+                                nn.Linear(condition.shape[1], t.shape[1]),
+                                nn.LayerNorm(t.shape[1])
+                    ).to(self.device)
+        condition = condition_linear(condition)
+                    
+        t += condition
 
 
         x1 = self.inc(x)
