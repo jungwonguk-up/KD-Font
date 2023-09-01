@@ -28,7 +28,7 @@ import os
 seed = 7777
 
 # graphic number
-gpu_num = 1
+gpu_num = 0
 image_size = 64
 input_size = 64
 batch_size = 16
@@ -38,8 +38,8 @@ n_epochs = 200
 use_amp = True
 resume_train = False
 file_num = 13
-stroke_text_path = "/home/hojun/Documents/code/Kofont2/KoFont-Diffusion/storke_txt.txt"
-style_enc_path = "/home/hojun/Documents/code/Kofont2/KoFont-Diffusion/weight/style_enc.pth"
+stroke_text_path = "C:\Paper_Project\storke_txt.txt"
+style_enc_path = "C:\Paper_Project\weight\style_enc.pth"
 start_epoch = 0
 
 # os
@@ -92,7 +92,7 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Set data directory
-    train_dirs = '/home/hojun/PycharmProjects/diffusion_font/code/KoFont-Diffusion/hojun/make_font/data/Hangul_Characters_Image64_radomSampling420_GrayScale'
+    train_dirs = 'C:\Paper_Project\Hangul_Characters_Image64_radomSampling420_GrayScale'
 
     # Set transform
     transforms = torchvision.transforms.Compose([
@@ -104,15 +104,22 @@ if __name__ == '__main__':
     ])
     dataset = torchvision.datasets.ImageFolder(train_dirs,transform=transforms)
 
+    #sample_img
+    sample_img_path = 'C:/Paper_Project/Hangul_Characters_Image64_radomSampling420_GrayScale/갊/62570_갊.png'
+    sample_img = Image.open(sample_img_path)
+    sample_img = transforms(sample_img).to(device)
+    sample_img = torch.unsqueeze(sample_img,1)
+    sample_img = sample_img.repeat(18, 1, 1, 1)
+
     #test set
-    n = range(0,len(dataset),10)
+    n = range(0,len(dataset),50)
     print("len : ",n)
     dataset = Subset(dataset, n)
 
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=12)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
     
     #sample_img
-    sample_img_path = '/home/hojun/PycharmProjects/diffusion_font/code/KoFont-Diffusion/hojun/make_font/data/Hangul_Characters_Image64_radomSampling420_GrayScale/갊/62570_갊.png'
+    sample_img_path = 'C:/Paper_Project/Hangul_Characters_Image64_radomSampling420_GrayScale/갊/62570_갊.png'
     sample_img = Image.open(sample_img_path)
     sample_img = transforms(sample_img).to(device)
     sample_img = torch.unsqueeze(sample_img,1)
@@ -176,7 +183,7 @@ if __name__ == '__main__':
         for i, (image, content) in enumerate(pbar):
             # print('x1 : ', x.shape)
             image = image.to(device)
-            condition = make_condition.make_condition(images = image,indexs = content,mode=1).to(device)
+            condition = make_condition.make_condition(images = image, indexs = content, mode=4).to(device) 
             
             t = diffusion.sample_t(image.shape[0]).to(device)
             image_t, noise = diffusion.noise_images(image, t)
@@ -192,13 +199,15 @@ if __name__ == '__main__':
 
 
         if epoch_id % 10 == 0 :
-        # Save
+
+            # Save
+
             labels = torch.arange(num_classes).long().to(device)
-            sampled_images = diffusion.portion_sampling(model, n=len(dataset.dataset.classes),sampleImage_len = 36, sty_img = sample_img, make_condition= make_condition)
-            plot_images(sampled_images)
+            sampled_images = diffusion.portion_sampling(model, n=len(labels), sampleImage_len = 36, sty_img = sample_img, make_condition = make_condition) # self, model, n,sampleImage_len, cfg_scale=0, sty_img = None, make_condition = None
+            # plot_images(sampled_images)
             save_images(sampled_images, os.path.join(result_image_path, f"{epoch_id}.jpg"))
-            torch.save(model,os.path.join(result_model_path,f"model_2_{epoch_id}.pt"))
-            torch.save(model.state_dict(), os.path.join(result_model_path, f"ckpt_2_{epoch_id}.pt"))
-            torch.save(optimizer.state_dict(), os.path.join(result_model_path, f"optim_2_{epoch_id}.pt"))
+            torch.save(model,os.path.join(result_model_path,f"model_nonstyle_{epoch_id}.pt"))
+            torch.save(model.state_dict(), os.path.join(result_model_path, f"ckpt_nonstyle_{epoch_id}.pt"))
+            torch.save(optimizer.state_dict(), os.path.join(result_model_path, f"optim_nonstyle_{epoch_id}.pt"))
 
     wandb.finish()

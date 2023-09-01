@@ -19,7 +19,7 @@ class Korean_StrokeEmbedding:
         stroke_embedding = []
         for index in indexs:
             tmp = []
-            unicode_diff = ord(self.classes[index]) - 44032# ord('가')
+            unicode_diff = ord(self.classes[index]) - 44032 # ord('가')
             for check in self.emd_stroke_list[unicode_diff]:
                 tmp.append(int(check))
             stroke_embedding.append(tmp)
@@ -31,10 +31,20 @@ class MakeCondition:
         self.device = device
         self.dataset_classes = data_classes
         self.num_classes = num_classes
-        self.contents_dim = 100 
+        self.time_embed_dim = 256
+        self.contents_dim = self.time_embed_dim//4 # 64
+        self.storke_in_dim = 68
         self.contents_emb = nn.Embedding(num_classes, self.contents_dim)
+        self.contents_emb2 = nn.Embedding(num_classes, self.time_embed_dim //2 )
         self.korean_stroke_emb = Korean_StrokeEmbedding(txt_path=stroke_text_path,classes=self.dataset_classes)
+        # self.stroke_emb = nn.Embedding(self.storke_in_dim, self.contents_dim/68)
         self.style_enc = self.make_style_enc(style_enc_path)
+        self.sty_emb_dim = self.time_embed_dim//2
+        self.sty_emb = nn.Sequential(
+                nn.Linear(32768, self.time_embed_dim),
+                nn.SiLU(),
+                nn.Linear(self.time_embed_dim, self.sty_emb_dim),
+            )
         self.language = language
 
     def make_style_enc(self,style_enc_path):
@@ -99,10 +109,42 @@ class MakeCondition:
 
 
         elif mode == 3: #test
-            uni_diff_list = torch.LongTensor(self.korean_index_to_uni_diff(indexs))
-            contents = torch.FloatTensor(self.contents_emb(uni_diff_list))
+            contents = torch.FloatTensor(self.korean_index_to_uni_diff(indexs))
             stroke =  torch.FloatTensor(self.korean_stroke_emb.embedding(indexs))
             style = self.style_enc(images).flatten(1).cpu()
+
+        elif mode == 4: #None style
+            uni_diff_list = torch.LongTensor(self.korean_index_to_uni_diff(indexs))
+            contents = torch.FloatTensor(self.contents_emb2(uni_diff_list))
+            stroke =  torch.FloatTensor(self.korean_stroke_emb.embedding(indexs))
+            stroke_linaer = nn.Linear(68, 128)
+            stroke = stroke_linaer(stroke)
+            # print("contents shape : ", contents.shape) 
+            # print("stroke shape : ", stroke.shape)  
+            return torch.cat([contents,stroke],dim=1)
+        
+
+        # Stroke Linear
+        stroke_linaer = nn.Linear(68, 64)
+        stroke = stroke_linaer(stroke)
+
+        # Stroke Embedding
+        # print("self.stroke_emb.weight : ", self.stroke_emb.weight.shape)
+        # stroke = stroke.reshape(16, 68, 1)
+        # print("stroke shape : ", stroke.shape)
+        #stroke =  (stroke * self.stroke_emb.weight).flatten(1)
+
+
+        style = self.sty_emb(style)
+
+        # print("contents shape : ", contents.shape) 
+        # print("stroke shape : ", stroke.shape)  
+        # print("style shape : ", style.shape)  
+
+
+        # print("contents shape : ", contents.shape)  -->  contents shape :  torch.Size([16, 100])
+        # print("stroke shape : ", stroke.shape)  -->  stroke shape :  torch.Size([16, 68])
+        # print("style shape : ", style.shape)  -->  style shape :  torch.Size([16, 32768])
         return torch.cat([contents,stroke,style],dim=1)
     
     

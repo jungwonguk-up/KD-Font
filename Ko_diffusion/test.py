@@ -8,13 +8,13 @@ from modules.condition import MakeCondition
 from PIL import Image
 import wandb
 
-gpu_num = 1
+gpu_num = 0
 file_num = 12
 epoch_id = 1
 num_classes = 11172
 n = 36
-stroke_text_path = "/home/hojun/Documents/code/Kofont2/KoFont-Diffusion/storke_txt.txt"
-style_enc_path = "/home/hojun/Documents/code/Kofont2/KoFont-Diffusion/weight/style_enc.pth"
+stroke_text_path = "C:\Paper_Project\storke_txt.txt"
+style_enc_path = "C:\Paper_Project\weight\style_enc.pth"
 
 # os
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
@@ -49,7 +49,7 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     
     
-    train_dirs = '/home/hojun/PycharmProjects/diffusion_font/code/KoFont-Diffusion/hojun/make_font/data/Hangul_Characters_Image64_radomSampling420_GrayScale'
+    train_dirs = 'C:\Paper_Project\Hangul_Characters_Image64_radomSampling420_GrayScale'
     dataset = torchvision.datasets.ImageFolder(train_dirs)
     
     make_condition = MakeCondition(num_classes=num_classes,
@@ -61,7 +61,7 @@ if __name__ == '__main__':
                                 )
     
     # sample path
-    sample_img_path = '/home/hojun/PycharmProjects/diffusion_font/code/KoFont-Diffusion/hojun/make_font/data/Hangul_Characters_Image64_radomSampling420_GrayScale/갊/62570_갊.png'
+    sample_img_path = 'C:/Paper_Project/Hangul_Characters_Image64_radomSampling420_GrayScale/갊/62570_갊.png'
     sample_img = Image.open(sample_img_path)
 
     # sampe to Tensor
@@ -75,7 +75,7 @@ if __name__ == '__main__':
     sample_img = sample_img.repeat(18, 1, 1, 1)
 
     model = TransformerUnet128(num_classes=n, context_dim=256,device=device).to(device)
-    ckpt = torch.load(f"/home/hojun/Documents/code/Kofont2/KoFont-Diffusion/Ko_diffusion/models/font_noStrokeStyle_{file_num}/ckpt_2_{epoch_id}.pt")
+    ckpt = torch.load('C:/Paper_Project/Ko_diffusion/models/font_noStrokeStyle_12/ckpt_nonstyle_50.pt')
     model.load_state_dict(ckpt)
     diffusion = Diffusion(first_beta=1e-4,
                             end_beta=0.02,
