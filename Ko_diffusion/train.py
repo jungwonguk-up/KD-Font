@@ -28,7 +28,7 @@ import os
 seed = 7777
 
 # graphic number
-gpu_num = 1
+gpu_num = 0
 image_size = 64
 input_size = 64
 batch_size = 16
@@ -38,8 +38,8 @@ n_epochs = 200
 use_amp = True
 resume_train = False
 file_num = 13
-stroke_text_path = "/home/hojun/Documents/code/Kofont2/KoFont-Diffusion/storke_txt.txt"
-style_enc_path = "/home/hojun/Documents/code/Kofont2/KoFont-Diffusion/weight/style_enc.pth"
+stroke_text_path = "C:\Paper_Project\storke_txt.txt"
+style_enc_path = "C:\Paper_Project\weight\style_enc.pth"
 start_epoch = 0
 
 # os
@@ -116,10 +116,10 @@ if __name__ == '__main__':
     print("len : ",n)
     dataset = Subset(dataset, n)
 
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=12)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
     
     #sample_img
-    sample_img_path = '/home/hojun/PycharmProjects/diffusion_font/code/KoFont-Diffusion/hojun/make_font/data/Hangul_Characters_Image64_radomSampling420_GrayScale/갊/62570_갊.png'
+    sample_img_path = 'C:/Paper_Project/Hangul_Characters_Image64_radomSampling420_GrayScale/갊/62570_갊.png'
     sample_img = Image.open(sample_img_path)
     sample_img = transforms(sample_img).to(device)
     sample_img = torch.unsqueeze(sample_img,1)
