@@ -36,7 +36,7 @@ num_classes = 11172
 lr = 3e-4
 n_epochs = 200
 use_amp = True
-resume_train = False
+resume_train = True
 file_num = 13
 stroke_text_path = "C:\Paper_Project\storke_txt.txt"
 style_enc_path = "C:\Paper_Project\weight\style_enc.pth"
@@ -70,6 +70,8 @@ if __name__ == '__main__':
  
     # wandb init
     wandb.init(project="diffusion_font_32_test", config={
+        "title": 'None_Stroke_Cross_20epoch+',
+        "name": 'None_Stroke_Cross_20epoch+',
         "learning_rate": 0.0003,
         "architecture": "UNET",
         "dataset": "HOJUN_KOREAN_FONT64",
@@ -112,11 +114,11 @@ if __name__ == '__main__':
     sample_img = sample_img.repeat(18, 1, 1, 1)
 
     #test set
-    n = range(0,len(dataset),50)
+    n = range(0,len(dataset),10)
     print("len : ",n)
     dataset = Subset(dataset, n)
 
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers = 4)
     
     #sample_img
     sample_img_path = 'C:/Paper_Project/Hangul_Characters_Image64_radomSampling420_GrayScale/갊/62570_갊.png'
@@ -127,7 +129,7 @@ if __name__ == '__main__':
 
     if resume_train:
         #Set model
-        model = TransformerUnet128(num_classes=num_classes,device = device).to(device)
+        model = TransformerUnet128(num_classes=num_classes, context_dim=256,device = device).to(device)
         # model = UNet128(num_classes=num_classes).to(device)
         wandb.watch(model)
 
@@ -135,11 +137,11 @@ if __name__ == '__main__':
         optimizer = optim.AdamW(model.parameters(), lr=lr)
 
         #load weight
-        start_epoch = 9
-        model.load_state_dict(torch.load(f'/home/hojun/Documents/code/Kofont2/KoFont-Diffusion/Ko_diffusion/models/font_noStrokeStyle_12/ckpt_2_{start_epoch}.pt'))
+        start_epoch = 30
+        model.load_state_dict(torch.load('C:/Paper_Project/Ko_diffusion/models/font_noStrokeStyle_13/ckpt_nonstyle_30.pt'))
 
         #load optimzer
-        optimizer.load_state_dict(torch.load(f'/home/hojun/Documents/code/Kofont2/KoFont-Diffusion/Ko_diffusion/models/font_noStrokeStyle_12/ckpt_2_{start_epoch}.pt'))
+        optimizer.load_state_dict(torch.load('C:/Paper_Project/Ko_diffusion/models/font_noStrokeStyle_13/optim_nonstyle_30.pt'))
         for state in optimizer.state.values():
             for k, v in state.items():
                 if isinstance(v, torch.Tensor):
@@ -197,15 +199,14 @@ if __name__ == '__main__':
         wandb.log({"train_mse_loss": loss,'train_time':toc-tic})
         pbar.set_postfix(MSE=loss.item())
 
-
         if epoch_id % 10 == 0 :
 
             # Save
 
-            labels = torch.arange(num_classes).long().to(device)
-            sampled_images = diffusion.portion_sampling(model, n=len(labels), sampleImage_len = 36, sty_img = sample_img, make_condition = make_condition) # self, model, n,sampleImage_len, cfg_scale=0, sty_img = None, make_condition = None
-            # plot_images(sampled_images)
-            save_images(sampled_images, os.path.join(result_image_path, f"{epoch_id}.jpg"))
+            # labels = torch.arange(num_classes).long().to(device)
+            # sampled_images = diffusion.portion_sampling(model, n=len(dataset.dataset.classes), sampleImage_len = 36, sty_img = sample_img, make_condition = make_condition).to(device) # self, model, n,sampleImage_len, cfg_scale=0, sty_img = None, make_condition = None
+            # # plot_images(sampled_images)
+            # save_images(sampled_images, os.path.join(result_image_path, f"{epoch_id}.jpg"))
             torch.save(model,os.path.join(result_model_path,f"model_nonstyle_{epoch_id}.pt"))
             torch.save(model.state_dict(), os.path.join(result_model_path, f"ckpt_nonstyle_{epoch_id}.pt"))
             torch.save(optimizer.state_dict(), os.path.join(result_model_path, f"optim_nonstyle_{epoch_id}.pt"))

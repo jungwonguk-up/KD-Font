@@ -75,7 +75,7 @@ if __name__ == '__main__':
     sample_img = sample_img.repeat(18, 1, 1, 1)
 
     model = TransformerUnet128(num_classes=n, context_dim=256,device=device).to(device)
-    ckpt = torch.load('C:/Paper_Project/Ko_diffusion/models/font_noStrokeStyle_12/ckpt_nonstyle_50.pt')
+    ckpt = torch.load('C:/Paper_Project/Ko_diffusion/models/font_noStrokeStyle_13/ckpt_nonstyle_30.pt')
     model.load_state_dict(ckpt)
     diffusion = Diffusion(first_beta=1e-4,
                             end_beta=0.02,
