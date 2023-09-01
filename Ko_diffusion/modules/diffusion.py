@@ -109,7 +109,6 @@ class Diffusion:
             x_list = torch.randn((sampleImage_len, 1, self.img_size, self.img_size)).to(self.device)
             y_idx = list(range(n))[::math.floor(n/sampleImage_len)][:sampleImage_len]
             y_list = torch.Tensor(y_idx).long().to(self.device)
-            print(y_idx)
             pbar = tqdm(list(reversed(range(1, self.noise_step))),desc="sampling")
             for i in pbar:
                 dataset = TensorDataset(x_list,y_list)
@@ -119,7 +118,7 @@ class Diffusion:
                 uncond_predicted_noise = torch.tensor([]).to(self.device)
                 for batch_x, batch_labels in dataloader:
                     batch_t = (torch.ones(len(batch_x)) * i).long().to(self.device)
-                    batch_condition = make_condition.make_condition(batch_x,batch_labels,mode=1).to(self.device)
+                    batch_condition = make_condition.make_condition(sty_img,batch_labels,mode=4).to(self.device) # images, indexs, mode
                     batch_noise = model(x = batch_x, condition = batch_condition, t = batch_t)
                     predicted_noise = torch.cat([predicted_noise,batch_noise],dim=0)
                     #uncodition

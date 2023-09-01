@@ -1,6 +1,7 @@
 import torch
 import torch.nn.functional as F
 from torch import nn, einsum
+from torch.backends.cuda import sdp_kernel
 
 
 class GEGLU(nn.Module):
@@ -71,10 +72,16 @@ class Attention(nn.Module):
 
         q, k, v = map(lambda t: t.view(b, -1, h, d).permute(0, 2, 1, 3).contiguous().view(b*h, -1, d), (q, k, v)) # b n (h d) -> (b h) n d
 
-        sim = einsum('b i d, b j d -> b i j' , q, k) * self.scale
-        attn = sim.softmax(dim=-1)
+        # sim = einsum('b i d, b j d -> b i j' , q, k) * self.scale
+        # attn = sim.softmax(dim=-1)
         
-        out = einsum('b i j, b j d -> b i d', attn, v)
+        # out = einsum('b i j, b j d -> b i d', attn, v)
+
+        with sdp_kernel(enable_flash=True, enable_math=True, enable_mem_efficient=False):
+            out = F.scaled_dot_product_attention(q, k, v)
+
+
+
         out = out.view(b, h, -1, d).permute(0, 2, 1, 3).contiguous().view(b, -1, h*d) # (b h) n d -> b n (h d)
         return self.to_out(out)
 
@@ -148,7 +155,7 @@ class TrasformerBlock(nn.Module):
     def __init__(self, 
                  in_channels: int, 
                  num_heads: int = 4, 
-                 head_dim: int = None, 
+                 head_dim: int = 32, 
                  context_dim: int = None,
                  depth: int = 1, 
                  dropout: float = 0., 
@@ -161,23 +168,27 @@ class TrasformerBlock(nn.Module):
             head_dim = in_channels // num_heads
 
         self.use_spatial = use_spatial
-        self.norm = nn.GroupNorm(num_groups=32, num_channels=in_channels, eps=1e-6, affine=True)
+        self.norm = nn.GroupNorm(num_groups=8, num_channels=in_channels, eps=1e-6, affine=True)
+        self.proj_in = nn.Conv2d(in_channels, in_channels, kernel_size=1, stride=1, padding=0)
+        self.proj_out = nn.Conv2d(in_channels, in_channels, kernel_size=1, stride=1, padding=0)
 
         self.transformer_block = nn.ModuleList([])
-        if use_spatial: # not use currently 
-            self.trasformer_block.append(SpatialTrasformerBlock(in_channels=in_channels, num_head=num_heads, head_dim=head_dim, context_dim=context_dim, depth=depth, dropout=dropout))
-        else:
-            for _ in range(depth):
-                self.transformer_block.append(BasicTransformerBlock(dim=in_channels, num_heads=num_heads, head_dim=head_dim, context_dim=context_dim, dropout=dropout))
+        # if use_spatial: # not use currently 
+        #     self.trasformer_block.append(SpatialTrasformerBlock(in_channels=in_channels, num_head=num_heads, head_dim=head_dim, context_dim=context_dim, depth=depth, dropout=dropout))
+        # else:
+        for _ in range(depth):
+            self.transformer_block.append(BasicTransformerBlock(dim=in_channels, num_heads=num_heads, head_dim=head_dim, context_dim=context_dim, dropout=dropout))
 
     def forward(self, x, context=None):
         b, c, h, w = x.shape
         x_in = x
-        x = self.norm(x) if self.use_spatial else x
+        x = self.norm(x) 
+        x = self.proj_in(x)
         x = x.permute(0, 2, 3, 1).view(b, -1, c) # b c h w -> b (h w) c
         for block in self.transformer_block:
             x = block(x, context=context)
         x = x.view(b, h, w, c).permute(0, 3, 1, 2) # b (h w) c -> b c h w
+        x = self.proj_out(x)
         # x = x + x_in if self.use_spatial else x
         x = x + x_in 
         return x
