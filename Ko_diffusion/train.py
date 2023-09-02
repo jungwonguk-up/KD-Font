@@ -28,7 +28,7 @@ import os
 seed = 7777
 
 # graphic number
-gpu_num = 1
+gpu_num = 0
 image_size = 64
 input_size = 64
 batch_size = 16
@@ -36,10 +36,10 @@ num_classes = 11172
 lr = 3e-4
 n_epochs = 200
 use_amp = True
-resume_train = False
+resume_train = True
 file_num = 13
-stroke_text_path = "/home/hojun/Documents/code/Kofont2/KoFont-Diffusion/storke_txt.txt"
-style_enc_path = "/home/hojun/Documents/code/Kofont2/KoFont-Diffusion/weight/style_enc.pth"
+stroke_text_path = "D:/workspace2/KoFont-Diffusion/storke_txt.txt"
+style_enc_path = "D:/workspace2/KoFont-Diffusion/weight/style_enc.pth"
 start_epoch = 0
 
 # os
@@ -92,7 +92,7 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Set data directory
-    train_dirs = '/home/hojun/PycharmProjects/diffusion_font/code/KoFont-Diffusion/hojun/make_font/data/Hangul_Characters_Image64_radomSampling420_GrayScale'
+    train_dirs = "H:/data/Hangul_Characters_Image64_radomSampling420_GrayScale"
 
     # Set transform
     transforms = torchvision.transforms.Compose([
@@ -112,7 +112,7 @@ if __name__ == '__main__':
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=12)
     
     #sample_img
-    sample_img_path = '/home/hojun/PycharmProjects/diffusion_font/code/KoFont-Diffusion/hojun/make_font/data/Hangul_Characters_Image64_radomSampling420_GrayScale/갊/62570_갊.png'
+    sample_img_path = 'H:/data/Hangul_Characters_Image64_radomSampling420_GrayScale/갊/62570_갊.png'
     sample_img = Image.open(sample_img_path)
     sample_img = transforms(sample_img).to(device)
     sample_img = torch.unsqueeze(sample_img,1)
@@ -120,7 +120,7 @@ if __name__ == '__main__':
 
     if resume_train:
         #Set model
-        model = TransformerUnet128(num_classes=num_classes,device = device).to(device)
+        model = TransformerUnet128(num_classes=num_classes, context_dim=256, device=device).to(device)
         # model = UNet128(num_classes=num_classes).to(device)
         wandb.watch(model)
 
@@ -128,11 +128,11 @@ if __name__ == '__main__':
         optimizer = optim.AdamW(model.parameters(), lr=lr)
 
         #load weight
-        start_epoch = 9
-        model.load_state_dict(torch.load(f'/home/hojun/Documents/code/Kofont2/KoFont-Diffusion/Ko_diffusion/models/font_noStrokeStyle_12/ckpt_2_{start_epoch}.pt'))
+        start_epoch = 40
+        model.load_state_dict(torch.load(f'D:/workspace2/models/font_noStrokeStyle_13/ckpt_2_{start_epoch}.pt'))
 
         #load optimzer
-        optimizer.load_state_dict(torch.load(f'/home/hojun/Documents/code/Kofont2/KoFont-Diffusion/Ko_diffusion/models/font_noStrokeStyle_12/ckpt_2_{start_epoch}.pt'))
+        optimizer.load_state_dict(torch.load(f'D:/workspace2/models/font_noStrokeStyle_13/optim_2_{start_epoch}.pt'))
         for state in optimizer.state.values():
             for k, v in state.items():
                 if isinstance(v, torch.Tensor):
@@ -195,7 +195,7 @@ if __name__ == '__main__':
         # Save
             labels = torch.arange(num_classes).long().to(device)
             sampled_images = diffusion.portion_sampling(model, n=len(dataset.dataset.classes),sampleImage_len = 36, sty_img = sample_img, make_condition= make_condition)
-            plot_images(sampled_images)
+            # plot_images(sampled_images)
             save_images(sampled_images, os.path.join(result_image_path, f"{epoch_id}.jpg"))
             torch.save(model,os.path.join(result_model_path,f"model_2_{epoch_id}.pt"))
             torch.save(model.state_dict(), os.path.join(result_model_path, f"ckpt_2_{epoch_id}.pt"))
