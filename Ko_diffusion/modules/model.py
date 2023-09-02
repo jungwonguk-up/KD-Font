@@ -176,6 +176,12 @@ class TransformerUnet128(nn.Module):
         self.attn8 = TrasformerBlock(in_channels=64, context_dim=context_dim)#128
         self.outc = nn.Conv2d(64, c_out, kernel_size=1)
 
+        self.condition_linear = nn.Sequential(
+                        nn.SiLU(),
+                        nn.Linear(256, 256),
+                        nn.LayerNorm(256)
+            ).to(self.device)
+
     def pos_encoding(self, t, channels):
         inv_freq = 1.0 / (
             10000
@@ -190,13 +196,7 @@ class TransformerUnet128(nn.Module):
         t = t.unsqueeze(-1).type(torch.float)
         t = self.pos_encoding(t, self.time_dim)
         # print("t : ",t.shape)  -->  t :  torch.Size([16, 256])
-        
-        # condition_linear = nn.Sequential(
-        #                 nn.SiLU(),
-        #                 nn.Linear(condition.shape[1], t.shape[1]),
-        #                 nn.LayerNorm(t.shape[1])
-        #     ).to(self.device)
-        # condition = condition_linear(condition)
+        condition = self.condition_linear(condition)
             
         t += condition
 

@@ -1,7 +1,7 @@
 import torch
 import torch.nn.functional as F
 from torch import nn, einsum
-from torch.backends.cuda import sdp_kernel
+# from torch.backends.cuda import sdp_kernel
 
 
 class GEGLU(nn.Module):
@@ -70,17 +70,14 @@ class Attention(nn.Module):
         k = self.to_k(context)
         v = self.to_v(context)
 
-        q, k, v = map(lambda t: t.view(b, -1, h, d).permute(0, 2, 1, 3).contiguous().view(b*h, -1, d), (q, k, v)) # b n (h d) -> (b h) n d
+        q, k, v = map(lambda t: t.view(b, -1, h, d).permute(0, 2, 1, 3).contiguous().view(b, h, -1, d), (q, k, v)) # b n (h d) -> (b h) n d
 
         # sim = einsum('b i d, b j d -> b i j' , q, k) * self.scale
         # attn = sim.softmax(dim=-1)
-        
         # out = einsum('b i j, b j d -> b i d', attn, v)
 
-        with sdp_kernel(enable_flash=True, enable_math=True, enable_mem_efficient=False):
-            out = F.scaled_dot_product_attention(q, k, v)
-
-
+        # with sdp_kernel(enable_flash=True, enable_math=False, enable_mem_efficient=False):
+        out = F.scaled_dot_product_attention(q, k, v)
 
         out = out.view(b, h, -1, d).permute(0, 2, 1, 3).contiguous().view(b, -1, h*d) # (b h) n d -> b n (h d)
         return self.to_out(out)

@@ -106,13 +106,6 @@ if __name__ == '__main__':
     ])
     dataset = torchvision.datasets.ImageFolder(train_dirs,transform=transforms)
 
-    #sample_img
-    sample_img_path = 'C:/Paper_Project/Hangul_Characters_Image64_radomSampling420_GrayScale/갊/62570_갊.png'
-    sample_img = Image.open(sample_img_path)
-    sample_img = transforms(sample_img).to(device)
-    sample_img = torch.unsqueeze(sample_img,1)
-    sample_img = sample_img.repeat(18, 1, 1, 1)
-
     #test set
     n = range(0,len(dataset),10)
     dataset = Subset(dataset, n)
@@ -202,10 +195,10 @@ if __name__ == '__main__':
 
             # Save
 
-            # labels = torch.arange(num_classes).long().to(device)
-            # sampled_images = diffusion.portion_sampling(model, n=len(dataset.dataset.classes), sampleImage_len = 36, sty_img = sample_img, make_condition = make_condition).to(device) # self, model, n,sampleImage_len, cfg_scale=0, sty_img = None, make_condition = None
-            # # plot_images(sampled_images)
-            # save_images(sampled_images, os.path.join(result_image_path, f"{epoch_id}.jpg"))
+            labels = torch.arange(num_classes).long().to(device)
+            sampled_images = diffusion.portion_sampling(model, n=len(dataset.dataset.classes), sampleImage_len = 36, sty_img = sample_img, make_condition = make_condition).to(device) # self, model, n,sampleImage_len, cfg_scale=0, sty_img = None, make_condition = None
+            # plot_images(sampled_images)
+            save_images(sampled_images, os.path.join(result_image_path, f"{epoch_id}.jpg"))
             torch.save(model,os.path.join(result_model_path,f"model_nonstyle_{epoch_id}.pt"))
             torch.save(model.state_dict(), os.path.join(result_model_path, f"ckpt_nonstyle_{epoch_id}.pt"))
             torch.save(optimizer.state_dict(), os.path.join(result_model_path, f"optim_nonstyle_{epoch_id}.pt"))

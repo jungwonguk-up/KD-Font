@@ -35,7 +35,7 @@ class MakeCondition:
         self.contents_dim = self.time_embed_dim//4 # 64
         self.storke_in_dim = 68
         self.contents_emb = nn.Embedding(num_classes, self.contents_dim)
-        self.contents_emb2 = nn.Embedding(num_classes, self.time_embed_dim //2 )
+        self.contents_emb2 = nn.Embedding(num_classes, self.time_embed_dim //4 )
         self.korean_stroke_emb = Korean_StrokeEmbedding(txt_path=stroke_text_path,classes=self.dataset_classes)
         # self.stroke_emb = nn.Embedding(self.storke_in_dim, self.contents_dim/68)
         self.style_enc = self.make_style_enc(style_enc_path)
@@ -117,11 +117,13 @@ class MakeCondition:
             uni_diff_list = torch.LongTensor(self.korean_index_to_uni_diff(indexs))
             contents = torch.FloatTensor(self.contents_emb2(uni_diff_list))
             stroke =  torch.FloatTensor(self.korean_stroke_emb.embedding(indexs))
-            stroke_linaer = nn.Linear(68, 128)
+            stroke_linaer = nn.Linear(68, 64)
             stroke = stroke_linaer(stroke)
+            style = self.style_enc(images).flatten(1).cpu()
+            style = self.sty_emb(style)
             # print("contents shape : ", contents.shape) 
             # print("stroke shape : ", stroke.shape)  
-            return torch.cat([contents,stroke],dim=1)
+            return torch.cat([contents,stroke,style],dim=1)
         
 
         # Stroke Linear
