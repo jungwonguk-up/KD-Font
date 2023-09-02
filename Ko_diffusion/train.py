@@ -115,7 +115,6 @@ if __name__ == '__main__':
 
     #test set
     n = range(0,len(dataset),10)
-    print("len : ",n)
     dataset = Subset(dataset, n)
 
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers = 4)
