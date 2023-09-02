@@ -36,8 +36,8 @@ num_classes = 11172
 lr = 3e-4
 n_epochs = 200
 use_amp = True
-resume_train = True
-file_num = 13
+resume_train = False
+file_num = 14
 stroke_text_path = "D:/workspace2/KoFont-Diffusion/storke_txt.txt"
 style_enc_path = "D:/workspace2/KoFont-Diffusion/weight/style_enc.pth"
 start_epoch = 0
@@ -93,6 +93,7 @@ if __name__ == '__main__':
 
     # Set data directory
     train_dirs = "H:/data/Hangul_Characters_Image64_radomSampling420_GrayScale"
+    # train_dirs = "H:/data/hangle_image64_gray_small"
 
     # Set transform
     transforms = torchvision.transforms.Compose([
