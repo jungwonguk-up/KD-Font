@@ -177,10 +177,12 @@ class TransformerUnet128(nn.Module):
         self.outc = nn.Conv2d(64, c_out, kernel_size=1)
 
         self.condition_linear = nn.Sequential(
-                        nn.SiLU(),
+                        # nn.SiLU(),
                         nn.Linear(32936, 256),
+                        nn.SiLU(),
                         nn.LayerNorm(256),
         )
+
 
         if num_classes is not None: # 스타일 인코더 스위치 
             # self.label_emb = nn.Embedding(num_classes, time_dim)
@@ -206,7 +208,7 @@ class TransformerUnet128(nn.Module):
         #                 nn.SiLU(),
         #                 nn.Linear(condition.shape[1], t.shape[1]),
         #     ).to(self.device)
-        print(f"condition shape: {condition.shape}")
+        # print(f"condition shape: {condition.shape}")
         condition = self.condition_linear(condition)
             
         t += condition
