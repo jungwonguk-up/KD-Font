@@ -176,13 +176,23 @@ class TransformerUnet128(nn.Module):
         self.attn8 = TrasformerBlock(in_channels=64, context_dim=context_dim)#128
         self.outc = nn.Conv2d(64, c_out, kernel_size=1)
 
-        self.condition_linear = nn.Sequential(
-                        # nn.SiLU(),
-                        nn.Linear(32936, 256),
-                        nn.SiLU(),
-                        nn.LayerNorm(256),
+        self.sty_linear = nn.Sequential(
+            nn.Linear(256, 256),
+            nn.GELU(),
+            nn.LayerNorm(256),
         )
 
+        self.emb_linear = nn.Sequential(
+            nn.Linear(100, 256),
+            nn.GELU(),
+            nn.LayerNorm(256),
+        )
+
+        self.strok_linear = nn.Sequential(
+            nn.Linear(68, 256),
+            nn.GELU(),
+            nn.LayerNorm(256),
+        )
 
         if num_classes is not None: # 스타일 인코더 스위치 
             # self.label_emb = nn.Embedding(num_classes, time_dim)
@@ -198,44 +208,42 @@ class TransformerUnet128(nn.Module):
         pos_enc = torch.cat([pos_enc_a, pos_enc_b], dim=-1)
         return pos_enc
 
-    def forward(self, x, condition,t):
+    def forward(self, x, t, sty, cond_emb, stroke):
         t = t.unsqueeze(-1).type(torch.float)
         t = self.pos_encoding(t, self.time_dim)
-        # print(f"condition.shape[1]: {condition.shape[1]}")
-        # print(f"condition.shape[1]: {t.shape[1]}")
-        
-        # condition_linear = nn.Sequential(
-        #                 nn.SiLU(),
-        #                 nn.Linear(condition.shape[1], t.shape[1]),
-        #     ).to(self.device)
-        # print(f"condition shape: {condition.shape}")
-        condition = self.condition_linear(condition)
-            
-        t += condition
 
-        # print(y)
+        # sty, cond_emb, stroke linear layer
+        sty = self.sty_linear(sty)
+        cond_emb = self.emb_linear(cond_emb).unsqueeze(dim=1)
+        stroke = self.strok_linear(stroke).unsqueeze(dim=1)
+
+        # concat
+        context = torch.cat([sty, cond_emb, stroke], dim=1)
+        # t += condition
+
         x1 = self.inc(x)
         x2 = self.down1(x1, t)
-        x2 = self.attn1(x2, condition)
+        x2 = self.attn1(x2, context)
         x3 = self.down2(x2, t)
-        x3 = self.attn2(x3, condition)
+        x3 = self.attn2(x3, context)
         x4 = self.down3(x3, t)
-        x4 = self.attn3(x4, condition)
+        x4 = self.attn3(x4, context)
 
         x5 = self.bot1(x4)
-        x5 = self.attn4(x5, condition)
+        x5 = self.attn4(x5, context)
         x5 = self.bot2(x5)
-        x5 = self.attn5(x5, condition)
+        x5 = self.attn5(x5, context)
         x5 = self.bot3(x5)
 
         x = self.up1(x5, x3, t)
-        x = self.attn6(x, condition)
+        x = self.attn6(x, context)
         x = self.up2(x, x2, t)
-        x = self.attn7(x, condition)
+        x = self.attn7(x, context)
         x = self.up3(x, x1, t)
-        x = self.attn8(x, condition)
+        x = self.attn8(x, context)
         output = self.outc(x)
         return output
+    
 
 class UNet128(nn.Module):
     def __init__(self, c_in=1, c_out=1, time_dim=256, num_classes=None, device="cuda", sample_img=None):

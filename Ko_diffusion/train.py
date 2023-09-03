@@ -37,7 +37,7 @@ lr = 3e-4
 n_epochs = 200
 use_amp = True
 resume_train = False
-file_num = 16
+file_num = 17
 stroke_text_path = "D:/workspace2/KoFont-Diffusion/storke_txt.txt"
 style_enc_path = "D:/workspace2/KoFont-Diffusion/weight/style_enc.pth"
 start_epoch = 0
@@ -62,20 +62,22 @@ def plot_images(images):
 
 
 if __name__ == '__main__':
+    # # wnadb disable mode select
+    # os.environ["WANDB_DISABLED"] = "True"
+
     #Set save file
     result_image_path = os.path.join("results", 'font_noStrokeStyle_{}'.format(file_num))
     result_model_path = os.path.join("models", 'font_noStrokeStyle_{}'.format(file_num))
     os.makedirs(result_image_path, exist_ok=True)
     os.makedirs(result_model_path, exist_ok=True)
- 
+    
     # wandb init
-    wandb.init(project="diffusion_font_32_test", config={
-        "learning_rate": 0.0003,
-        "architecture": "UNET",
-        "dataset": "HOJUN_KOREAN_FONT64",
-        "notes":"content, non_stoke, non_style/ 32 x 32"
-    })
-
+    wandb.init(project="diffusion_font_32_test",
+               name="o2rabbit_change_context_dim_test",
+               config={"learning_rate": 0.0003,
+                       "architecture": "UNET",
+                       "dataset": "HOJUN_KOREAN_FONT64",
+                       "notes":"content, non_stoke, non_style/ 32 x 32"})
 
     # Set random seed, deterministic
     torch.cuda.manual_seed(seed)
@@ -177,11 +179,14 @@ if __name__ == '__main__':
         for i, (image, content) in enumerate(pbar):
             # print('x1 : ', x.shape)
             image = image.to(device)
-            condition = make_condition.make_condition(images = image,indexs = content,mode=1).to(device)
+            # condition = make_condition.make_condition(images = image,indexs = content,mode=1).to(device)
+            sty, cond_emb, stroke = make_condition.make_condition(images=image, indexs=content, mode=1)
+            sty, cond_emb, stroke = sty.to(device), cond_emb.to(device), stroke.to(device)
             
             t = diffusion.sample_t(image.shape[0]).to(device)
             image_t, noise = diffusion.noise_images(image, t)
-            predicted_noise = model(x = image_t, condition = condition, t= t) # 원래 이미지 -> 스타일 인코더
+            # predicted_noise = model(x = image_t, condition = condition, t= t) # 원래 이미지 -> 스타일 인코더
+            predicted_noise = model(x=image_t, t=t, sty=sty, cond_emb=cond_emb, stroke=stroke)
             loss = loss_func(noise, predicted_noise)
 
             optimizer.zero_grad()
@@ -195,7 +200,7 @@ if __name__ == '__main__':
         if epoch_id % 10 == 0 :
         # Save
             labels = torch.arange(num_classes).long().to(device)
-            sampled_images = diffusion.portion_sampling(model, n=len(dataset.dataset.classes),sampleImage_len = 36, sty_img = sample_img, make_condition= make_condition)
+            sampled_images = diffusion.portion_sampling(model, n=len(dataset.dataset.classes), sampleImage_len=36, sty_img=sample_img, make_condition=make_condition)
             # plot_images(sampled_images)
             save_images(sampled_images, os.path.join(result_image_path, f"{epoch_id}.jpg"))
             torch.save(model,os.path.join(result_model_path,f"model_2_{epoch_id}.pt"))
