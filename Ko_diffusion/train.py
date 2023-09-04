@@ -38,8 +38,11 @@ n_epochs = 200
 use_amp = True
 resume_train = False
 file_num = 17
-stroke_text_path = "D:/workspace2/KoFont-Diffusion/storke_txt.txt"
-style_enc_path = "D:/workspace2/KoFont-Diffusion/weight/style_enc.pth"
+train_dirs = '/home/hojun/PycharmProjects/diffusion_font/code/KoFont-Diffusion/hojun/make_font/data/Hangul_Characters_Image64_radomSampling420_GrayScale'
+sample_img_path = f'{train_dirs}/갊/62570_갊.png'
+stroke_text_path = "./data/storke_txt.txt"
+style_enc_path = "./data/style_enc.pth"
+
 start_epoch = 0
 
 # os
@@ -93,8 +96,7 @@ if __name__ == '__main__':
     os.environ['CUDA_VISIBLE_DEVICES'] = str(gpu_num)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    # Set data directory
-    train_dirs = "H:/data/Hangul_Characters_Image64_radomSampling420_GrayScale"
+
     # train_dirs = "H:/data/hangle_image64_gray_small"
 
     # Set transform
@@ -108,14 +110,13 @@ if __name__ == '__main__':
     dataset = torchvision.datasets.ImageFolder(train_dirs,transform=transforms)
 
     #test set
-    n = range(0,len(dataset),10)
+    n = range(0,len(dataset),200)
     print("len : ",n)
     dataset = Subset(dataset, n)
 
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=12)
     
     #sample_img
-    sample_img_path = 'H:/data/Hangul_Characters_Image64_radomSampling420_GrayScale/갊/62570_갊.png'
     sample_img = Image.open(sample_img_path)
     sample_img = transforms(sample_img).to(device)
     sample_img = torch.unsqueeze(sample_img,1)
@@ -180,13 +181,12 @@ if __name__ == '__main__':
             # print('x1 : ', x.shape)
             image = image.to(device)
             # condition = make_condition.make_condition(images = image,indexs = content,mode=1).to(device)
-            sty, cond_emb, stroke = make_condition.make_condition(images=image, indexs=content, mode=1)
-            sty, cond_emb, stroke = sty.to(device), cond_emb.to(device), stroke.to(device)
+            condition_dict = make_condition.make_condition(images=image, indexs=content, mode=1)
             
             t = diffusion.sample_t(image.shape[0]).to(device)
             image_t, noise = diffusion.noise_images(image, t)
             # predicted_noise = model(x = image_t, condition = condition, t= t) # 원래 이미지 -> 스타일 인코더
-            predicted_noise = model(x=image_t, t=t, sty=sty, cond_emb=cond_emb, stroke=stroke)
+            predicted_noise = model(x=image_t, t=t, condition_dict = condition_dict)
             loss = loss_func(noise, predicted_noise)
 
             optimizer.zero_grad()

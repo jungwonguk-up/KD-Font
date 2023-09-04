@@ -147,7 +147,9 @@ class TransformerUnet128(nn.Module):
                  c_in=1, 
                  c_out=1, 
                  time_dim=256, 
-                 context_dim=32,
+                 context_dim=256,
+                 condition_dim=32936,
+                 style_dim = 256,
                  num_classes=None, 
                  device="cuda",
                  ):
@@ -176,27 +178,32 @@ class TransformerUnet128(nn.Module):
         self.attn8 = TrasformerBlock(in_channels=64, context_dim=context_dim)#128
         self.outc = nn.Conv2d(64, c_out, kernel_size=1)
 
-        self.sty_linear = nn.Sequential(
-            nn.Linear(256, 256),
-            nn.GELU(),
-            nn.LayerNorm(256),
-        )
-
-        self.emb_linear = nn.Sequential(
-            nn.Linear(100, 256),
-            nn.GELU(),
-            nn.LayerNorm(256),
-        )
-
-        self.strok_linear = nn.Sequential(
-            nn.Linear(68, 256),
-            nn.GELU(),
-            nn.LayerNorm(256),
-        )
-
         if num_classes is not None: # 스타일 인코더 스위치 
             # self.label_emb = nn.Embedding(num_classes, time_dim)
             pass
+        
+        self.sty_linear = nn.Sequential(
+            nn.Linear(style_dim, time_dim),
+            nn.GELU(),
+            nn.LayerNorm(time_dim),
+        )
+
+        self.emb_linear = nn.Sequential(
+            nn.Linear(100, time_dim),
+            nn.GELU(),
+            nn.LayerNorm(time_dim),
+        )
+
+        self.strok_linear = nn.Sequential(
+            nn.Linear(68, time_dim),
+            nn.GELU(),
+            nn.LayerNorm(time_dim),
+        )
+        self.condition_linear = nn.Sequential(
+                                nn.SiLU(),
+                                nn.Linear(32936, time_dim),
+                                nn.LayerNorm(time_dim)
+                    ).to(self.device)
 
     def pos_encoding(self, t, channels):
         inv_freq = 1.0 / (
@@ -208,39 +215,43 @@ class TransformerUnet128(nn.Module):
         pos_enc = torch.cat([pos_enc_a, pos_enc_b], dim=-1)
         return pos_enc
 
-    def forward(self, x, t, sty, cond_emb, stroke):
+    def forward(self, x, condition_dict,t):
         t = t.unsqueeze(-1).type(torch.float)
         t = self.pos_encoding(t, self.time_dim)
-
-        # sty, cond_emb, stroke linear layer
-        sty = self.sty_linear(sty)
-        cond_emb = self.emb_linear(cond_emb).unsqueeze(dim=1)
-        stroke = self.strok_linear(stroke).unsqueeze(dim=1)
+        
+          # sty, cond_emb, stroke linear layer
+        sty = self.sty_linear(condition_dict["style"])
+        cond_emb = self.emb_linear(condition_dict["contents"]).unsqueeze(dim=1)
+        stroke = self.strok_linear(condition_dict["stroke"]).unsqueeze(dim=1)
 
         # concat
-        context = torch.cat([sty, cond_emb, stroke], dim=1)
-        # t += condition
+        condition = torch.cat([cond_emb, stroke,sty], dim=1)
+        t_condition = torch.cat([condition_dict["contents"], condition_dict["stroke"], condition_dict['style'].flatten(1)], dim=1)
+        
+        t_condition = self.condition_linear(t_condition)
+        t += t_condition
 
+        # print(y)
         x1 = self.inc(x)
         x2 = self.down1(x1, t)
-        x2 = self.attn1(x2, context)
+        x2 = self.attn1(x2, condition)
         x3 = self.down2(x2, t)
-        x3 = self.attn2(x3, context)
+        x3 = self.attn2(x3, condition)
         x4 = self.down3(x3, t)
-        x4 = self.attn3(x4, context)
+        x4 = self.attn3(x4, condition)
 
         x5 = self.bot1(x4)
-        x5 = self.attn4(x5, context)
+        x5 = self.attn4(x5, condition)
         x5 = self.bot2(x5)
-        x5 = self.attn5(x5, context)
+        x5 = self.attn5(x5, condition)
         x5 = self.bot3(x5)
 
         x = self.up1(x5, x3, t)
-        x = self.attn6(x, context)
+        x = self.attn6(x, condition)
         x = self.up2(x, x2, t)
-        x = self.attn7(x, context)
+        x = self.attn7(x, condition)
         x = self.up3(x, x1, t)
-        x = self.attn8(x, context)
+        x = self.attn8(x, condition)
         output = self.outc(x)
         return output
     
