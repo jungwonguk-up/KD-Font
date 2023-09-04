@@ -66,7 +66,7 @@ def plot_images(images):
 
 if __name__ == '__main__':
     # # wnadb disable mode select
-    # os.environ["WANDB_DISABLED"] = "True"
+    os.environ["WANDB_DISABLED"] = "True"
 
     #Set save file
     result_image_path = os.path.join("results", 'font_noStrokeStyle_{}'.format(file_num))
@@ -74,14 +74,14 @@ if __name__ == '__main__':
     os.makedirs(result_image_path, exist_ok=True)
     os.makedirs(result_model_path, exist_ok=True)
     
-    # wandb init
-    wandb.init(project="diffusion_font_32_test",
-               name="o2rabbit_change_context_dim_test",
-               config={"learning_rate": 0.0003,
-                       "architecture": "UNET",
-                       "dataset": "HOJUN_KOREAN_FONT64",
-                       "notes":"content, non_stoke, non_style/ 32 x 32"})
-
+    ## wandb init
+    # wandb.init(project="diffusion_font_test",
+    #            name="o2rabbit_change_context_dim_test",
+    #            config={"learning_rate": 0.0003,
+    #                    "architecture": "UNET",
+    #                    "dataset": "HOJUN_KOREAN_FONT64",
+    #                    "notes":"content, non_stoke, non_style/ 32 x 32"})
+    wandb.init(mode = "disabled")
     # Set random seed, deterministic
     torch.cuda.manual_seed(seed)
     torch.manual_seed(seed)
