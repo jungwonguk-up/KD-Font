@@ -200,8 +200,8 @@ class TransformerUnet128(nn.Module):
             nn.LayerNorm(time_dim),
         )
         self.condition_linear = nn.Sequential(
-                                nn.SiLU(),
                                 nn.Linear(32936, time_dim),
+                                nn.GELU(),
                                 nn.LayerNorm(time_dim)
                     ).to(self.device)
 
