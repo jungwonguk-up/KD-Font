@@ -40,8 +40,8 @@ resume_train = False
 file_num = 17
 train_dirs = '/home/hojun/PycharmProjects/diffusion_font/code/KoFont-Diffusion/hojun/make_font/data/Hangul_Characters_Image64_radomSampling420_GrayScale'
 sample_img_path = f'{train_dirs}/갊/62570_갊.png'
-stroke_text_path = "./data/storke_txt.txt"
-style_enc_path = "./data/style_enc.pth"
+stroke_text_path = "./text_weight/storke_txt.txt"
+style_enc_path = "./text_weight/style_enc.pth"
 
 start_epoch = 0
 
@@ -110,7 +110,7 @@ if __name__ == '__main__':
     dataset = torchvision.datasets.ImageFolder(train_dirs,transform=transforms)
 
     #test set
-    n = range(0,len(dataset),200)
+    n = range(0,len(dataset),10)
     print("len : ",n)
     dataset = Subset(dataset, n)
 

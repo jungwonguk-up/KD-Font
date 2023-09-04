@@ -188,7 +188,7 @@ class TransformerUnet128(nn.Module):
             nn.LayerNorm(time_dim),
         )
 
-        self.emb_linear = nn.Sequential(
+        self.label_linear = nn.Sequential(
             nn.Linear(100, time_dim),
             nn.GELU(),
             nn.LayerNorm(time_dim),
@@ -219,19 +219,24 @@ class TransformerUnet128(nn.Module):
         t = t.unsqueeze(-1).type(torch.float)
         t = self.pos_encoding(t, self.time_dim)
         
-          # sty, cond_emb, stroke linear layer
-        sty = self.sty_linear(condition_dict["style"])
-        cond_emb = self.emb_linear(condition_dict["contents"]).unsqueeze(dim=1)
-        stroke = self.strok_linear(condition_dict["stroke"]).unsqueeze(dim=1)
+        ## sty, cond_emb, stroke linear layer
+        # sty = self.sty_linear(condition_dict["style"])
+        
+        label_emb_t = self.label_linear(condition_dict["contents"])
+        label_emb = label_emb_t.unsqueeze(dim=1)
+        condition = label_emb
+        
+        # stroke = self.strok_linear(condition_dict["stroke"]).unsqueeze(dim=1)
 
         # concat
-        condition = torch.cat([cond_emb, stroke,sty], dim=1)
-        t_condition = torch.cat([condition_dict["contents"], condition_dict["stroke"], condition_dict['style'].flatten(1)], dim=1)
+        # condition = torch.cat([label_emb, stroke,sty], dim=1)
+        # t_condition = torch.cat([condition_dict["contents"], condition_dict["stroke"], condition_dict['style'].flatten(1)], dim=1)
         
-        t_condition = self.condition_linear(t_condition)
-        t += t_condition
+        # t_condition = self.condition_linear(t_condition)
+        # t += t_condition
+        # t += label_emb_t
 
-        # print(y)
+
         x1 = self.inc(x)
         x2 = self.down1(x1, t)
         x2 = self.attn1(x2, condition)
