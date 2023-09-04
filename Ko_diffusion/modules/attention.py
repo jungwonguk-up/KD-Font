@@ -5,6 +5,14 @@ from torch import nn, einsum
 # torch >= 2.0.0
 # from torch.backends.cuda import sdp_kernel
 
+def zero_module(module):
+    """
+    Zero out the parameters of a module and return it.
+    """
+    for p in module.parameters():
+        p.detach().zero_()
+    return module
+
 
 class GEGLU(nn.Module):
     """
@@ -173,7 +181,7 @@ class TrasformerBlock(nn.Module):
         self.use_spatial = use_spatial
         self.norm = nn.GroupNorm(num_groups=8, num_channels=in_channels, eps=1e-6, affine=True)
         self.proj_in = nn.Conv2d(in_channels, in_channels, kernel_size=1, stride=1, padding=0)
-        self.proj_out = nn.Conv2d(in_channels, in_channels, kernel_size=1, stride=1, padding=0)
+        self.proj_out = zero_module(nn.Conv2d(in_channels, in_channels, kernel_size=1, stride=1, padding=0))
 
         self.transformer_block = nn.ModuleList([])
         # if use_spatial: # not use currently 
