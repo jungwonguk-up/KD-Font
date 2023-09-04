@@ -128,7 +128,8 @@ class Diffusion:
 
                     predicted_noise = torch.cat([predicted_noise,batch_noise],dim=0)
                     #uncodition
-                    uncond_batch_noise = model(x = batch_x, t = batch_t, condition = torch.zeros_like(batch_size,100))
+                    condition_dict['stroke'] = torch.zeros_like(condition_dict['stroke'])
+                    uncond_batch_noise = model(x = batch_x, t = batch_t, condition_dict = condition_dict)
                     uncond_predicted_noise = torch.cat([uncond_predicted_noise,uncond_batch_noise],dim = 0)
 
                 if cfg_scale > 0:

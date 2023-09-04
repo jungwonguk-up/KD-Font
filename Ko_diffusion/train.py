@@ -110,7 +110,7 @@ if __name__ == '__main__':
     dataset = torchvision.datasets.ImageFolder(train_dirs,transform=transforms)
 
     #test set
-    n = range(0,len(dataset),10)
+    n = range(0,len(dataset),200)
     print("len : ",n)
     dataset = Subset(dataset, n)
 
