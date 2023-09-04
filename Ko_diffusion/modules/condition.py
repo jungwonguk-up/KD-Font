@@ -67,6 +67,9 @@ class MakeCondition:
         contents = None
         stroke =  None
         style = None
+        style_c = 128
+        style_h, style_w = 16, 16
+        
         contents_p, stroke_p = random.random(), random.random()
         if mode == 1:
             if contents_p < 0.3:
@@ -81,9 +84,10 @@ class MakeCondition:
                 stroke =  torch.FloatTensor(self.korean_stroke_emb.embedding(indexs))
             
             if contents_p < 0.3 and stroke_p < 0.3:
-                style = torch.zeros(input_length,32768)
+                style = torch.zeros(input_length,style_c, style_h * style_w)
             else:
-                style = self.style_enc(images).flatten(1).cpu()
+                style = self.style_enc(images)
+                style = style.view(input_length, style_c, -1).cpu()
         elif mode == 2:
             if contents_p < 0.3:
                 contents = torch.zeros(input_length,self.contents_dim)
@@ -95,14 +99,20 @@ class MakeCondition:
             else:
                 stroke =  torch.FloatTensor(self.korean_stroke_emb.embedding(indexs))
             
-            style = torch.zeros(input_length,32768).cpu()
+            style = torch.zeros(input_length,style_c, style_h * style_w)
 
 
         elif mode == 3: #test
             uni_diff_list = torch.LongTensor(self.korean_index_to_uni_diff(indexs))
             contents = torch.FloatTensor(self.contents_emb(uni_diff_list))
             stroke =  torch.FloatTensor(self.korean_stroke_emb.embedding(indexs))
-            style = self.style_enc(images).flatten(1).cpu()
-        return torch.cat([contents,stroke,style],dim=1)
+            style = self.style_enc(images)
+            style = style.view(input_length, style_c, -1).cpu()
+        condition_dict = {}
+        condition_dict["contents"] = contents.to(self.device)
+        condition_dict["stroke"] = stroke.to(self.device)
+        condition_dict['style'] = style.to(self.device)
+
+        return condition_dict
     
     

@@ -91,9 +91,9 @@ class DoubleConv(nn.Module):
 class Down(nn.Module):
     def __init__(self, in_channels, out_channels, emb_dim=256):
         super().__init__()
-        self.maxpool_conv = nn.Sequential(
-            # nn.AvgPool2d(2),
-            nn.MaxPool2d(2),
+        self.avgpool_conv = nn.Sequential(
+            nn.AvgPool2d(2),
+            # nn.MaxPool2d(2),
             DoubleConv(in_channels, in_channels, residual=True),
             DoubleConv(in_channels, out_channels),
         )
@@ -107,7 +107,7 @@ class Down(nn.Module):
         )
 
     def forward(self, x, t):
-        x = self.maxpool_conv(x)
+        x = self.avgpool_conv(x)
         emb = self.emb_layer(t)[:, :, None, None].repeat(1, 1, x.shape[-2], x.shape[-1])
         # print('x.shape : ', x.shape)
         # print('t.shape : ', t.shape)
@@ -147,7 +147,9 @@ class TransformerUnet128(nn.Module):
                  c_in=1, 
                  c_out=1, 
                  time_dim=256, 
-                 context_dim=32,
+                 context_dim=256,
+                 condition_dim=32936,
+                 style_dim = 256,
                  num_classes=None, 
                  device="cuda",
                  ):
@@ -179,6 +181,29 @@ class TransformerUnet128(nn.Module):
         if num_classes is not None: # 스타일 인코더 스위치 
             # self.label_emb = nn.Embedding(num_classes, time_dim)
             pass
+        
+        self.sty_linear = nn.Sequential(
+            nn.Linear(style_dim, time_dim),
+            nn.GELU(),
+            nn.LayerNorm(time_dim),
+        )
+
+        self.emb_linear = nn.Sequential(
+            nn.Linear(100, time_dim),
+            nn.GELU(),
+            nn.LayerNorm(time_dim),
+        )
+
+        self.strok_linear = nn.Sequential(
+            nn.Linear(68, time_dim),
+            nn.GELU(),
+            nn.LayerNorm(time_dim),
+        )
+        self.condition_linear = nn.Sequential(
+                                nn.Linear(32936, time_dim),
+                                nn.GELU(),
+                                nn.LayerNorm(time_dim)
+                    ).to(self.device)
 
     def pos_encoding(self, t, channels):
         inv_freq = 1.0 / (
@@ -190,17 +215,21 @@ class TransformerUnet128(nn.Module):
         pos_enc = torch.cat([pos_enc_a, pos_enc_b], dim=-1)
         return pos_enc
 
-    def forward(self, x, condition,t):
+    def forward(self, x, condition_dict,t):
         t = t.unsqueeze(-1).type(torch.float)
         t = self.pos_encoding(t, self.time_dim)
         
-        condition_linear = nn.Sequential(
-                        nn.SiLU(),
-                        nn.Linear(condition.shape[1], t.shape[1]),
-            ).to(self.device)
-        condition = condition_linear(condition)
-            
-        t += condition
+          # sty, cond_emb, stroke linear layer
+        sty = self.sty_linear(condition_dict["style"])
+        cond_emb = self.emb_linear(condition_dict["contents"]).unsqueeze(dim=1)
+        stroke = self.strok_linear(condition_dict["stroke"]).unsqueeze(dim=1)
+
+        # concat
+        condition = torch.cat([cond_emb, stroke,sty], dim=1)
+        t_condition = torch.cat([condition_dict["contents"], condition_dict["stroke"], condition_dict['style'].flatten(1)], dim=1)
+        
+        t_condition = self.condition_linear(t_condition)
+        t += t_condition
 
         # print(y)
         x1 = self.inc(x)
@@ -225,6 +254,7 @@ class TransformerUnet128(nn.Module):
         x = self.attn8(x, condition)
         output = self.outc(x)
         return output
+    
 
 class UNet128(nn.Module):
     def __init__(self, c_in=1, c_out=1, time_dim=256, num_classes=None, device="cuda", sample_img=None):
