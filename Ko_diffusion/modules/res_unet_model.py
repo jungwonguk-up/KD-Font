@@ -181,7 +181,8 @@ class Unet(nn.Module):
                  channel_mult: list = [1, 2, 4, 4],
                  num_heads: int = 4,
                  transformer_depth: int = 1,
-                 context_dim: int = None):
+                 context_dim: int = None,
+                 device: str = "cuda"):
         super().__init__()
         assert context_dim
 
@@ -196,6 +197,7 @@ class Unet(nn.Module):
         self.num_heads = num_heads
         self.depth = transformer_depth
         self.context_dim = context_dim
+        self.device = device
 
         self.enc_layer_ch_list = [i * self.model_ch for i in channel_mult]
 
@@ -205,6 +207,13 @@ class Unet(nn.Module):
             nn.SiLU(),
             nn.Conv2d(self.model_ch, self.out_ch, kernel_size=1) # 맞나?
         )
+
+        self.label_linear = nn.Sequential(
+            nn.Linear(100, context_dim),
+            nn.GELU(),
+            nn.LayerNorm(context_dim),
+        )
+
 
         """임시"""
         # level1
@@ -247,7 +256,7 @@ class Unet(nn.Module):
         self.dec11 = BasicBlock(self.model_ch + self.model_ch, self.model_ch, num_heads=self.num_heads, head_dim=(self.model_ch)//num_heads, context_dim=self.context_dim, depth=self.depth)
         self.dec12 = BasicBlock(self.model_ch + self.model_ch, self.model_ch, num_heads=self.num_heads, head_dim=(self.model_ch)//num_heads, context_dim=self.context_dim, depth=self.depth)
 
-    
+    """TODO"""
     # method for make encoder layers
     def make_enc_layers(self, BasicBlock, num_basic_block, channel_mult):
         """
@@ -303,8 +312,24 @@ class Unet(nn.Module):
                 if i == self.num_block:
                     layers.append(UpSample(ch))
 
+    def pos_encoding(self, t, channels):
+        inv_freq = 1.0 / (
+            10000
+            ** (torch.arange(0, channels, 2, device=self.device).float() / channels)
+        )
+        pos_enc_a = torch.sin(t.repeat(1, channels // 2) * inv_freq)
+        pos_enc_b = torch.cos(t.repeat(1, channels // 2) * inv_freq)
+        pos_enc = torch.cat([pos_enc_a, pos_enc_b], dim=-1)
+        return pos_enc
 
-    def forward(self, x, t, context):
+    def forward(self, x, t, condition_dict):
+        t = t.unsqueeze(-1).type(torch.float)
+        t = self.pos_encoding(t, self.context_dim)
+        
+        label_emb_t = self.label_linear(condition_dict["contents"])
+        label_emb = label_emb_t.unsqueeze(dim=1)
+        context = label_emb
+
         """임시"""
         # enc level1
         x1 = self.input(x)

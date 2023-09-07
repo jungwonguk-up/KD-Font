@@ -16,6 +16,9 @@ from matplotlib import pyplot as plt
 
 from modules.diffusion import Diffusion
 from modules.model import UNet128,TransformerUnet128
+
+from modules.res_unet_model import Unet
+
 from modules.condition import MakeCondition
 from modules.style_encoder import style_enc_builder
 # import albumentations as A
@@ -33,10 +36,10 @@ image_size = 64
 input_size = 64
 batch_size = 16
 num_classes = 11172
-lr = 3e-4
+lr = 1e-4
 n_epochs = 402
 use_amp = True
-resume_train = True
+resume_train = False
 file_num = "resblock_unet_test"
 train_dirs = "H:/data/Hangul_Characters_Image64_radomSampling420_GrayScale"
 sample_img_path = f'{train_dirs}/갊/62570_갊.png'
@@ -66,7 +69,7 @@ def plot_images(images):
 
 if __name__ == '__main__':
     # # wnadb disable mode select
-    # os.environ["WANDB_DISABLED"] = "True"
+    os.environ["WANDB_DISABLED"] = "True"
 
     #Set save file
     result_image_path = os.path.join("results", 'font_noStrokeStyle_{}'.format(file_num))
@@ -76,8 +79,9 @@ if __name__ == '__main__':
     
     ## wandb init
     wandb.init(project="diffusion_font_test",
-               name="Label Only (Linear) + t + (Cross Attention) lr 8e-5 ~400epoch",
-               config={"learning_rate": 0.00008,
+            #    name="Label Only (Linear) + t + (Cross Attention) lr 8e-5 ~400epoch",
+               name="ResBlock UNet Test",
+               config={"learning_rate": 0.0001,
                        "architecture": "UNET",
                        "dataset": "HOJUN_KOREAN_FONT64",
                        "notes":"content, non_stoke, non_style/ 32 x 32"})
@@ -124,7 +128,8 @@ if __name__ == '__main__':
 
     if resume_train:
         #Set model
-        model = TransformerUnet128(num_classes=num_classes, context_dim=256, device=device).to(device)
+        model = Unet(context_dim=256, device=device).to(device)
+        # model = TransformerUnet128(num_classes=num_classes, context_dim=256, device=device).to(device)
         # model = UNet128(num_classes=num_classes).to(device)
         wandb.watch(model)
 
@@ -145,7 +150,8 @@ if __name__ == '__main__':
 
     else:
         #Set model
-        model = TransformerUnet128(num_classes=num_classes, context_dim=256,device = device).to(device) # 여기는 왜 256이지?
+        model = Unet(context_dim=256, device=device).to(device)
+        # model = TransformerUnet128(num_classes=num_classes, context_dim=256,device = device).to(device) # 여기는 왜 256이지?
         # model = UNet128(num_classes=num_classes).to(device)
         wandb.watch(model)
 
