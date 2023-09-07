@@ -3,8 +3,6 @@ import torch.nn.functional as F
 import torch.nn as nn
 from functools import partial
 import torch.nn as nn
-# from .modules import ConvBlock, GCBlock, CBAM
-from . import ConvBlock, GCBlock, CBAM
 class SelfAttention(nn.Module):
     def __init__(self, channels):
         super(SelfAttention, self).__init__()
@@ -115,7 +113,7 @@ class Up(nn.Module):
         return x + time_emb + charAttr_emb
 
 class UNet(nn.Module):
-    def __init__(self, c_in=3, c_out=3, time_dim=256, charAttr_dim = 12456, device="cuda"):
+    def __init__(self, c_in=1, c_out=1, time_dim=256, charAttr_dim = 296, device="cuda"):
         super().__init__()
         self.device = device
         self.time_dim = time_dim
@@ -179,32 +177,3 @@ class UNet(nn.Module):
         x = self.sa6(x)
         output = self.outc(x)
         return output
-
-
-
-class StyleEncoder(nn.Module):
-    def __init__(self, layers, out_shape):
-        super().__init__()
-
-        self.layers = nn.Sequential(*layers)
-        self.out_shape = out_shape
-
-    def forward(self, x):
-        style_feat = self.layers(x)
-        return style_feat
-
-
-def style_enc_builder(C_in, C, norm='in', activ='relu', pad_type='zero', skip_scale_var=False):
-    ConvBlk = partial(ConvBlock, norm=norm, activ=activ, pad_type=pad_type)
-
-    layers = [
-        ConvBlk(C_in, C, 3, 1, 1, norm='none', activ='none'),
-        ConvBlk(C * 1, C * 2, 3, 1, 1, downsample=True),
-        GCBlock(C * 2),
-        ConvBlk(C * 2, C * 4, 3, 1, 1, downsample=True),
-        CBAM(C * 4)
-    ]
-
-    out_shape = (C * 4, 32, 32)
-
-    return StyleEncoder(layers, out_shape)

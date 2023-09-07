@@ -60,16 +60,16 @@ class Diffusion:
 
     def indexToChar(self,y):
         return chr(44032+y)
-    def portion_sampling(self, model, n,sampleImage_len,dataset,mode,charAttar,cfg_scale=3):
+    def portion_sampling(self, model, n,sampleImage_len,dataset,mode,charAttar,sample_img, cfg_scale=3):
         example_images = []
         model.eval()
         with torch.no_grad():
-            x_list = torch.randn((sampleImage_len, 3, self.img_size, self.img_size)).to(self.device)
+            x_list = torch.randn((sampleImage_len, 1, self.img_size, self.img_size)).to(self.device)
 
-            y_idx = list(range(n))[::math.ceil(n/sampleImage_len)]
+            y_idx = list(range(n))[::math.floor(n/sampleImage_len)][:sampleImage_len]
             contents_index = torch.IntTensor(y_idx)
-            contents = [dataset.classes[content_index] for content_index in contents_index]
-            charAttr_list = charAttar.make_charAttr(x_list, contents_index, contents,mode=3).to(self.device)
+            contents = [dataset.dataset.classes[content_index] for content_index in contents_index]
+            charAttr_list = charAttar.make_charAttr(sample_img, contents_index, contents,mode=3).to(self.device)
 
             pbar = tqdm(list(reversed(range(1, self.noise_step))),desc="sampling")
             for i in pbar:

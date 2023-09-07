@@ -29,14 +29,18 @@ import wandb
 gpu_num = 1 #####
 input_size = 64
 batch_size = 8 #####
-num_classes = 36 #####
+num_classes = 11172 #####
 lr = 3e-4 #####
 n_epochs = 300 #####
 start_epoch = 10
-mode = 1 # mode_1 : with contents, stroke, mode_2 : with contents, stroke, style #####
+mode = 2 # mode_1 : with contents, stroke, mode_2 : with contents, stroke, style #####
+sampleImage_len = 36
 
 use_amp = True
 resume_train = False
+
+train_dirs = '/home/hojun/PycharmProjects/diffusion_font/code/KoFont-Diffusion/hojun/make_font/data/Hangul_Characters_Image64_radomSampling420_GrayScale'
+sample_img_path = f'{train_dirs}/갊/KoPubWorldBatangBold_갊.png'
 
 
 
@@ -53,13 +57,14 @@ if __name__ == '__main__':
     os.makedirs(result_model_path, exist_ok=True)
 
     # wandb init
-    # wandb.init(project="diffusion_font_32_test", config={
-    #     "learning_rate": 0.0003,
-    #     "architecture": "UNET",
-    #     "dataset": "HOJUN_KOREAN_FONT64",
-    #     "notes":"content, yes_stoke, non_style/ 64 x 64, 420 dataset"
-    # }) #####
-    wandb.init(mode="disabled")
+    wandb.init(project="diffusion_font_test", config={
+                "learning_rate": 0.0003,
+                "architecture": "UNET",
+                "dataset": "HOJUN_KOREAN_FONT64",
+                "notes":"content, yes_stoke, non_style/ 64 x 64, 420 dataset"
+                },
+               name = "self-attetnion condtion content stroke style") #####
+    # wandb.init(mode="disabled")
 
 
     # Set device(GPU/CPU)
@@ -67,25 +72,30 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # Set data directory
-    train_dirs = './make_font/data/Hangul_Characters_Image64_36' #####
+    # train_dirs = '/home/hojun/PycharmProjects/diffusion_font/code/KoFont-Diffusion/hojun/make_font/data/Hangul_Characters_Image64_radomSampling420_GrayScale' #####
 
     # Set transform
     transforms = torchvision.transforms.Compose([
-        torchvision.transforms.Resize((input_size,input_size)),
-    # #     torchvision.transforms.RandomResizedCrop(input_size, scale=(0.8, 1.0)),
+        # torchvision.transforms.Resize((input_size,input_size)),
+        torchvision.transforms.Grayscale(num_output_channels=1),
         torchvision.transforms.ToTensor(),
-        torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        torchvision.transforms.Normalize((0.5), (0.5))
     ])
     dataset = torchvision.datasets.ImageFolder(train_dirs,transform=transforms)
 
     # test set
-    # n = range(0,len(dataset),100)
-    # dataset = Subset(dataset, n)
+    n = range(0,len(dataset),10)
+    dataset = Subset(dataset, n)
 
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True,num_workers=32)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True,num_workers=12)
 
+    #sample_img
+    sample_img = Image.open(sample_img_path)
+    sample_img = transforms(sample_img).to(device)
+    sample_img = torch.unsqueeze(sample_img,1)
+    sample_img = sample_img.repeat(sampleImage_len, 1, 1, 1)
 
-
+    
     if resume_train:
         #Set model
         model = UNet()
@@ -133,8 +143,8 @@ if __name__ == '__main__':
         tic = time()
         for i, (images, contents_index) in enumerate(pbar):
             images = images.to(device)
-
-            contents = [dataset.classes[content_index] for content_index in contents_index]
+            
+            contents = [dataset.dataset.classes[content_index] for content_index in contents_index]
             charAttar = CharAttar(num_classes=num_classes,device=device)
 
             charAttr_list = charAttar.make_charAttr(images, contents_index,contents,mode=mode).to(device)
@@ -156,7 +166,7 @@ if __name__ == '__main__':
 
         if epoch_id % 10 == 0 :
             labels = torch.arange(num_classes).long().to(device)
-            sampled_images = diffusion.portion_sampling(model, n=len(labels),sampleImage_len = 36,dataset=dataset,mode =mode,charAttar=charAttar)
+            sampled_images = diffusion.portion_sampling(model, n=len(dataset.dataset.classes),sampleImage_len = sampleImage_len,dataset=dataset,mode =mode,charAttar=charAttar,sample_img=sample_img)
             # plot_images(sampled_images)
             save_images(sampled_images, os.path.join(result_image_path, f"{epoch_id}.jpg"))
             torch.save(model,os.path.join(result_model_path,f"model_{epoch_id}.pt"))

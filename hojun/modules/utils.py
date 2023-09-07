@@ -1,12 +1,14 @@
 import torch
 import torchvision
+import torch.nn as nn
+import torch.nn.functional as F
+
 from matplotlib import pyplot as plt
 from PIL import Image
-import torch.nn as nn
 import random, os
 from collections import OrderedDict
 
-from models.utils import style_enc_builder, StyleEncoder
+from models.style_encoder import style_enc_builder
 
 def save_images(images, path, **kwargs):
     for idx,image in enumerate(images):
@@ -59,9 +61,11 @@ def make_stroke(contents):
 class CharAttar:
     def __init__(self,num_classes,device):
         self.num_classes = num_classes
+        self.device = device
         self.contents_dim = 100
         self.contents_emb = nn.Embedding(num_classes, self.contents_dim)
-        self.device = device
+        self.style_enc = self.make_style_enc("/home/hojun/Documents/code/Kofont5/KoFont-Diffusion2/hojun/style_enc.pth")
+    
     def make_stroke(self,contents):
         strokes_list = []
         for content in contents:
@@ -76,6 +80,20 @@ class CharAttar:
             stroke[last_consonant_letter + 19 + 21] = 1
             strokes_list.append(stroke)
         return strokes_list
+    
+    def make_style_enc(self,style_enc_path):
+        C ,C_in = 32, 1
+        sty_encoder = style_enc_builder(C_in, C)
+        checkpoint = torch.load(style_enc_path, map_location=self.device)
+        tmp_dict = {}
+        for k, v in checkpoint.items():
+            if k in sty_encoder.state_dict():
+                tmp_dict[k] = v
+        sty_encoder.load_state_dict(tmp_dict)
+        # frozen sty_encoder
+        for p in sty_encoder.parameters():
+            p.requires_grad = False
+        return sty_encoder.to(self.device)
 
     # def set_charAttr_dim(mode):
     #     pass
@@ -86,7 +104,7 @@ class CharAttar:
 
         contents_emb = None
         stroke =  None
-        style_emb = None
+        style = None
         contents_p, stroke_p = random.random(), random.random()
         if mode == 1:
 
@@ -100,24 +118,10 @@ class CharAttar:
             else:
                 stroke =  torch.FloatTensor(self.make_stroke(contents))
 
-            style_emb = torch.zeros(input_length,12288)
+            style = torch.zeros(input_length,128)
 
         elif mode == 2:
-            style_encoder = style_enc_builder(3, 3).to(self.device)
-            style_econder_dict = torch.load(
-                '/home/hojun/PycharmProjects/diffusion_font/code/KoFont-Diffusion/hojun/results/models/style_weight/style_encoder_weight.pth',
-                map_location=torch.device(self.device))
-            style_econder_dict = style_econder_dict
-            print(style_econder_dict)
-            change_style_econder_dict = OrderedDict()
-            for key, weight in style_econder_dict.items():
-                name = ".".join(key.split('.')[1:])
-                change_style_econder_dict[name] = weight
-            #     if "layers.2.gc.k_proj.weight" in key:
-            # # print(name,key)
-            style_encoder.load_state_dict(change_style_econder_dict, strict=False)
-            # style_encoder.load_state_dict(style_econder_dict)
-
+            
             if contents_p < 0.3:
                 contents_emb = torch.zeros(input_length,self.contents_dim)
             else:
@@ -129,14 +133,24 @@ class CharAttar:
                 stroke = torch.FloatTensor(self.make_stroke(contents))
 
             if contents_p < 0.3 and stroke_p < 0.3:
-                style_emb = torch.zeros(input_length,12288)
+                style = torch.zeros(input_length,128)
             else:
-                style_emb = style_encoder(images)
-                style_emb = torch.flatten(style_emb)
+                style = self.style_enc(images)
+                style = F.adaptive_avg_pool2d(style, (1, 1))
+                style = style.view(input_length, -1).cpu()
+
 
         elif mode == 3: #test
             contents_emb = torch.FloatTensor(self.contents_emb(contents_index))
             stroke = torch.FloatTensor(self.make_stroke(contents))
-            style_emb = torch.zeros(input_length, 12288)
-        return torch.cat([contents_emb,stroke,style_emb],dim=1)
+            style = self.style_enc(images)
+            style = F.adaptive_avg_pool2d(style, (1, 1))
+            style = style.view(input_length, -1).cpu()
+            
+        elif mode == 4:
+            contents_emb = torch.FloatTensor(self.contents_emb(contents_index))
+            stroke = torch.FloatTensor(self.make_stroke(contents))
+            style = torch.zeros(input_length,128)
+            
+        return torch.cat([contents_emb,stroke,style],dim=1)
 
