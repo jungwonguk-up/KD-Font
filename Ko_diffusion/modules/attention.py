@@ -46,10 +46,10 @@ class Attention(nn.Module):
         super().__init__()
         assert query_dim 
 
-        # if not head_dim:
-        #     head_dim = query_dim
-        # inner_dim = num_heads * head_dim
-        inner_dim = 128 #TODO: temp val
+        if not head_dim:
+            head_dim = query_dim
+        inner_dim = num_heads * head_dim
+        # inner_dim = 128 #TODO: temp val
 
         self.cross = True if context_dim is not None else False
         if not self.cross:
