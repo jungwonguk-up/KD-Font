@@ -34,11 +34,11 @@ input_size = 64
 batch_size = 16
 num_classes = 11172
 lr = 3e-4
-n_epochs = 200
+n_epochs = 402
 use_amp = True
-resume_train = False
-file_num = 17
-train_dirs = '/home/hojun/PycharmProjects/diffusion_font/code/KoFont-Diffusion/hojun/make_font/data/Hangul_Characters_Image64_radomSampling420_GrayScale'
+resume_train = True
+file_num = "resblock_unet_test"
+train_dirs = "H:/data/Hangul_Characters_Image64_radomSampling420_GrayScale"
 sample_img_path = f'{train_dirs}/갊/62570_갊.png'
 stroke_text_path = "./text_weight/storke_txt.txt"
 style_enc_path = "./text_weight/style_enc.pth"
@@ -66,7 +66,7 @@ def plot_images(images):
 
 if __name__ == '__main__':
     # # wnadb disable mode select
-    os.environ["WANDB_DISABLED"] = "True"
+    # os.environ["WANDB_DISABLED"] = "True"
 
     #Set save file
     result_image_path = os.path.join("results", 'font_noStrokeStyle_{}'.format(file_num))
@@ -75,13 +75,13 @@ if __name__ == '__main__':
     os.makedirs(result_model_path, exist_ok=True)
     
     ## wandb init
-    # wandb.init(project="diffusion_font_test",
-    #            name="o2rabbit_change_context_dim_test",
-    #            config={"learning_rate": 0.0003,
-    #                    "architecture": "UNET",
-    #                    "dataset": "HOJUN_KOREAN_FONT64",
-    #                    "notes":"content, non_stoke, non_style/ 32 x 32"})
-    wandb.init(mode = "disabled")
+    wandb.init(project="diffusion_font_test",
+               name="Label Only (Linear) + t + (Cross Attention) lr 8e-5 ~400epoch",
+               config={"learning_rate": 0.00008,
+                       "architecture": "UNET",
+                       "dataset": "HOJUN_KOREAN_FONT64",
+                       "notes":"content, non_stoke, non_style/ 32 x 32"})
+    # wandb.init(mode = "disabled")
     # Set random seed, deterministic
     torch.cuda.manual_seed(seed)
     torch.manual_seed(seed)
@@ -110,7 +110,7 @@ if __name__ == '__main__':
     dataset = torchvision.datasets.ImageFolder(train_dirs,transform=transforms)
 
     #test set
-    n = range(0,len(dataset),200)
+    n = range(0,len(dataset),10)
     print("len : ",n)
     dataset = Subset(dataset, n)
 
@@ -132,11 +132,11 @@ if __name__ == '__main__':
         optimizer = optim.AdamW(model.parameters(), lr=lr)
 
         #load weight
-        start_epoch = 40
-        model.load_state_dict(torch.load(f'D:/workspace2/models/font_noStrokeStyle_13/ckpt_2_{start_epoch}.pt'))
+        start_epoch = 200
+        model.load_state_dict(torch.load(f'./models/font_noStrokeStyle_{file_num}/ckpt_2_{start_epoch}.pt'))
 
         #load optimzer
-        optimizer.load_state_dict(torch.load(f'D:/workspace2/models/font_noStrokeStyle_13/optim_2_{start_epoch}.pt'))
+        optimizer.load_state_dict(torch.load(f'./models/font_noStrokeStyle_{file_num}/optim_2_{start_epoch}.pt'))
         for state in optimizer.state.values():
             for k, v in state.items():
                 if isinstance(v, torch.Tensor):
