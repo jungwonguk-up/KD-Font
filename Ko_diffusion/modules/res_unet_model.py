@@ -143,9 +143,12 @@ class BasicBlock(nn.Module):
         self.mid = mid_block
 
         if self.mid:
+            assert self.in_ch == self.out_ch
+            self.mid_head_dim = self.mid_ch // num_heads
+
             self.res1 = ResBlock(self.in_ch, self.mid_ch, emb_channels, norm_num_groups, dropout)
-            self.tf = TrasformerBlock(self.mid_ch, num_heads, head_dim, context_dim, depth, dropout) 
-            self.res2 = ResBlock(self.mid_ch, self.in_ch, emb_channels, norm_num_groups, dropout)
+            self.tf = TrasformerBlock(self.mid_ch, num_heads, head_dim=self.mid_head_dim, context_dim=context_dim, depth=depth, dropout=dropout) 
+            self.res2 = ResBlock(self.mid_ch, self.out_ch, emb_channels, norm_num_groups, dropout)
         else:
             self.res1 = ResBlock(self.in_ch, self.out_ch, emb_channels, norm_num_groups, dropout)
             self.tf = TrasformerBlock(self.out_ch, num_heads, head_dim, context_dim, depth, dropout) if self.use_tf else None
@@ -233,7 +236,8 @@ class Unet(nn.Module):
         self.enc8 = BasicBlock(self.model_ch*4, self.model_ch*4, num_heads=self.num_heads, head_dim=(self.model_ch*4)//num_heads, context_dim=self.context_dim, depth=self.depth, use_transformer_block=False)
         
         # mid
-        self.mid = BasicBlock(self.model_ch*4, self.model_ch*8, num_heads=self.num_heads, head_dim=(self.model_ch*8)//num_heads, context_dim=self.context_dim, depth=self.depth, mid_block=True)
+        # inner dim = in_ch * 2 
+        self.mid = BasicBlock(self.model_ch*4, self.model_ch*4, num_heads=self.num_heads, head_dim=(self.model_ch*8)//num_heads, context_dim=self.context_dim, depth=self.depth, mid_block=True)
 
         # level4
         # in_channels = x_ch + skip_ch
