@@ -82,7 +82,7 @@ class Attention(nn.Module):
         k = self.to_k(context)
         v = self.to_v(context)
 
-        q, k, v = map(lambda t: t.view(b, -1, h, d).permute(0, 2, 1, 3).contiguous().view(b, h, -1, d), (q, k, v)) # b n (h d) -> b h n d
+        q, k, v = map(lambda t: t.view(b, -1, h, d).permute(0, 2, 1, 3), (q, k, v)) # b n (h d) -> b h n d
 
         # sim = einsum('b i d, b j d -> b i j' , q, k) * self.scale
         # attn = sim.softmax(dim=-1)
@@ -92,7 +92,8 @@ class Attention(nn.Module):
         # with sdp_kernel(enable_flash=True, enable_math=False, enable_mem_efficient=False): # enable_mem_efficient 는 계산값 일관성이 떨어진다고 한다
         out = F.scaled_dot_product_attention(q, k, v)
 
-        out = out.permute(0, 2, 1, 3).contiguous().view(b, -1, h*d) # (b h) n d -> b n (h d)
+        # out = out.permute(0, 2, 1, 3).contiguous().view(b, -1, h*d) # (b h) n d -> b n (h d)
+        out = out.permute(0, 2, 1, 3).view(b, -1, h*d) # b h n d -> b n (h d)
 
         return self.to_out(out)
 
