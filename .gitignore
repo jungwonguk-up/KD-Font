@@ -26,4 +26,4 @@ image
 *.ipynb
 *png
 
-./static
+static

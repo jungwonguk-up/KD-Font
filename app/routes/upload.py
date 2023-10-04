@@ -23,8 +23,8 @@ async def upload_file(file: UploadFile = File(...)) -> dict:
     # image full path
     img_full_path = workspace / file_path
 
-    with open(str(img_full_path), 'wb') as myfile:
+    with open(str(img_full_path), 'wb') as uploadfile:
         contents = await file.read()
-        myfile.write(contents)
+        uploadfile.write(contents)
     
     return {"message": "image upload sucessfully"}
