@@ -14,7 +14,7 @@ app = FastAPI()
 
 #TODO: include_route
 app.include_router(upload_router, prefix="/upload")
-app.include_router(inference_router)
+app.include_router(inference_router, prefix="/inference")
 
 
 #TODO : middleware

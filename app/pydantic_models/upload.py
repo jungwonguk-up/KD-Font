@@ -3,9 +3,3 @@
 
 from pydantic import BaseModel
 
-
-class UploadData(BaseModel):
-    img_path: str
-    thumb_path: str
-
-    #TODO: sample data
