@@ -2,7 +2,7 @@
 from pathlib import Path
 
 from fastapi import APIRouter, Body, UploadFile, File, Form
-from pydantic_models.upload import UploadData
+# from pydantic_models.upload import UploadData
 
 from library.func import create_workspace, read_image, save_image
 
