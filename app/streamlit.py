@@ -3,10 +3,11 @@ import requests
 from PIL import Image
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 import uuid
+import io
 
 
 # set url
-url = 'http://localhost:8000/upload/'
+url = 'http://localhost:8000'
 
 
 st.title("hello world")
@@ -19,18 +20,24 @@ if st.button("upload"):
 
         image = Image.open(img_file)
         st.image(image)
-        
-        uuid = {"uuid": str(uuid.uuid4())[:8]}
+
+        uuid = str(uuid.uuid4())[:8]
+        uuid_dict = {"uuid": uuid}
         # uuid = json.dumps(uuid)
-        print(uuid)
+        print(uuid_dict)
         files = {"file": img_file.getvalue()}
 
-        response = requests.post(url=url,
-                                 data=uuid,
+        post_response = requests.post(url=url + '/upload/',
+                                 data=uuid_dict,
                                  files=files,)
         
         st.write("image uploaed successfully.")
-        print(response)
+        print(post_response)
+
+        get_response = requests.get(url=url + f'/inference/{uuid}')
+        
+        get_image = Image.open(io.BytesIO(get_response.content))
+        st.image(get_image)
         
         
         # encoder = MultipartEncoder(

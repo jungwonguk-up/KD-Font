@@ -4,7 +4,7 @@ from pathlib import Path
 from fastapi import APIRouter, Body, UploadFile, File, Form
 # from pydantic_models.upload import UploadData
 
-from library.func import create_workspace, read_image, save_image
+from library.func import get_workspace, read_image, save_image
 
 
 upload_router = APIRouter(tags=["upload"])
@@ -17,7 +17,7 @@ async def upload_file(uuid: str = Form(None), file: UploadFile = File(...)) -> d
     print(uuid)
 
     # create workspace
-    workspace = create_workspace(uuid)
+    workspace = get_workspace(uuid)
 
     image = read_image(file)
 

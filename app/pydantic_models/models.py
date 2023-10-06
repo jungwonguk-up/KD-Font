@@ -2,4 +2,5 @@
 # DB 연결할지는 이후 판단 후 구현
 
 from pydantic import BaseModel
+from typing import List, Optional
 

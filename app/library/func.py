@@ -6,7 +6,7 @@ import numpy as np
 from fastapi import UploadFile, HTTPException, status
 from pathlib import Path
 from PIL import Image
-\
+
 # import markdown
 import functools
 from pydantic_settings import BaseSettings
@@ -19,7 +19,7 @@ class Settings(BaseSettings):
 settings = Settings()
 
 
-def create_workspace(uuid):
+def get_workspace(uuid):
     """
     Return workspace path
     """
