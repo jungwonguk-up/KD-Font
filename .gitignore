@@ -5,3 +5,4 @@ hojun/wandb/*
 hojun/make_font/temp.ipynb
 hojun/nohup.out
 *.pyc
+*.png
