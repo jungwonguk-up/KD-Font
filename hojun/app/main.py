@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from routers.route import user_router
 from database.db import Settings
 
 import uvicorn
@@ -9,7 +10,7 @@ import uvicorn
 app = FastAPI()
 settings = Settings()
 
-app.include_router()
+app.include_router(user_router)
 
 origins = ['*']
 app.add_middleware(CORSMiddleware,

@@ -33,3 +33,6 @@ image
 *.ipynb
 *png
 static
+
+.env
+tmp_db

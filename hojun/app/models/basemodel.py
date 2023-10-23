@@ -6,10 +6,10 @@ from typing import Optional, List
 class User(Document):
     id: str
     email: EmailStr
-    original_image: Optional[str]
-    cropped_image: Optional[str]
-    sampling_images: Optional[List[str]]
-    example_image: Optional[str]
+    original_image: Optional[str] = None
+    cropped_image: Optional[str] = None
+    sampling_images: Optional[List[str]] = None
+    example_image: Optional[str] = None
 
     model_config = {
         "json_schema_extra": {
