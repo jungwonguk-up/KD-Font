@@ -3,21 +3,21 @@ from pydantic import BaseModel, EmailStr
 from typing import Optional, List
 
 
-class User(Document):
+class UserRequest(Document):
     id: str
     email: EmailStr
-    original_image: Optional[str] = None
-    cropped_image: Optional[str] = None
-    sampling_images: Optional[List[str]] = None
-    example_image: Optional[str] = None
+    original_image_path: Optional[str] = None
+    cropped_image_path: Optional[str] = None
+    sampling_images_path: Optional[List[str]] = None
+    example_image_path: Optional[str] = None
 
     model_config = {
         "json_schema_extra": {
             "example": {"id": "1234 (uuid)",
                         "email": "abc@naver.com",
-                        "original_image": ".../images/original_img.png",
-                        "cropped_image:": ".../images/cropped_img.png",
-                        "sampling_images": [".../images/sample1.png", ".../images/sample2.png"],
-                        "example_images": ".../images/example_img.png"}
+                        "original_image_path": ".../images/original_img.png",
+                        "cropped_image_path:": ".../images/cropped_img.png",
+                        "sampling_images_path": [".../images/sample1.png", ".../images/sample2.png"],
+                        "example_images_path": ".../images/example_img.png"}
         }
     }
