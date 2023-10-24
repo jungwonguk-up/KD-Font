@@ -7,20 +7,21 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from typing import Any, List, Optional
 
 from models.basemodel import UserRequest
+from library.get_config import get_config
 
 
 # Setting Class
 class Settings(BaseSettings):
-    DATABASE_URL: Optional[str] = None # database url 
+    Database_URL: Optional[str] = get_config("Database_URL") # database url 
 
     async def initialize_db(self):
-        client = AsyncIOMotorClient(self.DATABASE_URL)
+        client = AsyncIOMotorClient(self.Database_URL)
 
         # init beanie
         await init_beanie(database=client.get_default_database(), document_models=[UserRequest,])
 
-    class Config:
-        env_file = '.env'
+    # class Config:
+    #     env_file = '.env'
 
 
 class Database:

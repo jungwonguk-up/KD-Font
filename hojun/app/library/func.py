@@ -1,21 +1,45 @@
-import base64
-import json
-import click
-import requests
+import os.path
+import uuid
+from fastapi import UploadFile, HTTPException, status
+from pathlib import Path
+from PIL import Image
+
+from library.get_config import get_config
 
 
+def get_storage_path(id: str):
+    """
+    Return storage path. if not exsit, make new dir
+    """
+    # base directory
+    storage_dir = Path(get_config("Image_storage_PATH"))
+    # UUID to prevent file overwrite
+    requset_id = Path(id)
+    # path concat
+    storage_path = storage_dir / requset_id
 
-def request_rest(id: str, image: bytes):
-    # serving_address = None #TODO
+    # check exist, or create new workspace path
+    if not os.path.exists(storage_path):
+        os.makedirs(storage_path)
+
+    return storage_path
+
+
+def read_image(file: UploadFile) -> Image:
+    """return Pillow Image instance from uploadfile"""
+    try:
+        image = Image.open(file.file).convert("RGB")
+    except:
+        raise HTTPException(
+            status_code=status.HTTP_406_NOT_ACCEPTABLE,
+            detail=f"{image.filename} is not image file."
+        )
+    return image
+
+
+def save_image(image: Image, path: str, format="png"):
+    """save image to path"""
+
+    image.save(f"{path}.{format}", format=format)
     
-    headers = {"Content-Type": "application/json"}
-    base64_image = base64.urlsafe_b64encode(image).decode("ascii")
-    request_dict = {"inputs": {"image": [base64_image]}}
-    response = requests.post(
-        # serving_address,
-        json.dumps(request_dict),
-        headers=headers,
-    )
-    return dict(response.json())['outputs'][0]
-
-
+#TODO delete_image

@@ -34,5 +34,6 @@ image
 *png
 static
 
-.env
+*.env
+*.yaml
 tmp_db
