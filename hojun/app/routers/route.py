@@ -11,6 +11,7 @@ from beanie import PydanticObjectId
 from database.db import Database
 from models.basemodel import UserRequest, UserRequestUpdate
 from library.func import get_storage_path, save_image, read_image
+from library.preprocess import image_preprocess
 
 from typing import List
 
@@ -36,19 +37,25 @@ requests_database = Database(UserRequest)
 
 @user_router.post("/")
 async def create_inference_request(email: str = Form(...), image_file: UploadFile = File(...)) -> dict:
+    # define user id by uuid
+    user_id = str(uuid.uuid4())
     # read image by pillow
     image_file = read_image(image_file)
-    # make path and save image
-    user_id = str(uuid.uuid4())
+    # get crop image
+    cropped_image = image_preprocess(image_file)
+    # make path and save original & crop image
     storage_path = get_storage_path(user_id)
     image_path = storage_path / Path("ori.png") #TODO 확장자는 따로 지정해줘야하나?
+    cropped_image_path = storage_path / Path("crop.png")
     save_image(image_file, str(storage_path/"ori"))
+    save_image(cropped_image, str(storage_path/"crop"))
     
-    # new db 
+    # create new db recode 
     user_request = UserRequest(
         id=user_id,
         email=email,
-        original_image_path=str(image_path)
+        original_image_path=str(image_path),
+        cropped_image_path=str(cropped_image_path)
     )
 
     await requests_database.save(user_request)
