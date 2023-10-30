@@ -1,4 +1,6 @@
 import os.path
+import io
+import aiofiles
 import uuid
 from fastapi import UploadFile, HTTPException, status
 from pathlib import Path
@@ -25,7 +27,7 @@ def get_storage_path(id: str):
     return storage_path
 
 
-def read_image(file: UploadFile) -> Image:
+async def read_image(file: UploadFile) -> Image:
     """return Pillow Image instance from uploadfile"""
     try:
         image = Image.open(file.file).convert("RGB")
@@ -37,9 +39,14 @@ def read_image(file: UploadFile) -> Image:
     return image
 
 
-def save_image(image: Image, path: str, format="png"):
+async def save_image(image: Image, path: str, format="png"):
     """save image to path"""
+    buffer = io.BytesIO()
+    image.save(buffer, format=format)
 
-    image.save(f"{path}.{format}", format=format)
+    async with aiofiles.open(path, "wb") as file:
+        await file.write(buffer.getbuffer())
+
+    # image.save(f"{path}.{format}", format=format)
     
 #TODO delete_image

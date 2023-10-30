@@ -5,17 +5,27 @@ import imutils
 from matplotlib import pyplot as plt
 
 
-def image_preprocess(image: Image.Image, 
-                     return_img_size: int = 400,
-                     black_threshold: int = 150
-                     ) -> Image.Image:
+async def image_preprocess(image: Image.Image, 
+                           return_img_size: int = 400,
+                           black_threshold: int = 150,
+                           inner_resize_width: int = 1200,
+                           ) -> Image.Image:
+    """
+    Detect Retangle and PerciveTransform Processing Function
+    image (pillow Image): input image
+    return_img_size (int): return image size, default = 400,
+    black_threshold (int): Treshold value to make black and white image
+    inner_resize_width (int): inner resize value for detect retangle in image. default = 1200 (experiment value)
+    """
 
     # assert type(image_array)
     size = return_img_size
 
     # convert pillow image to numpy array
     image_array = np.array(image)
-    resize_img = cv2.resize(image_array, dsize=(0,0), fx=0.5, fy=0.5, interpolation=cv2.INTER_LINEAR)
+    h, w, _ = image_array.shape
+    resize_ratio = inner_resize_width / w
+    resize_img = cv2.resize(image_array, dsize=(0,0), fx=resize_ratio, fy=resize_ratio, interpolation=cv2.INTER_LINEAR)
 
     # # convert the resize_img to grayscale, blur, and find edges
     gray = cv2.cvtColor(resize_img, cv2.COLOR_BGR2GRAY)
@@ -56,6 +66,6 @@ def image_preprocess(image: Image.Image,
     fn = lambda x : 255 if x > black_threshold else 0
     bw_image = image.convert('L').point(fn, mode='1')
 
-    #TODO 테두리 제거, 이미지 회전
+    # TODO 테두리 제거, 이미지 회전
 
     return bw_image

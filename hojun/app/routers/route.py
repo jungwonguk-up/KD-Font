@@ -3,6 +3,7 @@ import json
 import requests
 import uuid
 from pathlib import Path
+import asyncio
 
 from fastapi import APIRouter, Form, UploadFile, File, HTTPException, status
 from fastapi.responses import FileResponse
@@ -14,6 +15,12 @@ from library.func import get_storage_path, save_image, read_image
 from library.preprocess import image_preprocess
 
 from typing import List
+
+import time
+
+
+# 쓸 라우터랑 안쓸 라우터랑 분리하기?
+# TODO: 사용자 평가 db
 
 
 async def request_rest(id: str, image: bytes):
@@ -38,17 +45,34 @@ requests_database = Database(UserRequest)
 @user_router.post("/")
 async def create_inference_request(email: str = Form(...), image_file: UploadFile = File(...)) -> dict:
     # define user id by uuid
+    start_t = time.time()
+
+    print(f"request: {start_t}")
+
     user_id = str(uuid.uuid4())
     # read image by pillow
-    image_file = read_image(image_file)
+    image_file = await read_image(image_file)
     # get crop image
-    cropped_image = image_preprocess(image_file)
+    cropped_image = await image_preprocess(image_file)
     # make path and save original & crop image
     storage_path = get_storage_path(user_id)
     image_path = storage_path / Path("ori.png") #TODO 확장자는 따로 지정해줘야하나?
     cropped_image_path = storage_path / Path("crop.png")
-    save_image(image_file, str(storage_path/"ori"))
-    save_image(cropped_image, str(storage_path/"crop"))
+
+    before_save_t = time.time()
+
+    print(f"before save img: {time.time() - start_t}")
+
+    await asyncio.gather(
+        save_image(image_file, str(storage_path/"ori.png")),
+        save_image(cropped_image, str(storage_path/"crop.png"))
+    )
+
+    # await save_image(image_file, str(storage_path/"ori"))
+    # await save_image(cropped_image, str(storage_path/"crop"))
+
+    after_save_t = time.time()
+    print(f"after save img: {time.time() - before_save_t}")
     
     # create new db recode 
     user_request = UserRequest(
@@ -65,6 +89,9 @@ async def create_inference_request(email: str = Form(...), image_file: UploadFil
     # response = await request_rest(id=user_id,
     #                               image=image_file,)
     # if response:
+
+    print(f"after save db time: {time.time() - after_save_t}")
+    print(f"all time: {time.time() - start_t}")
 
     return {"message": "request info created sucessfully."}
 
