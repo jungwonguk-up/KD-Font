@@ -44,9 +44,9 @@
 - 정원국
   - Team lead, Lightweight development, Model train & inference, Model architecture desgin, Development of various tools
 - 신호준
-  - Data Analysis & Converting
+  - Data Analysis & Converting, ML Pipline, Development of various tools
 - 송영섭
-  - Backend
+  - Backend Develop, Development of various tools
 ---
 # Project Version
 
