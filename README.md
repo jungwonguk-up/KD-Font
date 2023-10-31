@@ -48,6 +48,10 @@
 - 송영섭
   - Backend
 ---
+# Project Version
+
+
+---
 
 # 프로젝트 데모
 
