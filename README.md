@@ -42,7 +42,7 @@
 </table>
 
 - 정원국
-  - Team lead, Lightweight, Model Train & Inference, Sampler Design, Test code
+  - Team lead, Lightweight development, Model train & inference, Model architecture desgin, Development of various tools
 - 신호준
   - Data Analysis & Converting
 - 송영섭
