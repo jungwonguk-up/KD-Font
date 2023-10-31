@@ -36,6 +36,7 @@ if __name__ == '__main__':
     os.environ['CUDA_VISIBLE_DEVICES'] = str(0)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+    model_path = '/root/paper_project/hojun/light_weight/onnx_model.onnx'
     model = UNet().to(device)
     ckpt = torch.load("light_weight/wieghts/ckpt_290.pt")
     model.load_state_dict(ckpt)
@@ -59,7 +60,7 @@ if __name__ == '__main__':
     n = range(0,len(dataset),10)
     dataset = Subset(dataset, n)
 
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True,num_workers=12)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True,num_workers=4)
 
     #sample_img
     sample_img = Image.open(sample_img_path)
@@ -83,7 +84,7 @@ if __name__ == '__main__':
         style_emb = torch.zeros(input_length,12288)
 
         y = torch.cat([contents_emb, strokes, style_emb], dim=1).to(device)
-        x = diffusion.test_sampling(model, input_length, y, cfg_scale=3)
+        x = diffusion.onnx_sampling(model_path, input_length, y, cfg_scale=3)
 
     elif mode == "manual":
         char_list = ['가,나,다,라,마,바,사,아,자,차,카,타,파,하']
@@ -91,8 +92,8 @@ if __name__ == '__main__':
         strokes = make_stroke(char_list)
         style_emb = torch.zeros(input_length, 12288)
         y = torch.cat([contents_emb, strokes, style_emb], dim=1).to(device)
-        x = diffusion.test_sampling(model,len(strokes), y, cfg_scale=3)
+        x = diffusion.onnx_sampling(model_path,len(strokes), y, cfg_scale=3)
         
     elif mode == "new":
         charAttar = CharAttar(num_classes=num_classes,device=device)
-        sampled_images = diffusion.portion_sampling(model, n=len(dataset.dataset.classes),sampleImage_len = sampleImage_len,dataset=dataset,mode =mode,charAttar=charAttar,sample_img=sample_img)
+        sampled_images = diffusion.onnx_sampling(model_path, n=len(dataset.dataset.classes),sampleImage_len = sampleImage_len,dataset=dataset,mode =mode,charAttar=charAttar,sample_img=sample_img)

@@ -7,6 +7,7 @@ from matplotlib import pyplot as plt
 from PIL import Image
 import random, os
 from collections import OrderedDict
+from torch.utils.data import Dataset
 
 from models.style_encoder import style_enc_builder
 
@@ -58,13 +59,26 @@ def make_stroke(contents):
         strokes_list.append(stroke)
     return strokes_list
 
+class NumpyDataset(Dataset):
+    def __init__(self, x_list, charAttr_list):
+        self.x_list = x_list
+        self.charAttr_list = charAttr_list
+
+    def __len__(self):
+        return len(self.x_list)
+
+    def __getitem__(self, idx):
+        x = self.x_list[idx]
+        charAttr = self.charAttr_list[idx]
+        return x, charAttr
+
 class CharAttar:
     def __init__(self,num_classes,device):
         self.num_classes = num_classes
         self.device = device
         self.contents_dim = 100
         self.contents_emb = nn.Embedding(num_classes, self.contents_dim)
-        self.style_enc = self.make_style_enc("/home/hojun/Documents/code/Kofont5/KoFont-Diffusion2/hojun/style_enc.pth")
+        self.style_enc = self.make_style_enc("/root/paper_project/hojun/style_enc.pth")
     
     def make_stroke(self,contents):
         strokes_list = []
