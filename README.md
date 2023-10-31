@@ -51,6 +51,7 @@
 # Project Version
 
 ### Version 1
+- [x] Korean model
 - [x] Self-Attention model
 - [x] ONNX, TensorRT Lightweight
 - [x] Labeling Tool
@@ -63,6 +64,7 @@
 
 ### Version2
 - [x] Cross-Attention model
+- [ ] Chinese model
 - [ ] Continuous Learning
 - [ ] User Feedback Pipline
 - [ ] Python Optimization
