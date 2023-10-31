@@ -50,6 +50,18 @@
 ---
 # Project Version
 
+### Version 1
+- [x] Self-Attention model
+- [x] ONNX, TensorRT Lightweight
+- [x] Labeling Tool
+- [x] OCR model and test pipline
+- [x] DDPM, DDIM backbone, Stroke Type Design
+- [x] ML Pipline, Backend
+- [x] Image Sampler
+- [x] TTF Transformer
+
+
+### Version2
 
 ---
 
