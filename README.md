@@ -64,6 +64,7 @@
 
 ### Version2
 - [x] Cross-Attention model
+- [ ] Service Page
 - [ ] Chinese model
 - [ ] Continuous Learning
 - [ ] User Feedback Pipline
