@@ -8,11 +8,7 @@ results/*
 
 checkpoints
 results
-Ko_diffusion/make_font/data/*
-Ko_diffusion/models/*
-Ko_diffusion/results/*
-Ko_diffusion/wandb/*/*
-Ko_diffusion/wandb/*
+
 Hangul_Characters_Image128
 Font-diff-main
 Ko_diff_base_chinese
@@ -24,4 +20,4 @@ Hangul_Characters_Image64_GrayScale
 image
 *.ipynb
 *png
-Version1/wandb
+wandb

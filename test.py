@@ -22,8 +22,8 @@ input_size = 64
 mode = "new"
 folder_name ="test_3"
 
-train_dirs = 'data/Hangul_Characters_Image64_radomSampling420_GrayScale'
-sample_img_path = 'data/62570_갊.png'
+train_dirs = 'data/sample_data'
+sample_img_path = 'sample_img/62570_갊.png'
 
 if __name__ == '__main__':
     wandb.init(project="diffusion_font_test_sampling", config={
