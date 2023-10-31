@@ -77,6 +77,7 @@
 ![Screenshot from 2023-11-01 05-42-18](https://github.com/jungwonguk/KoFont-Diffusion/assets/98310175/a4c454ef-563c-4404-b3d8-10987d6f484b)
 
 ### Sample Image
+<p align="center"><img src="https://github.com/jungwonguk/KoFont-Diffusion/assets/98310175/2dc6ea29-f81f-438b-abbc-8cfda906c58d"></p>
 
 ### **Web Demo**
 
