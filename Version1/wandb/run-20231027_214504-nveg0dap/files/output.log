@@ -1,0 +1,7 @@
+sampling:   0%|                                                                                                                                                                   | 0/999 [00:00<?, ?it/s]
+Traceback (most recent call last):
+  File "test_onnx.py", line 99, in <module>
+    sampled_images = diffusion.onnx_sampling(model_path, n=len(dataset.dataset.classes),sampleImage_len = sampleImage_len,dataset=dataset,mode =mode,charAttar=charAttar,sample_img=sample_img)
+  File "/root/paper_project/hojun/modules/diffusion.py", line 185, in onnx_sampling
+    "char" : batch_conditions.numpy()
+TypeError: can't convert cuda:0 device type tensor to numpy. Use Tensor.cpu() to copy the tensor to host memory first.

@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "test.py", line 56, in <module>
+    dataset = torchvision.datasets.ImageFolder(train_dirs,transform=transforms)
+  File "/usr/local/lib/python3.8/dist-packages/torchvision/datasets/folder.py", line 310, in __init__
+    super(ImageFolder, self).__init__(root, loader, IMG_EXTENSIONS if is_valid_file is None else None,
+  File "/usr/local/lib/python3.8/dist-packages/torchvision/datasets/folder.py", line 146, in __init__
+    samples = self.make_dataset(self.root, class_to_idx, extensions, is_valid_file)
+  File "/usr/local/lib/python3.8/dist-packages/torchvision/datasets/folder.py", line 192, in make_dataset
+    return make_dataset(directory, class_to_idx, extensions=extensions, is_valid_file=is_valid_file)
+  File "/usr/local/lib/python3.8/dist-packages/torchvision/datasets/folder.py", line 102, in make_dataset
+    raise FileNotFoundError(msg)
+FileNotFoundError: Found no valid file for the classes 갌, 갔, 갵, 걲, 걹, 겮, 겼, 겾, 곅, 곭, 광, 굀, 굄, 굍, 귚, 균, 긂, 긛, 긟, 긺, 깄, 깇, 깍, 깎, 깬, 깮, 꺀, 꺇, 꺞, 껏, 껕, 껪, 껳, 꼫, 꽎, 꽝, 꽤, 꾇, 꾏, 꾓, 꿉, 꿍, 꿗, 꿚, 꿥, 난, 냃, 냻, 넄, 넉, 넪, 넲, 녺, 놝, 뇉, 눷, 뉡, 늍, 늛, 늺, 닒, 닶, 댈, 댞, 덎, 덞, 덳, 뎀, 뎕, 뎣, 뎭, 돞, 돬, 돶, 됂, 됪, 됺, 두, 뒠, 뒡, 뒤, 뒮, 뒲, 듛, 딹, 딿, 땂, 땡, 땪, 땸, 떀, 떂, 떐, 떖, 떟, 떥, 떰, 뗹, 똉, 똌, 뙚, 뙧, 뙽, 뚏, 뚚, 뚞, 뚤, 락, 띾, 럊, 럕, 럛, 럲, 렃, 렪, 렱, 롯, 뢀, 뢗, 뢥, 뢧, 룚, 룻, 뤦, 릗, 릤, 릳, 먫, 멤, 멫, 몆, 몊, 몍, 몐, 몣, 뫌, 묏, 묙, 무, 묵, 묹, 뭈, 뭫, 뭹, 뮞, 뮸, 믗, 믧, 믩, 믭, 밙, 받, 밡, 밭, 뱅, 벙, 벪, 벳, 병, 볣, 봒, 봥, 봾, 뵇, 뵞, 뵭, 뵿, 붧, 붿, 뷛, 븃, 븇, 븋, 빽, 뺂, 뺚, 뺛, 뺶, 뻜, 뻭, 뼯, 뽍, 뽏, 뽮, 뽺, 뽽, 뿌, 뿣, 쀬, 쁘, 쁢, 삈, 삚, 삡, 삤, 샛, 샱, 섈, 섔, 셆, 셚, 셨, 쇃, 쇕, 숋, 숕, 숚, 쉍, 쉢, 슫, 슰, 슲, 싦, 싩, 싵, 쌬, 쎈, 쎹, 쏉, 쏘, 쏠, 쏡, 쏸, 쒇, 쒮, 쓀, 쓃, 쓓, 쓘, 쓜, 쓠, 쓫, 쓽, 씗, 씶, 씿, 얔, 엉, 엝, 엨, 엻, 옛, 옢, 왃, 왥, 욍, 욣, 욥, 욨, 욬, 웅, 웜, 웢, 웤, 웬, 웸, 윌, 윕, 율, 작, 잠, 쟒, 젅, 졇, 졎, 좀, 좋, 좌, 좺, 죋, 죍, 죠, 죵, 줒, 줳, 줺, 줽, 쥅, 즏, 즟, 즡, 즲, 쩁, 쩞, 쪍, 쪑, 쪡, 쪥, 쪰, 쪳, 쫅, 쬛, 쭎, 쭩, 쭰, 쮚, 쮜, 쯄, 쯆, 쯗, 쯘, 쯰, 찄, 찣, 찺, 챗, 챣, 첃, 첊, 첍, 촌, 촢, 쵩, 쵫, 쵹, 춗, 춲, 췕, 췚, 췜, 췦, 췵, 츀, 츄, 츒, 츻, 칇, 캴, 캻, 캼, 콅, 콕, 콟, 쾤, 쾨, 쿠, 퀒, 퀔, 퀖, 퀩, 큓, 큣, 큫, 큸, 킏, 킖, 킞, 킫, 킲, 킵, 탇, 턀, 털, 턿, 텐, 텕, 텝, 텲, 톡, 톥, 톿, 퇌, 퇐, 퇝, 툖, 퉃, 튄, 트, 틃, 틞, 틟, 틨, 팄, 팫, 팱, 퍂, 퍪, 펄, 펎, 펚, 펯, 퐘, 퐵, 퐼, 푶, 푽, 풴, 퓀, 퓐, 퓤, 퓦, 퓲, 픏, 픐, 핊, 핕, 핵, 핶, 행, 햍, 햓, 햜, 햯, 햱, 헂, 헔, 혌, 혲, 홀, 홋, 홦, 횃, 횆, 횛, 횦, 횭, 횽, 훤, 훻. Supported extensions are: .jpg, .jpeg, .png, .ppm, .bmp, .pgm, .tif, .tiff, .webp

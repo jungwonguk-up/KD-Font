@@ -1,0 +1,10 @@
+
+sampling:   0%|                                                                                                                                                                   | 0/999 [00:00<?, ?it/s]/root/paper_project/hojun/modules/diffusion.py:197: UserWarning: Creating a tensor from a list of numpy.ndarrays is extremely slow. Please consider converting the list to a single numpy.ndarray with numpy.array() before converting to a tensor. (Triggered internally at  ../torch/csrc/utils/tensor_new.cpp:201.)
+  batch_noise = torch.tensor(batch_noise)
+sampling:   0%|                                                                                                                                                                   | 0/999 [00:02<?, ?it/s]
+Traceback (most recent call last):
+  File "test_onnx.py", line 99, in <module>
+    sampled_images = diffusion.onnx_sampling(model_path, n=len(dataset.dataset.classes),sampleImage_len = sampleImage_len,dataset=dataset,mode =mode,charAttar=charAttar,sample_img=sample_img)
+  File "/root/paper_project/hojun/modules/diffusion.py", line 198, in onnx_sampling
+    predicted_noise = torch.cat([predicted_noise,batch_noise],dim=0)
+RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cuda:0 and cpu! (when checking argument for argument tensors in method wrapper___cat)

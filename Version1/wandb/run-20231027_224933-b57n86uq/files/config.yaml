@@ -1,0 +1,41 @@
+wandb_version: 1
+
+learning_rate:
+  desc: null
+  value: 0.0003
+architecture:
+  desc: null
+  value: UNET
+dataset:
+  desc: null
+  value: HOJUN_KOREAN_FONT64
+notes:
+  desc: null
+  value: content, yes_stoke, non_style/ 64 x 64, 420 dataset
+_wandb:
+  desc: null
+  value:
+    python_version: 3.8.10
+    cli_version: 0.15.12
+    framework: torch
+    is_jupyter_run: false
+    is_kaggle_kernel: false
+    start_time: 1698446973.939396
+    t:
+      1:
+      - 1
+      - 41
+      - 55
+      2:
+      - 1
+      - 41
+      - 55
+      3:
+      - 13
+      - 16
+      - 23
+      4: 3.8.10
+      5: 0.15.12
+      8:
+      - 5
+      13: linux-x86_64

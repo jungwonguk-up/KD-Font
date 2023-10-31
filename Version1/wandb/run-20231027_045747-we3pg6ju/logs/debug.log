@@ -1,0 +1,28 @@
+2023-10-27 04:57:47,981 INFO    MainThread:123263 [wandb_setup.py:_flush():76] Current SDK version is 0.15.12
+2023-10-27 04:57:47,981 INFO    MainThread:123263 [wandb_setup.py:_flush():76] Configure stats pid to 123263
+2023-10-27 04:57:47,981 INFO    MainThread:123263 [wandb_setup.py:_flush():76] Loading settings from /root/.config/wandb/settings
+2023-10-27 04:57:47,981 INFO    MainThread:123263 [wandb_setup.py:_flush():76] Loading settings from /root/paper_project/hojun/wandb/settings
+2023-10-27 04:57:47,981 INFO    MainThread:123263 [wandb_setup.py:_flush():76] Loading settings from environment variables: {}
+2023-10-27 04:57:47,981 INFO    MainThread:123263 [wandb_setup.py:_flush():76] Applying setup settings: {'_disable_service': False}
+2023-10-27 04:57:47,981 INFO    MainThread:123263 [wandb_setup.py:_flush():76] Inferring run settings from compute environment: {'program_relpath': 'hojun/test.py', 'program_abspath': '/root/paper_project/hojun/test.py', 'program': 'test.py'}
+2023-10-27 04:57:47,981 INFO    MainThread:123263 [wandb_setup.py:_flush():76] Applying login settings: {'api_key': '***REDACTED***'}
+2023-10-27 04:57:47,981 INFO    MainThread:123263 [wandb_init.py:_log_setup():528] Logging user logs to /root/paper_project/hojun/wandb/run-20231027_045747-we3pg6ju/logs/debug.log
+2023-10-27 04:57:47,981 INFO    MainThread:123263 [wandb_init.py:_log_setup():529] Logging internal logs to /root/paper_project/hojun/wandb/run-20231027_045747-we3pg6ju/logs/debug-internal.log
+2023-10-27 04:57:47,981 INFO    MainThread:123263 [wandb_init.py:init():568] calling init triggers
+2023-10-27 04:57:47,981 INFO    MainThread:123263 [wandb_init.py:init():575] wandb.init called with sweep_config: {}
+config: {'learning_rate': 0.0003, 'architecture': 'UNET', 'dataset': 'HOJUN_KOREAN_FONT64', 'notes': 'content, yes_stoke, non_style/ 64 x 64, 420 dataset'}
+2023-10-27 04:57:47,981 INFO    MainThread:123263 [wandb_init.py:init():618] starting backend
+2023-10-27 04:57:47,982 INFO    MainThread:123263 [wandb_init.py:init():622] setting up manager
+2023-10-27 04:57:47,983 INFO    MainThread:123263 [backend.py:_multiprocessing_setup():105] multiprocessing start_methods=fork,spawn,forkserver, using: spawn
+2023-10-27 04:57:47,984 INFO    MainThread:123263 [wandb_init.py:init():628] backend started and connected
+2023-10-27 04:57:47,985 INFO    MainThread:123263 [wandb_init.py:init():720] updated telemetry
+2023-10-27 04:57:47,996 INFO    MainThread:123263 [wandb_init.py:init():753] communicating run to backend with 90.0 second timeout
+2023-10-27 04:57:48,540 INFO    MainThread:123263 [wandb_run.py:_on_init():2220] communicating current version
+2023-10-27 04:57:48,570 INFO    MainThread:123263 [wandb_run.py:_on_init():2229] got version response 
+2023-10-27 04:57:48,570 INFO    MainThread:123263 [wandb_init.py:init():804] starting run threads in backend
+2023-10-27 04:57:48,671 INFO    MainThread:123263 [wandb_run.py:_console_start():2199] atexit reg
+2023-10-27 04:57:48,671 INFO    MainThread:123263 [wandb_run.py:_redirect():2054] redirect: wrap_raw
+2023-10-27 04:57:48,671 INFO    MainThread:123263 [wandb_run.py:_redirect():2119] Wrapping output streams.
+2023-10-27 04:57:48,672 INFO    MainThread:123263 [wandb_run.py:_redirect():2144] Redirects installed.
+2023-10-27 04:57:48,672 INFO    MainThread:123263 [wandb_init.py:init():845] run started, returning control to user process
+2023-10-27 04:58:01,900 WARNING MsgRouterThr:123263 [router.py:message_loop():77] message_loop has been closed

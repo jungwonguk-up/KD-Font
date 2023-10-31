@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "test.py", line 65, in <module>
+    sample_img = Image.open(sample_img_path)
+  File "/usr/local/lib/python3.8/dist-packages/PIL/Image.py", line 3218, in open
+    fp = builtins.open(filename, "rb")
+FileNotFoundError: [Errno 2] No such file or directory: 'data/Hangul_Characters_Image64_radomSampling420_GrayScale/갊/나눔손글씨강인한위로_갊.png'

@@ -1,0 +1,6 @@
+Traceback (most recent call last):
+  File "test_onnx.py", line 99, in <module>
+    sampled_images = diffusion.onnx_sampling(model_path, n=len(dataset.dataset.classes),sampleImage_len = sampleImage_len,dataset=dataset,mode =mode,charAttar=charAttar,sample_img=sample_img)
+  File "/root/paper_project/hojun/modules/diffusion.py", line 161, in onnx_sampling
+    model = onnx.load(onnx_model_path).to('cuda')
+AttributeError: to

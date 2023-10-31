@@ -1,0 +1,108 @@
+{
+    "os": "Linux-6.2.0-35-generic-x86_64-with-glibc2.29",
+    "python": "3.8.10",
+    "heartbeatAt": "2023-10-27T22:03:43.288607",
+    "startedAt": "2023-10-27T22:03:42.647762",
+    "docker": null,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "test_onnx.py",
+    "codePathLocal": "test_onnx.py",
+    "codePath": "hojun/test_onnx.py",
+    "git": {
+        "remote": "https://github.com/jungwonguk/KoFont-Diffusion.git",
+        "commit": "22fc086e1bafe3c10a1faf0dcf4d8ce26d156a46"
+    },
+    "email": null,
+    "root": "/root/paper_project",
+    "host": "c46754deb47b",
+    "username": "root",
+    "executable": "/usr/local/bin/python",
+    "cpu_count": 6,
+    "cpu_count_logical": 12,
+    "cpu_freq": {
+        "current": 3874.470666666666,
+        "min": 2200.0,
+        "max": 3700.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 3803.431,
+            "min": 2200.0,
+            "max": 3700.0
+        },
+        {
+            "current": 4388.315,
+            "min": 2200.0,
+            "max": 3700.0
+        },
+        {
+            "current": 4649.19,
+            "min": 2200.0,
+            "max": 3700.0
+        },
+        {
+            "current": 4153.388,
+            "min": 2200.0,
+            "max": 3700.0
+        },
+        {
+            "current": 4614.508,
+            "min": 2200.0,
+            "max": 3700.0
+        },
+        {
+            "current": 4257.32,
+            "min": 2200.0,
+            "max": 3700.0
+        },
+        {
+            "current": 3724.615,
+            "min": 2200.0,
+            "max": 3700.0
+        },
+        {
+            "current": 4629.951,
+            "min": 2200.0,
+            "max": 3700.0
+        },
+        {
+            "current": 4649.508,
+            "min": 2200.0,
+            "max": 3700.0
+        },
+        {
+            "current": 4436.627,
+            "min": 2200.0,
+            "max": 3700.0
+        },
+        {
+            "current": 4410.425,
+            "min": 2200.0,
+            "max": 3700.0
+        },
+        {
+            "current": 4061.089,
+            "min": 2200.0,
+            "max": 3700.0
+        }
+    ],
+    "disk": {
+        "/": {
+            "total": 656.0237274169922,
+            "used": 65.7785758972168
+        }
+    },
+    "gpu": "NVIDIA GeForce RTX 4090",
+    "gpu_count": 1,
+    "gpu_devices": [
+        {
+            "name": "NVIDIA GeForce RTX 4090",
+            "memory_total": 25757220864
+        }
+    ],
+    "memory": {
+        "total": 31.258056640625
+    }
+}

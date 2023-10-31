@@ -1,0 +1,27 @@
+
+
+
+
+sampling:   5%|██████▍                                                                                                                           | 49/999 [00:09<03:00,  5.26it/s]
+Traceback (most recent call last):
+  File "test.py", line 98, in <module>
+    sampled_images = diffusion.portion_sampling(model, n=len(dataset.dataset.classes),sampleImage_len = sampleImage_len,dataset=dataset,mode =mode,charAttar=charAttar,sample_img=sample_img)
+  File "/root/paper_project/hojun/modules/diffusion.py", line 86, in portion_sampling
+    uncond_batch_noise = model(batch_x, batch_t, torch.zeros_like(batch_conditions))
+  File "/usr/local/lib/python3.8/dist-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/root/paper_project/hojun/models/utils.py", line 166, in forward
+    x4 = self.sa3(x4)
+  File "/usr/local/lib/python3.8/dist-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/root/paper_project/hojun/models/utils.py", line 23, in forward
+    attention_value, _ = self.mha(x_ln, x_ln, x_ln)
+  File "/usr/local/lib/python3.8/dist-packages/torch/nn/modules/module.py", line 1102, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/usr/local/lib/python3.8/dist-packages/torch/nn/modules/activation.py", line 1003, in forward
+    attn_output, attn_output_weights = F.multi_head_attention_forward(
+  File "/usr/local/lib/python3.8/dist-packages/torch/nn/functional.py", line 5101, in multi_head_attention_forward
+    attn_output, attn_output_weights = _scaled_dot_product_attention(q, k, v, attn_mask, dropout_p)
+  File "/usr/local/lib/python3.8/dist-packages/torch/nn/functional.py", line 4844, in _scaled_dot_product_attention
+    attn = torch.bmm(q, k.transpose(-2, -1))
+KeyboardInterrupt

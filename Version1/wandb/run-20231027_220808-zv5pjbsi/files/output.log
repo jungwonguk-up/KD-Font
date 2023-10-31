@@ -1,0 +1,13 @@
+sampling:   0%|                                                                                                                                                                   | 0/999 [00:00<?, ?it/s]
+Traceback (most recent call last):
+  File "test_onnx.py", line 99, in <module>
+    sampled_images = diffusion.onnx_sampling(model_path, n=len(dataset.dataset.classes),sampleImage_len = sampleImage_len,dataset=dataset,mode =mode,charAttar=charAttar,sample_img=sample_img)
+  File "/root/paper_project/hojun/modules/diffusion.py", line 183, in onnx_sampling
+    for batch_x, batch_conditions in dataloader:
+  File "/usr/local/lib/python3.8/dist-packages/torch/utils/data/dataloader.py", line 521, in __next__
+    data = self._next_data()
+  File "/usr/local/lib/python3.8/dist-packages/torch/utils/data/dataloader.py", line 561, in _next_data
+    data = self._dataset_fetcher.fetch(index)  # may raise StopIteration
+  File "/usr/local/lib/python3.8/dist-packages/torch/utils/data/_utils/fetch.py", line 52, in fetch
+    return self.collate_fn(data)
+TypeError: custom_collate_fn() missing 1 required positional argument: 'batch'

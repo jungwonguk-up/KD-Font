@@ -1,0 +1,13 @@
+sampling:   0%|                                                                                                                                                                   | 0/999 [00:00<?, ?it/s]
+Traceback (most recent call last):
+  File "test_onnx.py", line 99, in <module>
+    sampled_images = diffusion.onnx_sampling(model_path, n=len(dataset.dataset.classes),sampleImage_len = sampleImage_len,dataset=dataset,mode =mode,charAttar=charAttar,sample_img=sample_img)
+  File "/root/paper_project/hojun/modules/diffusion.py", line 199, in onnx_sampling
+    batch_noise = ort_session.run(None, input_data_condition)
+  File "/usr/local/lib/python3.8/dist-packages/onnxruntime/capi/onnxruntime_inference_collection.py", line 188, in run
+    return self._sess.run(output_names, input_feed, run_options)
+RuntimeError: Input must be a list of dictionaries or a single numpy array for input 't'.
+<class 'numpy.ndarray'>
+<class 'numpy.ndarray'>
+(18, 1, 64, 64)
+(18, 296)

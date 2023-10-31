@@ -1,0 +1,9 @@
+sampling:   0%|                                                                                                                                                                   | 0/999 [00:00<?, ?it/s]
+Traceback (most recent call last):
+  File "test_onnx.py", line 99, in <module>
+    sampled_images = diffusion.onnx_sampling(model_path, n=len(dataset.dataset.classes),sampleImage_len = sampleImage_len,dataset=dataset,mode =mode,charAttar=charAttar,sample_img=sample_img)
+  File "/root/paper_project/hojun/modules/diffusion.py", line 180, in onnx_sampling
+    dataloader = DataLoader(dataset,batch_size=batch_size,shuffle=False, collate_fn = custom_collate_fn(batch_size))
+  File "/root/paper_project/hojun/modules/diffusion.py", line 163, in custom_collate_fn
+    batch_x, batch_conditions = zip(*batch)
+TypeError: type object argument after * must be an iterable, not int

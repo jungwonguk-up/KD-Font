@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "test.py", line 97, in <module>
+    charAttar = CharAttar(num_classes=num_classes,device=device)
+  File "/root/paper_project/hojun/modules/utils.py", line 67, in __init__
+    self.style_enc = self.make_style_enc("style_enc.pth")
+  File "/root/paper_project/hojun/modules/utils.py", line 87, in make_style_enc
+    checkpoint = torch.load(style_enc_path, map_location=self.device)
+  File "/usr/local/lib/python3.8/dist-packages/torch/serialization.py", line 594, in load
+    with _open_file_like(f, 'rb') as opened_file:
+  File "/usr/local/lib/python3.8/dist-packages/torch/serialization.py", line 230, in _open_file_like
+    return _open_file(name_or_buffer, mode)
+  File "/usr/local/lib/python3.8/dist-packages/torch/serialization.py", line 211, in __init__
+    super(_open_file, self).__init__(open(name, mode))
+FileNotFoundError: [Errno 2] No such file or directory: 'style_enc.pth'
