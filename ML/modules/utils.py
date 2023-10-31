@@ -78,7 +78,7 @@ class CharAttar:
         self.device = device
         self.contents_dim = 100
         self.contents_emb = nn.Embedding(num_classes, self.contents_dim)
-        self.style_enc = self.make_style_enc("/root/paper_project/hojun/style_enc.pth")
+        self.style_enc = self.make_style_enc("/root/paper_project/weight/style_enc.pth")
     
     def make_stroke(self,contents):
         strokes_list = []

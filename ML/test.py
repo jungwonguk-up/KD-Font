@@ -12,7 +12,7 @@ from modules.utils import plot_images, test_save_images,make_stroke,stroke_to_ch
 from models.utils import UNet
 from modules.utils import CharAttar
 batch_size = 8 #####
-sampleImage_len = 36
+sampleImage_len = 25
 
 
 num_classes = 420
@@ -21,9 +21,8 @@ contents_dim = 100
 input_size = 64
 mode = "new"
 folder_name ="test_3"
-
-train_dirs = 'data/sample_data'
-sample_img_path = 'sample_img/62570_갊.png'
+train_dirs = 'sample_data'
+sample_img_path = 'sample_img/d03fc0a9c3190dce.png'
 
 if __name__ == '__main__':
     wandb.init(project="diffusion_font_test_sampling", config={
@@ -37,7 +36,7 @@ if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     model = UNet().to(device)
-    ckpt = torch.load("light_weight/wieghts/ckpt_290.pt")
+    ckpt = torch.load("weight/ckpt_290.pt")
     model.load_state_dict(ckpt)
 
     diffusion = Diffusion(first_beta=1e-4,
@@ -47,6 +46,7 @@ if __name__ == '__main__':
                               img_size=input_size,
                               device=device)
     
+    # to do 데이터로더는 필요 없음 삭제! 
     transforms = torchvision.transforms.Compose([
         # torchvision.transforms.Resize((input_size,input_size)),
         torchvision.transforms.Grayscale(num_output_channels=1),
@@ -56,7 +56,7 @@ if __name__ == '__main__':
     dataset = torchvision.datasets.ImageFolder(train_dirs,transform=transforms)
 
     # test set
-    n = range(0,len(dataset),10)
+    n = range(0,len(dataset),1)
     dataset = Subset(dataset, n)
 
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True,num_workers=12)

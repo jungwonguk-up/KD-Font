@@ -1,14 +1,11 @@
-
 checkpoints
 results
 hojun/wandb
 make_font/data/*
 models/*
 results/*
-
 checkpoints
 results
-
 Hangul_Characters_Image128
 Font-diff-main
 Ko_diff_base_chinese
@@ -21,3 +18,4 @@ image
 *.ipynb
 *png
 wandb
+*.pt
