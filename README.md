@@ -73,6 +73,10 @@
 ---
 
 # 프로젝트 데모
+### Font Generation Result
+![Screenshot from 2023-11-01 05-42-18](https://github.com/jungwonguk/KoFont-Diffusion/assets/98310175/a4c454ef-563c-4404-b3d8-10987d6f484b)
+
+### Sample Image
 
 ### **Web Demo**
 
