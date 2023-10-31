@@ -1,12 +1,11 @@
-data
+
 checkpoints
 results
 hojun/wandb
 make_font/data/*
 models/*
 results/*
-wandb/*
-data
+
 checkpoints
 results
 Ko_diffusion/make_font/data/*
