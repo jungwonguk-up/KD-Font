@@ -29,9 +29,7 @@
     </tr>
     <tr height="40px">
         <td align="center" width="200px">
-            <a href="https://www.linkedin.com/in/hyeongseok-kim-a280841b9/">Linkedin</a>
-            <br/>
-            <a href="https://tiryul.notion.site">Notion</a>
+            <a href="https://guksblog.tistory.com/">Blog</a>
             <br/>
         </td>
         <td align="center" width="200px">
