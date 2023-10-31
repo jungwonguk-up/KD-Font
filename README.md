@@ -42,7 +42,7 @@
 </table>
 
 - 정원국
-  - Inference Engine, Model Train & Inference, 
+  - Team lead, Lightweight, Model Train & Inference, Sampler Design, Test code
 - 신호준
   - Data Analysis & Converting
 - 송영섭
@@ -62,6 +62,10 @@
 
 
 ### Version2
+- [x] Cross-Attention model
+- [ ] Continuous Learning
+- [ ] User Feedback Pipline
+- [ ] Python Optimization
 
 ---
 
