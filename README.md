@@ -88,15 +88,9 @@
   - [How to Use ModelDeploy](docs/How-to-Use-ModelDeploy.md)
   - [How to build PyTorch for Jetson Xavier](docs/How-to-build-PyTorch-for-Jetson-Xavier.md)
 
----
-# 폴더 구조
--
--
--
--
 
 ---
-# 관련 파일
+# 관련 파일 (weight)
 
-- 학습 모델 및 변환 모델 모음
-  - 
+- 
+
