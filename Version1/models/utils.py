@@ -1,17 +1,8 @@
 import torch
 import torch.nn.functional as F
 import torch.nn as nn
-<<<<<<< HEAD:Ko_diffusion/modules/model.py
-from .style_encoder import style_enc_builder
-
-C = 32
-C_in = 1
-
-
-=======
 from functools import partial
 import torch.nn as nn
->>>>>>> Light_Weight:Version1/models/utils.py
 class SelfAttention(nn.Module):
     def __init__(self, channels):
         super(SelfAttention, self).__init__()
@@ -121,13 +112,8 @@ class Up(nn.Module):
         charAttr_emb = self.condition_layer(charAttr)[:, :, None, None].repeat(1, 1, x.shape[-2], x.shape[-1])
         return x + time_emb + charAttr_emb
 
-<<<<<<< HEAD:Ko_diffusion/modules/model.py
-class UNet128(nn.Module):
-    def __init__(self, c_in=1, c_out=1, time_dim=256, num_classes=None, device="cuda"):
-=======
 class UNet(nn.Module):
     def __init__(self, c_in=1, c_out=1, time_dim=256, charAttr_dim = 296, device="cuda"):
->>>>>>> Light_Weight:Version1/models/utils.py
         super().__init__()
         self.device = device
         self.time_dim = time_dim
@@ -153,15 +139,6 @@ class UNet(nn.Module):
         self.sa6 = SelfAttention(64)
         self.outc = nn.Conv2d(64, c_out, kernel_size=1)
 
-<<<<<<< HEAD:Ko_diffusion/modules/model.py
-        if num_classes is not None:
-            # print("num_classes : ", num_classes)
-            self.label_emb = nn.Embedding(num_classes, time_dim)
-            # print("------------------ Set Sty_enc -----------------")
-            self.sty_encoder = style_enc_builder(C_in, C).to(device)
-
-=======
->>>>>>> Light_Weight:Version1/models/utils.py
     def pos_encoding(self, t, channels):
         inv_freq = 1.0 / (
             10000
@@ -172,54 +149,12 @@ class UNet(nn.Module):
         pos_enc = torch.cat([pos_enc_a, pos_enc_b], dim=-1)
         return pos_enc
 
-<<<<<<< HEAD:Ko_diffusion/modules/model.py
-    def forward(self, x, t, y):
-        print("y : ", y)
-        t = t.unsqueeze(-1).type(torch.float)
-        t = self.pos_encoding(t, self.time_dim)
-
-        if y is not None:
-            print('t , label , sty  :', t.size(), self.label_emb(y).size(), self.sty_encoder(x).size())
-            # print("t.size1 : ", t.size())
-            t += self.label_emb(y)
-            # print('------------------ sty + tim_emb ---------------------')
-            # print('t.size2 : ' , t.size())
-            print('sty_size : ', self.sty_encoder(x).size())
-            # print(x.shape)
-            sty_size = self.sty_encoder(x)
-
-            # new_sty_size를 CUDA 장치로 이동
-            # print('t.device : ', t.device)
-            
-
-            # nn.Linear를 사용하여 new_sty_size의 shape를 t와 동일하게 맞추기
-            sty_size = sty_size.view(sty_size.size(0), -1)
-            # print(sty_size.size())
-            # print(sty_size.shape[1])
-            # print(t.shape[1])
-            linear = nn.Linear(sty_size.shape[1],t.shape[1]).to("cuda")
-            new_sty_size = linear(sty_size)
-
-            # print('new_sty_size : ', new_sty_size.size())
-
-            t += new_sty_size
-        #     print('t.size3 : ' , t.size())
-        # print('12345')
-        x1 = self.inc(x)
-        x2 = self.down1(x1, t)
-        x2 = self.sa1(x2)
-        x3 = self.down2(x2, t)
-        x3 = self.sa2(x3)
-        x4 = self.down3(x3, t)
-        x4 = self.sa3(x4)
-=======
     def forward(self, x, time, charAttr):
         time = time.unsqueeze(-1).type(torch.float)
         time = self.pos_encoding(time, self.time_dim)
 
         # if y is not None:
         #     time += self.contents_emb(y)
->>>>>>> Light_Weight:Version1/models/utils.py
 
 
         x1 = self.inc(x)
