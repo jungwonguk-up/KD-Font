@@ -36,7 +36,7 @@
             <a></a> 
         </td>
         <td align="center" width="200px">
-            <a></a>
+            <a href="https://dreamrunning.tistory.com/">Blog</a>
             <br/>
     </tr>
 </table>
