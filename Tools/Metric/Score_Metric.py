@@ -23,10 +23,10 @@ class ImageQualityMetrics:
         return 20 * math.log10(PIXEL_MAX / torch.sqrt(mse))
 
     @staticmethod
-    def lpips_cal(img1, img2, backbon='alex'):
-        assert backbon == 'alex' or 'vgg'
+    def lpips_cal(img1, img2, backborn='alex'):
+        assert backborn == 'alex' or 'vgg'
 
-        loss_fn = lpips.LPIPS(net=backbon)
+        loss_fn = lpips.LPIPS(net=backborn)
         return loss_fn.forward(img1, img2)
 
     @staticmethod
