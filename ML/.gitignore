@@ -19,4 +19,4 @@ image
 *png
 wandb
 *.pt
-*.onnx
+*.engine
