@@ -12,17 +12,17 @@
 <table align="center">
     <tr height="160px">
         <td align="center" width="200px">
-            <a href="https://github.com/jungwonguk"><img height="120px" width="120px" src="https://avatars.githubusercontent.com/u/98310175?v=4"/></a>
+            <a href="https://github.com/jungwonguk"><img height="180px" width="180px" src="https://avatars.githubusercontent.com/u/98310175?v=4"/></a>
             <br />
             <a href="https://github.com/jungwonguk"><strong>정원국</strong></a>
         </td>
         <td align="center" width="200px">
-            <a href="https://github.com/internationalwe"><img height="120px" width="120px" src=https://avatars.githubusercontent.com/u/46400961?v=4/></a>
+            <a href="https://github.com/internationalwe"><img height="180px" width="180px" src=https://avatars.githubusercontent.com/u/46400961?v=4/></a>
             <br />
             <a href="https://github.com/internationalwe"><strong>신호준</strong></a>
         </td>
         <td align="center" width="200px">
-            <a href="https://github.com/gih0109"><img height="120px" width="120px" src=https://avatars.githubusercontent.com/u/102566187?v=4/></a>
+            <a href="https://github.com/gih0109"><img height="180px" width="180px" src=https://avatars.githubusercontent.com/u/102566187?v=4/></a>
             <br />
             <a href="https://github.com/gih0109"><strong>송영섭</strong></a>
         </td>
