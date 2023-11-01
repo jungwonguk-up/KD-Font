@@ -95,7 +95,7 @@
   - [PyTorch Model 변환](docs/PyTorch-Model-Convert.md)
 - Demo
   - [How to Use ModelDeploy](docs/How-to-Use-ModelDeploy.md)
-  - [How to build PyTorch for Jetson Xavier](docs/How-to-build-PyTorch-for-Jetson-Xavier.md)
+
 
 
 ---
