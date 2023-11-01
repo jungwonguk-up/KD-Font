@@ -76,7 +76,7 @@
 # 프로젝트 데모
 ### Font Generation Result
 아래의 이미지와 같이 사용자의 손글씨에 맞는 **폰트를 생성**하고 이를 TTF 파일로 변환해줍니다.
-![Screenshot from 2023-11-01 05-42-18](https://github.com/jungwonguk/KoFont-Diffusion/assets/98310175/a4c454ef-563c-4404-b3d8-10987d6f484b)
+![Screenshot from 2023-11-01 05-42-18](https://github.com/jungwonguk/KoFont-Diffusion/assets/98310175/70fe9b01-ec5b-429c-ac3a-4b459f3f08d7)
 
 ### Sample Image
 아래의 이미지와 같이 변환된 폰트를 통해 시 문구를 **샘플이미지**로 보여줍니다.
