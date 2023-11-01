@@ -12,7 +12,8 @@ from beanie import PydanticObjectId
 from database.db import Database
 from models.basemodel import UserRequest, UserRequestUpdate
 from library.func import get_storage_path, save_image, read_image
-from library.img_process import image_preprocess
+from library.img_process import image_preprocess, make_example_from_ttf
+from library.get_config import get_config
 
 from typing import List
 
@@ -22,9 +23,13 @@ import time
 # 쓸 라우터랑 안쓸 라우터랑 분리하기?
 # TODO: 사용자 평가 db
 
+INFERECE_SERVER_URL = get_config("Inference_URL")
+EXAMPLE_TEXT = get_config("example_text")
+EXAMPLE_BG_IMG = get_config("example_image_PATH")
+
 
 async def request_rest(id: str, cropped_img_path: str, text: str):
-    inference_server_url = get_request("Inference_URL")
+    inference_server_url = INFERECE_SERVER_URL
     headers = {"Content-Type": "application/json"}
 
     request_dict = {"inputs": {"id": id, "cropped_img_path": cropped_img_path, "text": text}}
@@ -42,7 +47,7 @@ user_router = APIRouter()
 requests_database = Database(UserRequest)
 
 
-@user_router.post("/")
+@user_router.post("/request")
 async def create_inference_request(email: str = Form(...), image_file: UploadFile = File(...)) -> dict:
 
     # define user id by uuid
@@ -77,9 +82,6 @@ async def create_inference_request(email: str = Form(...), image_file: UploadFil
     await requests_database.save(user_request)
     print(f"Request ID {user_id[:-8]} recoded to DB sucessfully.")
 
-    # read text
-    text = get_request("TEXT")
-
     #TODO Request
     # response = await request_rest(id=user_id,
     #                               cropped_img_path=str(cropped_image_path),
@@ -90,7 +92,7 @@ async def create_inference_request(email: str = Form(...), image_file: UploadFil
     return {"message": "request info created sucessfully."}
 
 
-@user_router.get("/{id}/status")
+@user_router.get("/status/{id}")
 async def get_request_status(id: str):
     user_request = await requests_database.get(id)
     
@@ -111,7 +113,7 @@ async def get_request_status(id: str):
 
 
 #TODO # 샘플링 이미지 생성 완료 신호 받기
-@user_router.post("/{id}")
+@user_router.post("/request/{id}")
 async def receive_sampling_complete_signal(id: str) -> dict:
     user_request = await requests_database.get(id)
     
@@ -119,13 +121,21 @@ async def receive_sampling_complete_signal(id: str) -> dict:
 
     print(sampling_images_path_list)
 
+    #TODO make ttf
+
+
+
     #TODO make example image and save to db
+
+    # example_image = make_example_from_ttf(text=EXAMPLE_TEXT,
+    #                                       background_image_path=EXAMPLE_BG_IMG,
+    #                                       ttf_file_path=None,)
 
     return {"message": "signal received successfully."}
 
 
 #TODO 샘플 이미지 받기
-@user_router.get("/{id}/sample_image")
+@user_router.get("/sample_image/{id}")
 async def get_sampled_image(id: str):
     user_request = await requests_database.get(id)
 
@@ -136,7 +146,7 @@ async def get_sampled_image(id: str):
     return 
 
 
-@user_router.get("/{id}/example_image")
+@user_router.get("/example_image/{id}")
 async def get_example_image(id: str):
     user_request = await requests_database.get(id)
 
@@ -157,7 +167,7 @@ async def get_example_image(id: str):
     return FileResponse(path=example_image_path,)
 
 
-@user_router.get("/{id}", response_model=UserRequest)
+@user_router.get("/request/{id}", response_model=UserRequest)
 async def get_request(id: str) -> UserRequest:
     user_request = await requests_database.get(id)
 
@@ -170,15 +180,14 @@ async def get_request(id: str) -> UserRequest:
     return user_request
 
 
-@user_router.get("/", response_model=List[UserRequest])
+@user_router.get("/get_all_db", response_model=List[UserRequest])
 async def get_all_requests() -> List[UserRequest]:
     user_requests = await requests_database.get_all()
 
     return user_requests
 
 
-#TODO should fix
-@user_router.put("/{id}", response_model=UserRequest)
+@user_router.put("/request/{id}", response_model=UserRequest)
 async def update_request(id: str, body: dict) -> UserRequest:
     print("UserRequest")
     print(body)
@@ -195,7 +204,7 @@ async def update_request(id: str, body: dict) -> UserRequest:
     return user_request
 
 
-@user_router.delete("/{id}")
+@user_router.delete("/request/{id}")
 async def delete_request(id: str) -> dict:
     user_request = await requests_database.delete(id)
     
