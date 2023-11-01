@@ -46,10 +46,11 @@ class Database:
         docs = await self.model.find_all().to_list()
         return docs
     
-    async def update(self, id: str, body: BaseModel):
+    async def update(self, id: str, body: dict):
         """Update Recode"""
         doc_id = id
-        des_body = body.model_dump()
+        des_body = body
+        # des_body = body.model_dump()
         des_body = {k: v for k, v in des_body.items() if v is not None}
         update_query = {"$set": {field: value for field, value in des_body.items()}}
 

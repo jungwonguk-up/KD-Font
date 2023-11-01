@@ -12,7 +12,7 @@ from beanie import PydanticObjectId
 from database.db import Database
 from models.basemodel import UserRequest, UserRequestUpdate
 from library.func import get_storage_path, save_image, read_image
-from library.preprocess import image_preprocess
+from library.img_process import image_preprocess
 
 from typing import List
 
@@ -23,11 +23,11 @@ import time
 # TODO: 사용자 평가 db
 
 
-async def request_rest(id: str, image: bytes):
+async def request_rest(id: str, cropped_img_path: str, text: str):
     inference_server_url = get_request("Inference_URL")
     headers = {"Content-Type": "application/json"}
-    base64_image = base64.urlsafe_b64encode(image).decode("ascii")
-    request_dict = {"inputs": {"id": id, "image": [base64_image]}}
+
+    request_dict = {"inputs": {"id": id, "cropped_img_path": cropped_img_path, "text": text}}
 
     response = requests.post(
         inference_server_url,
@@ -35,7 +35,7 @@ async def request_rest(id: str, image: bytes):
         headers=headers,
     )
 
-    return None #TODO 전송 결과값을 받아야 한다
+    return response
 
 
 user_router = APIRouter()
@@ -44,11 +44,8 @@ requests_database = Database(UserRequest)
 
 @user_router.post("/")
 async def create_inference_request(email: str = Form(...), image_file: UploadFile = File(...)) -> dict:
+
     # define user id by uuid
-    start_t = time.time()
-
-    print(f"request: {start_t}")
-
     user_id = str(uuid.uuid4())
     # read image by pillow
     image_file = await read_image(image_file)
@@ -61,8 +58,6 @@ async def create_inference_request(email: str = Form(...), image_file: UploadFil
 
     before_save_t = time.time()
 
-    print(f"before save img: {time.time() - start_t}")
-
     await asyncio.gather(
         save_image(image_file, str(storage_path/"ori.png")),
         save_image(cropped_image, str(storage_path/"crop.png"))
@@ -70,9 +65,6 @@ async def create_inference_request(email: str = Form(...), image_file: UploadFil
 
     # await save_image(image_file, str(storage_path/"ori"))
     # await save_image(cropped_image, str(storage_path/"crop"))
-
-    after_save_t = time.time()
-    print(f"after save img: {time.time() - before_save_t}")
     
     # create new db recode 
     user_request = UserRequest(
@@ -85,13 +77,15 @@ async def create_inference_request(email: str = Form(...), image_file: UploadFil
     await requests_database.save(user_request)
     print(f"Request ID {user_id[:-8]} recoded to DB sucessfully.")
 
+    # read text
+    text = get_request("TEXT")
+
     #TODO Request
     # response = await request_rest(id=user_id,
-    #                               image=image_file,)
+    #                               cropped_img_path=str(cropped_image_path),
+    #                               text=text)
+    #TODO
     # if response:
-
-    print(f"after save db time: {time.time() - after_save_t}")
-    print(f"all time: {time.time() - start_t}")
 
     return {"message": "request info created sucessfully."}
 
@@ -110,7 +104,9 @@ async def get_request_status(id: str):
         return {"message": "Preprocessing"}
     elif user_request.cropped_image_path is not None and user_request.sampling_images_path is None:
         return {"message": "Sampling"}
-    elif user_request.sampling_images_path is not None:
+    elif user_request.sampling_images_path is not None and user_request.example_image_path is None:
+        return {"message": "Postprocessing"}
+    elif user_request.example_image_path is not None:
         return {"message": "Completed"}
 
 
@@ -135,8 +131,9 @@ async def get_sampled_image(id: str):
 
 
 
-    #TODO return multiple images
-    return FileResponse()
+    #TODO img2ttf, ttf2exmaplei
+
+    return 
 
 
 @user_router.get("/{id}/example_image")
@@ -182,7 +179,7 @@ async def get_all_requests() -> List[UserRequest]:
 
 #TODO should fix
 @user_router.put("/{id}", response_model=UserRequest)
-async def update_request(id: str, body: UserRequestUpdate) -> UserRequest:
+async def update_request(id: str, body: dict) -> UserRequest:
     print("UserRequest")
     print(body)
     print()

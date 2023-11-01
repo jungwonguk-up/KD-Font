@@ -1,5 +1,5 @@
 import cv2
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 import imutils
 from matplotlib import pyplot as plt
@@ -69,3 +69,24 @@ async def image_preprocess(image: Image.Image,
     # TODO 테두리 제거, 이미지 회전
 
     return bw_image
+
+
+def make_example_from_ttf(text: str,
+                          background_image_path: str,
+                          ttf_file_path: str,
+                          text_size: int = 50,
+                          text_align: str = "center",
+                          draw_coordinate: tuple = (180, 50)
+                          ) -> Image.Image:
+    """
+    make example image using ttf file
+    """
+    
+    image = Image.open(background_image_path)
+    selected_font = ImageFont.truetype(ttf_file_path, text_size)
+
+    draw = ImageDraw.Draw(image)
+    draw.text(draw_coordinate, text, font=selected_font, align=text_align)
+
+    return image
+
