@@ -6,7 +6,7 @@
 # 프로젝트 한줄 소개
 
 **나만의 손글씨 생성 서비스**는 사용자의 손글씨 **한 글자**를 입력받아 **diffusion model**을 이용하여 사용자의 손글씨 폰트를 만들어서 샘플 이미지를 보여주고 ttf파일로 손글씨 폰트를 보내주는 서비스 입니다. 
-또한 해당 프로젝트는 CVPR, Neurips등의 논문 등록을 목표로 모델 개발이 진행되고 있습니다.
+또한 해당 프로젝트는 CVPR, Neurips등의 논문 Accept를 목표로 모델 개발이 진행되고 있습니다.
 
 # 팀원 소개
 <table align="center">
@@ -74,11 +74,11 @@
 
 # 프로젝트 데모
 ### Font Generation Result
-아래의 이미지와 같이 사용자의 손글씨에 맞는 폰트를 생성하고 이를 TTF 파일로 변환해줍니다.
+아래의 이미지와 같이 사용자의 손글씨에 맞는 **폰트를 생성**하고 이를 TTF 파일로 변환해줍니다.
 ![Screenshot from 2023-11-01 05-42-18](https://github.com/jungwonguk/KoFont-Diffusion/assets/98310175/a4c454ef-563c-4404-b3d8-10987d6f484b)
 
 ### Sample Image
-아래의 이미지와 같이 변환된 폰트를 통해 시 문구를 샘플이미지로 보여줍니다.
+아래의 이미지와 같이 변환된 폰트를 통해 시 문구를 **샘플이미지**로 보여줍니다.
 <p align="center"><img src="https://github.com/jungwonguk/KoFont-Diffusion/assets/98310175/2dc6ea29-f81f-438b-abbc-8cfda906c58d"></p>
 
 ### **Web Demo**
