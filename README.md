@@ -36,7 +36,7 @@
             <a></a> 
         </td>
         <td align="center" width="200px">
-            <a href="https://jiyong-jeon.notion.site/Jeon-Jiyong-30ccaa36276d458ab0a8b1b06aab3c13">Notion</a>
+            <a></a>
             <br/>
     </tr>
 </table>
