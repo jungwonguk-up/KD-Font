@@ -6,7 +6,7 @@ import lpips
 
 
 # psnr
-def psnr(img1, img2):
+def psnr_cal(img1, img2):
     mse = torch.mean((img1 - img2) ** 2)
     if mse == 0:
         return 100
@@ -15,11 +15,11 @@ def psnr(img1, img2):
 
 
 # lpips
-def lpips(img1, img2, backborn='alex'):
+def lpips_cal(img1, img2, backborn='alex'):
     assert backborn == 'alex' or 'vgg'
 
     loss_fn = lpips.LPIPS(net=backborn)
-    return loss_fn(img1, img2)
+    return loss_fn.forward(img1, img2)
 
 
 # ssim
@@ -40,7 +40,7 @@ class SSIM(nn.Module):
         self.C1 = 0.01 ** 2
         self.C2 = 0.03 ** 2
 
-    def forward(self, x, y):
+    def score(self,x,y):
         # shape : (xh, xw) -> (xh + 2, xw + 2)
         x = self.refl(x) 
         # shape : (yh, yw) -> (yh + 2, yw + 2)
@@ -61,8 +61,3 @@ class SSIM(nn.Module):
 
         # Loss function
         # return torch.clamp((1 - SSIM_n / SSIM_d) / 2, 0, 1)
-
-
-def score_function(img1, img2):
-
-    return
