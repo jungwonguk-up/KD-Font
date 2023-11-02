@@ -12,7 +12,7 @@ from beanie import PydanticObjectId
 from database.db import Database
 from models.basemodel import UserRequest, UserRequestUpdate
 from library.func import get_storage_path, save_image, read_image
-from library.img_process import image_preprocess, make_example_from_ttf
+from library.img_process import pre_processing, make_example_from_ttf
 from library.get_config import get_config
 
 from typing import List
@@ -54,14 +54,12 @@ async def create_inference_request(email: str = Form(...), image_file: UploadFil
     user_id = str(uuid.uuid4())
     # read image by pillow
     image_file = await read_image(image_file)
-    # get crop image
-    cropped_image = await image_preprocess(image_file)
+    # get crop image after pre-processing
+    cropped_image = pre_processing(image_file, brightness_adj_val=1.5, contrast_enhance_val=3)
     # make path and save original & crop image
     storage_path = get_storage_path(user_id)
     image_path = storage_path / Path("ori.png") #TODO 확장자는 따로 지정해줘야하나?
     cropped_image_path = storage_path / Path("crop.png")
-
-    before_save_t = time.time()
 
     await asyncio.gather(
         save_image(image_file, str(storage_path/"ori.png")),
@@ -189,9 +187,6 @@ async def get_all_requests() -> List[UserRequest]:
 
 @user_router.put("/request/{id}", response_model=UserRequest)
 async def update_request(id: str, body: dict) -> UserRequest:
-    print("UserRequest")
-    print(body)
-    print()
     
     user_request = await requests_database.update(id=id, body=body)
 
