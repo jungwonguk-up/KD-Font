@@ -58,12 +58,12 @@ async def create_inference_request(email: str = Form(...), image_file: UploadFil
     cropped_image = pre_processing(image_file, brightness_adj_val=1.5, contrast_enhance_val=3)
     # make path and save original & crop image
     storage_path = get_storage_path(user_id)
-    image_path = storage_path / Path("ori.png") #TODO 확장자는 따로 지정해줘야하나?
-    cropped_image_path = storage_path / Path("crop.png")
+    image_path = storage_path / Path("ori.jpg") #TODO 확장자는 따로 지정해줘야하나?
+    cropped_image_path = storage_path / Path("crop.jpg")
 
     await asyncio.gather(
-        save_image(image_file, str(storage_path/"ori.png")),
-        save_image(cropped_image, str(storage_path/"crop.png"))
+        save_image(image_file, str(storage_path/"ori.jpg")),
+        save_image(cropped_image, str(storage_path/"crop.jpg"))
     )
 
     # await save_image(image_file, str(storage_path/"ori"))
