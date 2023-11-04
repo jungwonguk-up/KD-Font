@@ -88,18 +88,13 @@
 
 ---
 # Document
-- [프로젝트 소개](docs/introduce.md)
 - Getting_started
-  - [설치 방법](docs/Install.md)
-  - [데이터 변환](KITTIVisualizer/Auto_transform.ipynb)
-  - [PyTorch Model 변환](docs/PyTorch-Model-Convert.md)
+  - [ML Train/Test](https://github.com/jungwonguk/KoFont-Diffusion/blob/main/ML/README.md)
+  - [Light Weight](docs/PyTorch-Model-Convert.md)
 - Demo
   - [How to Use ModelDeploy](docs/How-to-Use-ModelDeploy.md)
 
 
 
----
-# 관련 파일 (weight)
 
-- 
 
