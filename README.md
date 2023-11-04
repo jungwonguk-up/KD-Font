@@ -1,7 +1,13 @@
-# KoFont-Diffusion
+# KD-Font (Korean Diffusion Font)
 
 **발표 영상**: 11/8 업로드 예정  
-<img src="https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white"/> <img src="https://img.shields.io/badge/PyTorch-EE4C2C?style=flat&logo=PyTorch&logoColor=white"/> <img src="https://img.shields.io/badge/Streamlit-FF4B4B?style=flat&logo=streamlit&logoColor=white"/> <img src="https://img.shields.io/badge/FastAPI-009688?style=flat&logo=FastAPI&logoColor=white"/> <img src="https://img.shields.io/badge/TensorRT-FF6F00?style=flat&logo=TensorFlow&logoColor=white"/> 
+<img src="https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white"/> <img src="https://img.shields.io/badge/PyTorch-EE4C2C?style=flat&logo=PyTorch&logoColor=white"/> <img src="https://img.shields.io/badge/FastAPI-009688?style=flat&logo=FastAPI&logoColor=white"/> <img src="https://img.shields.io/badge/TensorRT-FF6F00?style=flat&logo=TensorFlow&logoColor=white"/> <img
+src="https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white"/> <img
+src="https://img.shields.io/badge/Kubernetes-326CE5?style=flat&logo=kubernetes&logoColor=white"/> <img
+src="https://img.shields.io/badge/Kubeflow-326CE5?style=flat&logo=kubernetes&logoColor=white"/> <img
+src="https://img.shields.io/badge/Kserve-326CE5?style=flat&logo=kubernetes&logoColor=white"/> <img
+src="https://img.shields.io/badge/Torchserve-EE4C2C?style=flat&logo=PyTorch&logoColor=white"/> <img
+src="https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=MongoDB&logoColor=white"/> 
 
 # 프로젝트 한줄 소개
 
@@ -51,22 +57,27 @@
 # Project Version
 
 ### Version 1
-- [x] Korean model
-- [x] Self-Attention model
+- [x] Korean Model
+- [x] Stroke Embedding Design
+- [x] Self-Attention Model
 - [x] ONNX, TensorRT Lightweight
 - [x] Labeling Tool
-- [x] OCR model and test pipline
 - [x] DDPM, DDIM backbone, Stroke Type Design
+
+### Version 1.5
+- [x] OCR Model and Test Pipline
 - [x] ML Pipline, Backend
-- [x] Image Sampler
+- [x] Sample Image Generator
 - [x] TTF Transformer
-- [x] RLHF  
+- [x] RLHF
+- [x] UI/UX Desgin
+- [x] Front End
 
 
 ### Version2
-- [x] Cross-Attention model
+- [x] Cross-Attention Model
 - [ ] Service Page
-- [ ] Chinese model
+- [ ] Chinese Model
 - [ ] Continuous Learning
 - [ ] User Feedback Pipline
 - [ ] Python Optimization
@@ -88,18 +99,13 @@
 
 ---
 # Document
-- [프로젝트 소개](docs/introduce.md)
 - Getting_started
-  - [설치 방법](docs/Install.md)
-  - [데이터 변환](KITTIVisualizer/Auto_transform.ipynb)
-  - [PyTorch Model 변환](docs/PyTorch-Model-Convert.md)
+  - [ML Train/Test](https://github.com/jungwonguk/KoFont-Diffusion/blob/main/ML/README.md)
+  - [Light Weight](docs/PyTorch-Model-Convert.md)
 - Demo
   - [How to Use ModelDeploy](docs/How-to-Use-ModelDeploy.md)
 
 
 
----
-# 관련 파일 (weight)
 
-- 
 
