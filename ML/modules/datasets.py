@@ -49,21 +49,20 @@ class DiffusionDataset(Dataset):
             return transform_x, y_ch, filename
         
 class DiffusionSamplingDataset(Dataset):
-    def __init__(self,sampling_img_path, sampling_chars,img_size, device,transforms = None):
+    def __init__(self,sampling_img_path, sampling_chars,img_size, device,transforms):
         self.sampling_chars = sampling_chars
-        self.img_size =img_size
+        self.img_size = img_size
         self.sampling_img_path = sampling_img_path
         self.transforms = transforms
         self.device = device
-        self.all_x = torch.randn((len(sampling_chars), 1, self.img_size, self.img_size)).to(device)
-        
+        self.sample_img = self.transforms(Image.open(sampling_img_path))
+        self.all_x = np.random.randn(len(sampling_chars), 1, self.img_size, self.img_size)
+    
     def __len__(self):
         return len(self.sampling_chars)
     
     def __getitem__(self, id_: int):
-        sample_img = Image.open(self.sampling_img_path)
-        if self.transforms is not None:
-            sample_img = self.transforms(sample_img).to(self.device)
+        # sample_img = self.transforms(Image.open(self.sampling_img_path))
         sample_x = self.all_x[id_]
         sample_y = self.sampling_chars[id_]
-        return sample_img,sample_x, sample_y
+        return self.sample_img,sample_x, sample_y

@@ -37,23 +37,21 @@ lr = 3e-4 #####
 n_epochs = 300 #####
 start_epoch = 10
 mode = 2 # mode_1 : with contents, stroke, mode_2 : with contents, stroke, style #####
-sampleImage_len = 36
-sampling_chars = "가나다라"
+sampling_chars = "괴그기깅나는늘다도디러로를만버없에우워을자점하한했"
 noise_step = 1000
 cfg_scale = 3
 use_amp = True
 resume_train = False
 
 train_dirs = '/home/hojun/Documents/code/cr_diffusion/KoFont-Diffusion/Tools/MakeFont/Hangul_Characters_Image128_Grayscale'
-sample_img_path = f'{train_dirs}/62570_가.png'
+sample_img_path = f'{train_dirs}/62570_늘.png'
 
 csv_path = "/home/hojun/Documents/code/cr_diffusion/KoFont-Diffusion/Tools/MakeFont/diffusion_font_train.csv"
 style_path = "/home/hojun/Documents/code/cr_diffusion/KoFont-Diffusion/ML/style_enc.pth"
 
 
-torch.multiprocessing.set_start_method('forkserver',force=True)
+# torch.multiprocessing.set_start_method('forkserver',force=True)
 if __name__ == '__main__':
-
     #Set save file
     file_number= "Unet64_image420_3"
     result_image_path = os.path.join("results", "images", 'font_noStrokeStyle_{}'.format(file_number))
@@ -72,7 +70,7 @@ if __name__ == '__main__':
                 "notes":"content, yes_stoke, non_style/ 64 x 64, 420 dataset"
                 },
                name = "self-attetnion condtion content stroke style") #####
-    wandb.init(mode="disabled")
+    # wandb.init(mode="disabled")
 
 
     # Set device(GPU/CPU)
@@ -96,7 +94,7 @@ if __name__ == '__main__':
     # dataset = Subset(dataset, n)
 
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=12)
-    test_dataloader = DataLoader(sampling_dataset,batch_size=batch_size,shuffle=False, num_workers=12)
+    test_dataloader = DataLoader(sampling_dataset,batch_size=batch_size,shuffle=False)
     
     if resume_train:
         #Set model
@@ -164,44 +162,46 @@ if __name__ == '__main__':
         train_pbar.set_postfix(MSE=loss.item())
         
         if epoch_id % 10 == 0 :
-            example_images = []
-            sample_all_x = sampling_dataset.all_x.clone()
-            pbar = tqdm(list(reversed(range(1, noise_step))),desc=f"sampling_{epoch_id}")
-            for i in pbar:
-                sample_predicted_noise = torch.tensor([]).to(device)
-                sample_uncond_predicted_noise = torch.tensor([]).to(device)
-                for _, (sample_img,sample_x, sample_y) in enumerate(test_dataloader):
-                    sample_t = (torch.ones(len(sample_x)) * i).long().to(device)
-                    sample_x = sample_x.to(device)
-                    sample_charAttr_list = charAttar.make_charAttr(sample_img, sample_y, mode=mode).to(device)
-                    sample_noise = model(sample_x, sample_t, sample_charAttr_list)
-                    sample_predicted_noise = torch.cat([sample_predicted_noise,sample_noise],dim=0)
-                    sample_uncond_predicted_noise = model(sample_x, sample_t, torch.zeros_like(sample_charAttr_list))
+            model.eval()
+            with torch.no_grad():
+                example_images = []
+                sample_all_x = torch.Tensor(sampling_dataset.all_x).to(device)
+                pbar = tqdm(list(reversed(range(1, noise_step))),desc=f"sampling_{epoch_id}")
+                for i in pbar:
+                    sample_predicted_noise = torch.tensor([]).to(device)
+                    sample_uncond_predicted_noise = torch.tensor([]).to(device)
+                    for sample_img,sample_x, sample_y in test_dataloader:
+                        sample_t = (torch.ones(len(sample_x)) * i).long().to(device)
+                        sample_x = sample_x.to(device=device, dtype=torch.float)
+                        sample_img = sample_img.to(device)
+                        sample_charAttr_list = charAttar.make_charAttr(sample_img, sample_y, mode=3).to(device)
+                        sample_noise = model(sample_x, sample_t, sample_charAttr_list)
+                        sample_predicted_noise = torch.cat([sample_predicted_noise, sample_noise],dim=0)
+                        sample_uncond_noise = model(sample_x, sample_t, torch.zeros_like(sample_charAttr_list))
+                        sample_uncond_predicted_noise = torch.cat([sample_uncond_predicted_noise,sample_uncond_noise],dim=0)
+                    if cfg_scale > 0:
+                        sample_predicted_noise = torch.lerp(sample_uncond_predicted_noise, sample_predicted_noise, cfg_scale)
+                    t = (torch.ones(len(sampling_chars)) * i).long()
+                    a_t = diffusion.alpha_t(t)
+                    aBar_t = diffusion.alpha_bar_t(t)
+                    b_t = diffusion.beta_t(t)
                     
-                if cfg_scale > 0:
-                    predicted_noise = torch.lerp(sample_uncond_predicted_noise, sample_predicted_noise, cfg_scale)
-                
-                t = (torch.ones(len(sample_all_x)) * i).long()
-                a_t = diffusion.alpha_t(t)
-                aBar_t = diffusion.alpha_bar_t(t)
-                b_t = diffusion.beta_t(t)
-                
-                if i > 1:
-                    noise = torch.randn_like(sample_all_x)
-                else:
-                    noise = torch.zeros_like(sample_all_x)
-                
-                sample_all_x = 1 / torch.sqrt(a_t) * (
-                        sample_all_x - ((1 - a_t) / (torch.sqrt(1 - aBar_t))) * predicted_noise) + torch.sqrt(
-                    b_t) * noise
+                    if i > 1:
+                        noise = torch.randn_like(sample_all_x)
+                    else:
+                        noise = torch.zeros_like(sample_all_x)
+                    # print(sample_all_x.device, a_t.device, aBar_t.device, sample_predicted_noise.device,b_t.device, noise.device)
+                    sample_all_x = 1 / torch.sqrt(a_t) * (
+                            sample_all_x - ((1 - a_t) / (torch.sqrt(1 - aBar_t))) * sample_predicted_noise) + torch.sqrt(
+                        b_t) * noise
                 for sample_image,sample_char in zip(sample_all_x, sampling_chars):
                     example_images.append(wandb.Image(sample_image, caption=f"Sample:{sample_char}"))
                     wandb.log({
                         "Examples": example_images
                     })
-                model.train()
-                sample_all_x = (sample_all_x.clamp(-1, 1) + 1) / 2
-                sample_all_x = (sample_all_x * 255).type(torch.uint8)
+            model.train()
+            # sample_all_x = (sample_all_x.clamp(-1, 1) + 1) / 2
+            # sample_all_x = (sample_all_x * 255).type(torch.uint8)
             # plot_images(sampled_images)
             # save_images(sample_all_x, os.path.join(result_image_path, f"{epoch_id}.jpg"))
             torch.save(model,os.path.join(result_model_path,f"model_{epoch_id}.pt"))
