@@ -1,3 +1,21 @@
+# KD Font
+Korean_Diffusion_Font 모델 Docs 입니다. 
+
+## \# Stroke 설계
+기존 Stroke Embedding 방식은 한국어 고유의 특징을 잘 반영하지 못하고 있습니다. 때문에 초성과 종성의 생김새와 특징을 구분해서 적용하지 못하고 있습니다. 이런 점을 개선하기 위해 새롭게 Stroke Embedding 방식을 설계하였습니다.
+<p align="center"><img src="https://github.com/jungwonguk/KoFont-Diffusion/assets/98310175/fe7aa4cd-006f-4ddf-9430-9b9a54c35f9a"></p>
+
+
+
+
+## \# 모델의 구조
+모델의 기본 구조는 Diffusion입니다. Style, Strokes, Label을 받아들여 Embbedding Vector를 만들어냅니다.
+- **V1**의 경우 **Self-Attention** 구조로 되어 있습니다.
+- **V2**의 경우 **Cross-Attention** 구조로 되어 있어 초성,중성,종성의 **위치적 특징**을 더 잘 받아들입니다.
+<p align="center"><img src="https://github.com/jungwonguk/KoFont-Diffusion/assets/98310175/d69d929a-4197-4003-a41e-36958bfcd1f3"></p>
+
+
+
 ## 개발 환경
 ```
 Ubuntu 22.04
@@ -49,20 +67,6 @@ python test.py
 # package
 python test.py
 ```
-## \# Stroke 설계
-기존 Stroke Embedding 방식은 한국어 고유의 특징을 잘 반영하지 못하고 있습니다. 때문에 초성과 종성의 생김새와 특징을 구분해서 적용하지 못하고 있습니다. 이런 점을 개선하기 위해 새롭게 Stroke Embedding 방식을 설계하였습니다.
-<p align="center"><img src="https://github.com/jungwonguk/KoFont-Diffusion/assets/98310175/fe7aa4cd-006f-4ddf-9430-9b9a54c35f9a"></p>
-
-
-
-
-## \# 모델의 구조
-모델의 기본 구조는 Diffusion입니다. Style, Strokes, Label을 받아들여 Embbedding Vector를 만들어냅니다.
-- **V1**의 경우 **Self-Attention** 구조로 되어 있습니다.
-- **V2**의 경우 **Cross-Attention** 구조로 되어 있어 초성,중성,종성의 **위치적 특징**을 더 잘 받아들입니다.
-<p align="center"><img src="https://github.com/jungwonguk/KoFont-Diffusion/assets/98310175/d69d929a-4197-4003-a41e-36958bfcd1f3"></p>
-
-
 
 
 
