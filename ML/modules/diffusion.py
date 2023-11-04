@@ -3,8 +3,8 @@ from tqdm import tqdm
 import torch
 from torch.utils.data import TensorDataset,DataLoader
 from .utils import CharAttar
-import onnxruntime as ort
-import onnx
+# import onnxruntime as ort
+# import onnx
 from .utils import NumpyDataset
 import numpy as np
 class Diffusion:
@@ -68,6 +68,55 @@ class Diffusion:
 
     def indexToChar(self,y):
         return chr(44032+y)
+    
+    def portion_sampling(self, model, sampling_chars,charAttar,sample_img, cfg_scale=3):
+        example_images = []
+        model.eval()
+        with torch.no_grad():
+            x_list = torch.randn((len(sampling_chars), 1, self.img_size, self.img_size)).to(self.device)
+            charAttr_list = charAttar.make_charAttr(sample_img, sampling_chars ,mode=3).to(self.device)
+
+            pbar = tqdm(list(reversed(range(1, self.noise_step))),desc="sampling")
+            for i in pbar:
+                dataset = TensorDataset(x_list,charAttr_list)
+                batch_size= 18
+                dataloader = DataLoader(dataset,batch_size=batch_size,shuffle=False)
+                predicted_noise = torch.tensor([]).to(self.device)
+                uncond_predicted_noise = torch.tensor([]).to(self.device)
+                for batch_x, batch_conditions in dataloader:
+                    batch_t = (torch.ones(len(batch_x)) * i).long().to(self.device)
+                    batch_noise = model(batch_x, batch_t, batch_conditions)
+                    predicted_noise = torch.cat([predicted_noise,batch_noise],dim=0)
+                    #uncodition
+                    uncond_batch_noise = model(batch_x, batch_t, torch.zeros_like(batch_conditions))
+                    uncond_predicted_noise = torch.cat([uncond_predicted_noise,uncond_batch_noise],dim = 0)
+
+                if cfg_scale > 0:
+                    predicted_noise = torch.lerp(uncond_predicted_noise, predicted_noise, cfg_scale)
+
+                t = (torch.ones(len(sampling_chars)) * i).long()
+                a_t = self.alpha_t(t)
+                aBar_t = self.alpha_bar_t(t)
+                b_t = self.beta_t(t)
+
+                if i > 1:
+                    noise = torch.randn_like(x_list)
+                else:
+                    noise = torch.zeros_like(x_list)
+
+                x_list = 1 / torch.sqrt(a_t) * (
+                        x_list - ((1 - a_t) / (torch.sqrt(1 - aBar_t))) * predicted_noise) + torch.sqrt(
+                    b_t) * noise
+        for sample_image,sample_content in zip(x_list,sampling_chars):
+            example_images.append(wandb.Image(sample_image, caption=f"Sample:{sample_content}"))
+        wandb.log({
+            "Examples": example_images
+        })
+        model.train()
+        x_list = (x_list.clamp(-1, 1) + 1) / 2
+        x_list = (x_list * 255).type(torch.uint8)
+        return x_list
+    
     
     # to do ONNX runtime / Custom Dataloader 제작
     def onnx_sampling(self, onnx_model_path, n,sampleImage_len,dataset,mode,charAttar,sample_img, cfg_scale=3):

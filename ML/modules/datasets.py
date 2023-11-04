@@ -56,7 +56,7 @@ class DiffusionSamplingDataset(Dataset):
         self.transforms = transforms
         self.device = device
         self.sample_img = self.transforms(Image.open(sampling_img_path))
-        self.all_x = np.random.randn(len(sampling_chars), 1, self.img_size, self.img_size)
+        self.all_x = torch.randn(len(sampling_chars), 1, self.img_size, self.img_size).numpy()
     
     def __len__(self):
         return len(self.sampling_chars)
