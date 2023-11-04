@@ -16,12 +16,15 @@ from matplotlib import pyplot as plt
 
 from modules.diffusion import Diffusion
 from modules.utils import save_images, plot_images,CharAttar
+from modules.datasets import DiffusionDataset, DiffusionSamplingDataset
 
 from models.utils import UNet
 
 import gc
 
 import wandb
+
+
 # # seed
 # seed = 7777
 
@@ -35,17 +38,22 @@ n_epochs = 300 #####
 start_epoch = 10
 mode = 2 # mode_1 : with contents, stroke, mode_2 : with contents, stroke, style #####
 sampleImage_len = 36
-
+sampling_chars = "가나다라"
+noise_step = 1000
+cfg_scale = 3
 use_amp = True
 resume_train = False
 
-train_dirs = '/home/hojun/PycharmProjects/diffusion_font/code/KoFont-Diffusion/hojun/make_font/data/Hangul_Characters_Image64_radomSampling420_GrayScale'
-sample_img_path = f'{train_dirs}/갊/KoPubWorldBatangBold_갊.png'
+train_dirs = '/home/hojun/Documents/code/cr_diffusion/KoFont-Diffusion/Tools/MakeFont/Hangul_Characters_Image128_Grayscale'
+sample_img_path = f'{train_dirs}/62570_가.png'
+
+csv_path = "/home/hojun/Documents/code/cr_diffusion/KoFont-Diffusion/Tools/MakeFont/diffusion_font_train.csv"
+style_path = "/home/hojun/Documents/code/cr_diffusion/KoFont-Diffusion/ML/style_enc.pth"
 
 
-
-
+torch.multiprocessing.set_start_method('forkserver',force=True)
 if __name__ == '__main__':
+
     #Set save file
     file_number= "Unet64_image420_3"
     result_image_path = os.path.join("results", "images", 'font_noStrokeStyle_{}'.format(file_number))
@@ -64,7 +72,7 @@ if __name__ == '__main__':
                 "notes":"content, yes_stoke, non_style/ 64 x 64, 420 dataset"
                 },
                name = "self-attetnion condtion content stroke style") #####
-    # wandb.init(mode="disabled")
+    wandb.init(mode="disabled")
 
 
     # Set device(GPU/CPU)
@@ -81,20 +89,14 @@ if __name__ == '__main__':
         torchvision.transforms.ToTensor(),
         torchvision.transforms.Normalize((0.5), (0.5))
     ])
-    dataset = torchvision.datasets.ImageFolder(train_dirs,transform=transforms)
-
+    train_dataset = DiffusionDataset(csv_path=csv_path,transform=transforms)
+    sampling_dataset = DiffusionSamplingDataset(sampling_img_path=sample_img_path,sampling_chars=sampling_chars,img_size=input_size,device=device,transforms=transforms )
     # test set
-    n = range(0,len(dataset),10)
-    dataset = Subset(dataset, n)
+    # n = range(0,len(dataset),10)
+    # dataset = Subset(dataset, n)
 
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True,num_workers=12)
-
-    #sample_img
-    sample_img = Image.open(sample_img_path)
-    sample_img = transforms(sample_img).to(device)
-    sample_img = torch.unsqueeze(sample_img,1)
-    sample_img = sample_img.repeat(sampleImage_len, 1, 1, 1)
-
+    train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=12)
+    test_dataloader = DataLoader(sampling_dataset,batch_size=batch_size,shuffle=False, num_workers=12)
     
     if resume_train:
         #Set model
@@ -127,33 +129,31 @@ if __name__ == '__main__':
     #Set diffusion
     diffusion = Diffusion(first_beta=1e-4,
                           end_beta=0.02,
-                          noise_step=1000,
+                          noise_step=noise_step,
                           beta_schedule_type='linear',
                           img_size=input_size,
                           device=device)
 
 
+    charAttar = CharAttar(num_classes=num_classes,device=device,style_path=style_path)
     for epoch_id in range(n_epochs):
         if resume_train:
             epoch_id += start_epoch
 
         print(f"Epoch {epoch_id}/{n_epochs} Train..")
 
-        pbar = tqdm(dataloader,desc=f"trian_{epoch_id}")
+        train_pbar = tqdm(train_dataloader,desc=f"trian_{epoch_id}")
         tic = time()
-        for i, (images, contents_index) in enumerate(pbar):
-            images = images.to(device)
-            
-            contents = [dataset.dataset.classes[content_index] for content_index in contents_index]
-            charAttar = CharAttar(num_classes=num_classes,device=device)
+        for i, (train_images, train_contents_ch, train_filename) in enumerate(train_pbar):
+            train_images = train_images.to(device)
 
-            charAttr_list = charAttar.make_charAttr(images, contents_index,contents,mode=mode).to(device)
+            train_charAttr_list = charAttar.make_charAttr(train_images, train_contents_ch, mode=mode).to(device)
 
-            t = diffusion.sample_t(images.shape[0]).to(device)
-            x_t, noise = diffusion.noise_images(images, t)
+            t = diffusion.sample_t(train_images.shape[0]).to(device)
+            x_t, noise = diffusion.noise_images(train_images, t)
 
-            predicted_noise = model(x_t, t, charAttr_list)
-            loss = loss_func(noise, predicted_noise)
+            train_predicted_noise = model(x_t, t, train_charAttr_list)
+            loss = loss_func(noise, train_predicted_noise)
 
             optimizer.zero_grad()
             loss.backward()
@@ -161,14 +161,49 @@ if __name__ == '__main__':
         toc = time()
         wandb.log({"train_mse_loss": loss,'train_time':toc-tic})
 
-        pbar.set_postfix(MSE=loss.item())
-
-
+        train_pbar.set_postfix(MSE=loss.item())
+        
         if epoch_id % 10 == 0 :
-            labels = torch.arange(num_classes).long().to(device)
-            sampled_images = diffusion.portion_sampling(model, n=len(dataset.dataset.classes),sampleImage_len = sampleImage_len,dataset=dataset,mode =mode,charAttar=charAttar,sample_img=sample_img)
+            example_images = []
+            sample_all_x = sampling_dataset.all_x.clone()
+            pbar = tqdm(list(reversed(range(1, noise_step))),desc=f"sampling_{epoch_id}")
+            for i in pbar:
+                sample_predicted_noise = torch.tensor([]).to(device)
+                sample_uncond_predicted_noise = torch.tensor([]).to(device)
+                for _, (sample_img,sample_x, sample_y) in enumerate(test_dataloader):
+                    sample_t = (torch.ones(len(sample_x)) * i).long().to(device)
+                    sample_x = sample_x.to(device)
+                    sample_charAttr_list = charAttar.make_charAttr(sample_img, sample_y, mode=mode).to(device)
+                    sample_noise = model(sample_x, sample_t, sample_charAttr_list)
+                    sample_predicted_noise = torch.cat([sample_predicted_noise,sample_noise],dim=0)
+                    sample_uncond_predicted_noise = model(sample_x, sample_t, torch.zeros_like(sample_charAttr_list))
+                    
+                if cfg_scale > 0:
+                    predicted_noise = torch.lerp(sample_uncond_predicted_noise, sample_predicted_noise, cfg_scale)
+                
+                t = (torch.ones(len(sample_all_x)) * i).long()
+                a_t = diffusion.alpha_t(t)
+                aBar_t = diffusion.alpha_bar_t(t)
+                b_t = diffusion.beta_t(t)
+                
+                if i > 1:
+                    noise = torch.randn_like(sample_all_x)
+                else:
+                    noise = torch.zeros_like(sample_all_x)
+                
+                sample_all_x = 1 / torch.sqrt(a_t) * (
+                        sample_all_x - ((1 - a_t) / (torch.sqrt(1 - aBar_t))) * predicted_noise) + torch.sqrt(
+                    b_t) * noise
+                for sample_image,sample_char in zip(sample_all_x, sampling_chars):
+                    example_images.append(wandb.Image(sample_image, caption=f"Sample:{sample_char}"))
+                    wandb.log({
+                        "Examples": example_images
+                    })
+                model.train()
+                # sample_all_x = (sample_all_x.clamp(-1, 1) + 1) / 2
+                # sample_all_x = (sample_all_x * 255).type(torch.uint8)
             # plot_images(sampled_images)
-            save_images(sampled_images, os.path.join(result_image_path, f"{epoch_id}.jpg"))
+            # save_images(sample_all_x, os.path.join(result_image_path, f"{epoch_id}.jpg"))
             torch.save(model,os.path.join(result_model_path,f"model_{epoch_id}.pt"))
             torch.save(model.state_dict(), os.path.join(result_model_path, f"ckpt_{epoch_id}.pt"))
             torch.save(optimizer.state_dict(), os.path.join(result_model_path, f"optim_{epoch_id}.pt"))

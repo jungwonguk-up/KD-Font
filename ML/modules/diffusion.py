@@ -3,8 +3,8 @@ from tqdm import tqdm
 import torch
 from torch.utils.data import TensorDataset,DataLoader
 from .utils import CharAttar
-import onnxruntime as ort
-import onnx
+# import onnxruntime as ort
+# import onnx
 from .utils import NumpyDataset
 import numpy as np
 class Diffusion:
@@ -75,6 +75,7 @@ class Diffusion:
             x_list = torch.randn((sampleImage_len, 1, self.img_size, self.img_size)).to(self.device)
 
             y_idx = list(range(n))[::math.floor(n/sampleImage_len)][:sampleImage_len]
+            
             contents_index = torch.IntTensor(y_idx)
             contents = [dataset.dataset.classes[content_index] for content_index in contents_index]
             charAttr_list = charAttar.make_charAttr(sample_img, contents_index, contents,mode=3).to(self.device)

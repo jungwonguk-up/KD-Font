@@ -4,7 +4,7 @@ from PIL import Image, ImageDraw, ImageFont, ImageOps
 from tqdm import tqdm
 import _thread
 import numpy as np
-image_size = 128
+image_size = 64
 
 def make_font_image(font,unicodeChars,file_path):
     # Get font image size and bbox
@@ -13,7 +13,7 @@ def make_font_image(font,unicodeChars,file_path):
 
     # Check font image is empty / If font image is empty, do not create image
     if x == 0 or y == 0 or (right-left) == 0 or (bottom-top) == 0:
-        return
+        return False
 
     # Make base image
     font_image = Image.new('RGB', (image_size, image_size), color='white')
@@ -24,6 +24,8 @@ def make_font_image(font,unicodeChars,file_path):
     
     # Save image
     font_image.save(file_path)
+    
+    return True
     
         
 def make_font_grayscale_image(font,unicodeChars,file_path):
@@ -51,8 +53,8 @@ def make_font_grayscale_image(font,unicodeChars,file_path):
 if __name__ == '__main__':
     # set parameter
     fonts_base_path = "/usr/share/fonts/truetype"
-    result_path = "./Hangul_Characters_Image128_Grayscale/"
-    csv_path = "./MakeFont"
+    result_path = "/home/hojun/Documents/code/cr_diffusion/KoFont-Diffusion/Tools/MakeFont/Hangul_Characters_Image128_Grayscale"
+    csv_path = "."
     
     if os.path.isdir(result_path):
         pass
@@ -89,8 +91,8 @@ if __name__ == '__main__':
                 
                 # Make Font Image
                 # _thread.start_new_thread(make_font_grayscale_image,(fonts_base_path,fonts_folder,font_size,unicodeChars,result_path))
-                make_font_image(font=font, unicodeChars=unicodeChars, file_path=file_path)
-                
-                train_files.append([file_name,file_path,unicodeChars])
+                make_flag = make_font_image(font=font, unicodeChars=unicodeChars, file_path=file_path)
+                if make_flag:
+                    train_files.append([file_name,file_path,unicodeChars])
     train_csv = pd.DataFrame(train_files)
     train_csv.to_csv(os.path.join(csv_path,"diffusion_font_train.csv"),index=False)
