@@ -200,8 +200,8 @@ if __name__ == '__main__':
                         "Examples": example_images
                     })
                 model.train()
-                # sample_all_x = (sample_all_x.clamp(-1, 1) + 1) / 2
-                # sample_all_x = (sample_all_x * 255).type(torch.uint8)
+                sample_all_x = (sample_all_x.clamp(-1, 1) + 1) / 2
+                sample_all_x = (sample_all_x * 255).type(torch.uint8)
             # plot_images(sampled_images)
             # save_images(sample_all_x, os.path.join(result_image_path, f"{epoch_id}.jpg"))
             torch.save(model,os.path.join(result_model_path,f"model_{epoch_id}.pt"))
