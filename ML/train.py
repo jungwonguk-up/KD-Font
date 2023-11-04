@@ -29,7 +29,7 @@ import wandb
 # seed = 7777
 
 # graphic number #####
-gpu_num = 1 #####
+gpu_num = 0 #####
 input_size = 64
 batch_size = 8 #####
 num_classes = 11172 #####
@@ -37,25 +37,23 @@ lr = 3e-4 #####
 n_epochs = 300 #####
 start_epoch = 10
 mode = 2 # mode_1 : with contents, stroke, mode_2 : with contents, stroke, style #####
-sampleImage_len = 36
-sampling_chars = "가나다라"
+sampling_chars = "괴그기깅나는늘다도디러로를만버없에우워을자점하한했"
 noise_step = 1000
 cfg_scale = 3
 use_amp = True
 resume_train = False
 
-train_dirs = '/home/hojun/Documents/code/cr_diffusion/KoFont-Diffusion/Tools/MakeFont/Hangul_Characters_Image128_Grayscale'
-sample_img_path = f'{train_dirs}/62570_가.png'
+train_dirs = '/home/hojun/Documents/code/cr_diffusion/KD-Font/Tools/MakeFont/Hangul_Characters_Image64_Grayscale'
+sample_img_path = f'{train_dirs}/62570_늘.png'
 
-csv_path = "/home/hojun/Documents/code/cr_diffusion/KoFont-Diffusion/Tools/MakeFont/diffusion_font_train.csv"
-style_path = "/home/hojun/Documents/code/cr_diffusion/KoFont-Diffusion/ML/style_enc.pth"
+csv_path = "/home/hojun/Documents/code/cr_diffusion/KD-Font/Tools/MakeFont/diffusion_font_train.csv"
+style_path = "/home/hojun/Documents/code/cr_diffusion/KD-Font/ML/style_enc.pth"
 
 
-torch.multiprocessing.set_start_method('forkserver',force=True)
+# torch.multiprocessing.set_start_method('forkserver',force=True)
 if __name__ == '__main__':
-
     #Set save file
-    file_number= "Unet64_image420_3"
+    file_number= "Unet64_image420_5"
     result_image_path = os.path.join("results", "images", 'font_noStrokeStyle_{}'.format(file_number))
     result_model_path = os.path.join("results", "models", 'font_noStrokeStyle_{}'.format(file_number))
     if os.path.exists(result_model_path):
@@ -65,13 +63,13 @@ if __name__ == '__main__':
     os.makedirs(result_model_path, exist_ok=True)
 
     # wandb init
-    wandb.init(project="diffusion_font_test", config={
-                "learning_rate": 0.0003,
-                "architecture": "UNET",
-                "dataset": "HOJUN_KOREAN_FONT64",
-                "notes":"content, yes_stoke, non_style/ 64 x 64, 420 dataset"
-                },
-               name = "self-attetnion condtion content stroke style") #####
+    # wandb.init(project="diffusion_font_test", config={
+    #             "learning_rate": 0.0003,
+    #             "architecture": "UNET",
+    #             "dataset": "HOJUN_KOREAN_FONT64",
+    #             "notes":"content, yes_stoke, non_style/ 64 x 64, 420 dataset"
+    #             },
+    #            name = "self-attetnion condtion content stroke GAP 25") #####
     wandb.init(mode="disabled")
 
 
@@ -96,7 +94,13 @@ if __name__ == '__main__':
     # dataset = Subset(dataset, n)
 
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=12)
-    test_dataloader = DataLoader(sampling_dataset,batch_size=batch_size,shuffle=False, num_workers=12)
+    test_dataloader = DataLoader(sampling_dataset,batch_size=batch_size,shuffle=False)
+    
+    sample_img = Image.open(sample_img_path)
+    sample_img = transforms(sample_img).to(device)
+    sample_img = torch.unsqueeze(sample_img,1)
+    sample_img = sample_img.repeat(len(sampling_chars), 1, 1, 1)
+
     
     if resume_train:
         #Set model
@@ -159,53 +163,20 @@ if __name__ == '__main__':
             loss.backward()
             optimizer.step()
         toc = time()
-        wandb.log({"train_mse_loss": loss,'train_time':toc-tic})
 
         train_pbar.set_postfix(MSE=loss.item())
         
         if epoch_id % 10 == 0 :
-            example_images = []
-            sample_all_x = sampling_dataset.all_x.clone()
-            pbar = tqdm(list(reversed(range(1, noise_step))),desc=f"sampling_{epoch_id}")
-            for i in pbar:
-                sample_predicted_noise = torch.tensor([]).to(device)
-                sample_uncond_predicted_noise = torch.tensor([]).to(device)
-                for _, (sample_img,sample_x, sample_y) in enumerate(test_dataloader):
-                    sample_t = (torch.ones(len(sample_x)) * i).long().to(device)
-                    sample_x = sample_x.to(device)
-                    sample_charAttr_list = charAttar.make_charAttr(sample_img, sample_y, mode=mode).to(device)
-                    sample_noise = model(sample_x, sample_t, sample_charAttr_list)
-                    sample_predicted_noise = torch.cat([sample_predicted_noise,sample_noise],dim=0)
-                    sample_uncond_predicted_noise = model(sample_x, sample_t, torch.zeros_like(sample_charAttr_list))
-                    
-                if cfg_scale > 0:
-                    predicted_noise = torch.lerp(sample_uncond_predicted_noise, sample_predicted_noise, cfg_scale)
-                
-                t = (torch.ones(len(sample_all_x)) * i).long()
-                a_t = diffusion.alpha_t(t)
-                aBar_t = diffusion.alpha_bar_t(t)
-                b_t = diffusion.beta_t(t)
-                
-                if i > 1:
-                    noise = torch.randn_like(sample_all_x)
-                else:
-                    noise = torch.zeros_like(sample_all_x)
-                
-                sample_all_x = 1 / torch.sqrt(a_t) * (
-                        sample_all_x - ((1 - a_t) / (torch.sqrt(1 - aBar_t))) * predicted_noise) + torch.sqrt(
-                    b_t) * noise
-                for sample_image,sample_char in zip(sample_all_x, sampling_chars):
-                    example_images.append(wandb.Image(sample_image, caption=f"Sample:{sample_char}"))
-                    wandb.log({
-                        "Examples": example_images
-                    })
-                model.train()
-                sample_all_x = (sample_all_x.clamp(-1, 1) + 1) / 2
-                sample_all_x = (sample_all_x * 255).type(torch.uint8)
+            sampled_images = diffusion.portion_sampling(model, sampling_chars,charAttar=charAttar,sample_img=sample_img)
+            model.train()
+            # sample_all_x = (sample_all_x.clamp(-1, 1) + 1) / 2
+            # sample_all_x = (sample_all_x * 255).type(torch.uint8)
             # plot_images(sampled_images)
             # save_images(sample_all_x, os.path.join(result_image_path, f"{epoch_id}.jpg"))
             torch.save(model,os.path.join(result_model_path,f"model_{epoch_id}.pt"))
             torch.save(model.state_dict(), os.path.join(result_model_path, f"ckpt_{epoch_id}.pt"))
             torch.save(optimizer.state_dict(), os.path.join(result_model_path, f"optim_{epoch_id}.pt"))
+        else:
+            wandb.log({"train_mse_loss": loss,'train_time':toc-tic})
 
     wandb.finish()
