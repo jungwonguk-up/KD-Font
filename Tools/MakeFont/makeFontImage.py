@@ -1,106 +1,96 @@
 import os
+import pandas as pd
 from PIL import Image, ImageDraw, ImageFont, ImageOps
 from tqdm import tqdm
 import _thread
 import numpy as np
 image_size = 128
 
-def make_font_image(fonts_base_path,fonts_folder,font_size,unicodeChars,result_path):
-    for ttf in fonts:
-        # Get Font image
-        font = ImageFont.truetype(font=os.path.join(fonts_base_path, fonts_folder, ttf), size=font_size)
+def make_font_image(font,unicodeChars,file_path):
+    # Get font image size and bbox
+    x,y = font.getsize(unicodeChars)
+    left, top, right, bottom = font.getbbox(unicodeChars)
 
-        # Get font image size and bbox
-        x,y = font.getsize(unicodeChars)
-        left, top, right, bottom = font.getbbox(unicodeChars)
+    # Check font image is empty / If font image is empty, do not create image
+    if x == 0 or y == 0 or (right-left) == 0 or (bottom-top) == 0:
+        return
 
-        # Check font image is empty / If font image is empty, do not create image
-        if x == 0 or y == 0 or (right-left) == 0 or (bottom-top) == 0:
-            continue
+    # Make base image
+    font_image = Image.new('RGB', (image_size, image_size), color='white')
 
-        # make base image
-        font_image = Image.new('RGB', (image_size, image_size), color='white')
-
-        # Draw font image on base image
-        draw_image = ImageDraw.Draw(font_image)
-        draw_image.text(((image_size-x)/2, (image_size-y)/2), unicodeChars[0], font=font, fill='black')
-
-        # Set file name
-        # file_name = os.path.join(result_path, ttf[:-4]+"_"+unicodeChars)
-        ttf_name = ttf[:-4].replace(" ","")
-        # print(ttf[:-4],ttf_name)
-        file_name = result_path + "/" + ttf_name + "_" + unicodeChars
-
-        # Save image
-        font_image.save('{}.png'.format(file_name)) 
+    # Draw font image on base image
+    draw_image = ImageDraw.Draw(font_image)
+    draw_image.text(((image_size-x)/2, (image_size-y)/2), unicodeChars[0], font=font, fill='black')
+    
+    # Save image
+    font_image.save(file_path)
+    
         
-def make_font_grayscale_image(fonts_base_path,fonts_folder,font_size,unicodeChars,result_path):
-    for ttf in fonts:
-        # Get Font image
-        font = ImageFont.truetype(font=os.path.join(fonts_base_path, fonts_folder, ttf), size=font_size)
+def make_font_grayscale_image(font,unicodeChars,file_path):
+    # Get font image size and bbox
+    x,y = font.getsize(unicodeChars)
+    left, top, right, bottom = font.getbbox(unicodeChars)
 
-        # Get font image size and bbox
-        x,y = font.getsize(unicodeChars)
-        left, top, right, bottom = font.getbbox(unicodeChars)
+    # Check font image is empty / If font image is empty, do not create image
+    if x == 0 or y == 0 or (right-left) == 0 or (bottom-top) == 0:
+        return
 
-        # Check font image is empty / If font image is empty, do not create image
-        if x == 0 or y == 0 or (right-left) == 0 or (bottom-top) == 0:
-            continue
-        
+    # Make base image
+    font_image = Image.new('RGB', (image_size, image_size), color='white')
 
-        # make base image
-        # font_image = Image.new('L', (image_size, image_size),255)
-        font_image = Image.new('L', (image_size, image_size),255)
-
-        # Draw font image on base image
-        draw_image = ImageDraw.Draw(font_image)
-        # draw_image.text(((image_size-x)/2, (image_size-y)/2), unicodeChars[0], font=font)
-
-        draw_image.text(((image_size-x)/2, (image_size-y)/2), unicodeChars[0], font=font, fill='black')
-
-        # Set file name
-        # file_name = os.path.join(result_path, ttf[:-4]+"_"+unicodeChars)
-        ttf_name = ttf[:-4].replace(" ","")
-        # print(ttf[:-4],ttf_name)
-        file_name = result_path + "/" + ttf_name + "_" + unicodeChars
-        # font_image = ImageOps.grayscale(font_image)
-        # Save image
-        font_image.save('{}.png'.format(file_name))
+    # Draw font image on base image
+    draw_image = ImageDraw.Draw(font_image)
+    draw_image.text(((image_size-x)/2, (image_size-y)/2), unicodeChars[0], font=font, fill='black')
+    
+    # Convert the image to grayscale
+    font_image = ImageOps.grayscale(font_image)
+    
+    # Save image
+    font_image.save(file_path)
 
 if __name__ == '__main__':
-    # set base path
+    # set parameter
     fonts_base_path = "/usr/share/fonts/truetype"
-    base_path = "/home/hojun/PycharmProjects/diffusion_font/code/KoFont-Diffusion/hojun/make_font/data/Hangul_Characters_Image128_Grayscale/"
+    result_path = "./Hangul_Characters_Image128_Grayscale/"
+    csv_path = "./MakeFont"
+    
+    if os.path.isdir(result_path):
+        pass
+    else:
+        os.mkdir(result_path)
+    
     # make list of font folder names
     fonts_folder_list = os.listdir(fonts_base_path)
     fonts_folder_list = [x for x in fonts_folder_list if x[0] != "."]
 
-    # set start and end code point(unicode)
-    start = "AC00"
-    end = "D7AF"
-
-    # hangul syllables's code point list
-    hangul_codePoint = list(range(int(start, 16), int(end, 16) + 1))
-    hangul_codePoint = [format(x, 'X') for x in hangul_codePoint]
+    # set making char point(unicode)
+    makeing_chars = "가나다"
+    hangul_codePoint = [format(ord(ch),'X') for ch in makeing_chars]
 
     # Set font's size
     font_size = int(image_size *0.8)
-
-    # Generate each character's folder
-    for uni in tqdm(hangul_codePoint):
-        unicodeChars = chr(int(uni, 16))
-
-        result_path = os.path.join(base_path,unicodeChars)
-
-        os.makedirs(result_path, exist_ok=True)
-
+    
+    train_files = []
+    
     # Generate each character's image with different font
-    for uni in tqdm(hangul_codePoint):
-        unicodeChars = chr(int(uni, 16))
-        result_path = os.path.join(base_path,unicodeChars)
-
-        for fonts_folder in fonts_folder_list:
-            fonts = os.listdir(os.path.join(fonts_base_path,fonts_folder))
-            fonts = [x for x in fonts if x[0] != "."]
-            _thread.start_new_thread(make_font_grayscale_image,(fonts_base_path,fonts_folder,font_size,unicodeChars,result_path))
-            # make_font_grayscale_image(fonts_base_path,fonts_folder,font_size,unicodeChars,result_path)
+    for fonts_folder in fonts_folder_list:
+        fonts = os.listdir(os.path.join(fonts_base_path,fonts_folder))
+        fonts = [x for x in fonts if x[0] != "."]
+        for ttf in fonts:
+            font = ImageFont.truetype(font=os.path.join(fonts_base_path, fonts_folder, ttf), size=font_size)
+            
+            # Set file name
+            ttf_name = ttf[:-4].replace(" ","")
+            for uni in tqdm(hangul_codePoint):
+                unicodeChars = chr(int(uni, 16))
+                # Set file name and path
+                file_name = ttf_name + "_" + unicodeChars + ".png"
+                file_path = os.path.join(result_path, file_name)
+                
+                # Make Font Image
+                # _thread.start_new_thread(make_font_grayscale_image,(fonts_base_path,fonts_folder,font_size,unicodeChars,result_path))
+                make_font_image(font=font, unicodeChars=unicodeChars, file_path=file_path)
+                
+                train_files.append([file_name,file_path,unicodeChars])
+    train_csv = pd.DataFrame(train_files)
+    train_csv.to_csv(os.path.join(csv_path,"diffusion_font_train.csv"),index=False)
