@@ -56,12 +56,16 @@
 - [x] Self-Attention model
 - [x] ONNX, TensorRT Lightweight
 - [x] Labeling Tool
-- [x] OCR model and test pipline
 - [x] DDPM, DDIM backbone, Stroke Type Design
+
+### Version 1.5
+- [x] OCR model and Test pipline
 - [x] ML Pipline, Backend
-- [x] Image Sampler
+- [x] Sample Image Generator
 - [x] TTF Transformer
-- [x] RLHF  
+- [x] RLHF
+- [x] UI/UX Desgin
+- [x] Front End
 
 
 ### Version2
