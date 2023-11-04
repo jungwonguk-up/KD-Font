@@ -52,6 +52,7 @@
 
 ### Version 1
 - [x] Korean model
+- [x] Stroke Embedding Design
 - [x] Self-Attention model
 - [x] ONNX, TensorRT Lightweight
 - [x] Labeling Tool
