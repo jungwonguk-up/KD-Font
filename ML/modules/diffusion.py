@@ -3,8 +3,8 @@ from tqdm import tqdm
 import torch
 from torch.utils.data import TensorDataset,DataLoader
 from .utils import CharAttar
-import onnxruntime as ort
-import onnx
+# import onnxruntime as ort
+# import onnx
 from .utils import NumpyDataset
 import numpy as np
 class Diffusion:
