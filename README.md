@@ -51,15 +51,15 @@
 # Project Version
 
 ### Version 1
-- [x] Korean model
+- [x] Korean Model
 - [x] Stroke Embedding Design
-- [x] Self-Attention model
+- [x] Self-Attention Model
 - [x] ONNX, TensorRT Lightweight
 - [x] Labeling Tool
 - [x] DDPM, DDIM backbone, Stroke Type Design
 
 ### Version 1.5
-- [x] OCR model and Test pipline
+- [x] OCR Model and Test Pipline
 - [x] ML Pipline, Backend
 - [x] Sample Image Generator
 - [x] TTF Transformer
@@ -69,9 +69,9 @@
 
 
 ### Version2
-- [x] Cross-Attention model
+- [x] Cross-Attention Model
 - [ ] Service Page
-- [ ] Chinese model
+- [ ] Chinese Model
 - [ ] Continuous Learning
 - [ ] User Feedback Pipline
 - [ ] Python Optimization
