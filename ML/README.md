@@ -25,31 +25,59 @@ CUDNN
 pytorch
 python 
 ```
-## 훈련
-```shell
+## 환경 설치
+```bash
 # 패키지 설치
-
+pip install torch==2.0.0 torchvision==0.15.1 torchaudio==2.0.1 --index-url https://download.pytorch.org/whl/cu118
+pip install tqdm==4.65.0
+pip install pandas==2.0.0
+pip install matplotlib==3.3.2
+pip install wandb
 ```
 
-```shell
-# 학습된 모델 다운 & 압축해제 & 덮어쓰기
-.
-├── font_python
-│   ├── baseline
-│   │   └── checkpoint
-│   │       └── experiment_0_batch_16
-│   │           ├── checkpoint
-│   │           ├── unet.model-107850.data-00000-of-00001
-│   │           ├── unet.model-107850.index
-│   │           └── unet.model-107850.meta
- 
-```
-[Download PreTrained Model](https://drive.google.com/file/d/1uLGAyY7zXUi2BHuc90-ILw-IgawVcsZ8/view?usp=sharing)
+## 데이터셋 만들기
 
 ```shell
 # font2image 데이터 생성
 python 02_font2image.py 
 ```
+
+## 훈련
+
+```shell
+# 학습된 모델 다운 & 압축해제 & 덮어쓰기
+├── ML
+│   ├── config
+│   │   ├── train.yaml
+│   │   └── test.yaml
+│   │── models
+│   │   ├── __init__.py
+│   │   ├── blocks.py
+│   │   ├── cbam.py
+│   │   ├── frn.py
+│   │   ├── modules.py
+│   │   ├── self_attention.py
+│   │   ├── style_encoder.py
+│   │   └── utils.py
+│   │── modules
+│   │   ├── datasets.py
+│   │   ├── diffusion.py
+│   │   └── utils.py
+│   │── weight
+│   │   ├── style_enc.pth
+│   │   └── PretrainModel (Put Pretrain Model in here)
+│   │── train.py
+│   │── test.py
+│   │── test_onnx.py
+│   │── README.md
+├── DATA
+│   ├── sampling_imgs
+│   │   └── Sampling Image
+│   │── Datasets Folder
+│   │── Train.csv
+```
+[Download PreTrained Model](https://drive.google.com/file/d/1uLGAyY7zXUi2BHuc90-ILw-IgawVcsZ8/view?usp=sharing)
+
 
 ```shell
 # Train
