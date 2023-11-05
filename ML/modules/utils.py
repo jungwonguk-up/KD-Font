@@ -5,11 +5,14 @@ import torch.nn.functional as F
 
 from matplotlib import pyplot as plt
 from PIL import Image
-import random, os
-from collections import OrderedDict
+import random, os, yaml
 from torch.utils.data import Dataset
 
 from models.style_encoder import style_enc_builder
+
+def load_yaml(path):
+	with open(path, 'r') as f:
+		return yaml.load(f, Loader=yaml.FullLoader)
 
 def save_images(images, path, **kwargs):
     for idx,image in enumerate(images):
