@@ -1,0 +1,41 @@
+# Graphic
+gpu_num: 0
+
+# Train value
+n_epochs: 300
+batch_size: 8 
+input_size: 64
+
+# Retrain
+resume_train: False
+start_epoch: 10
+lr: 3.0e-4
+model_path: ""
+optim_path: ""
+
+
+# Diffusion
+first_beta: 1.0e-4
+end_beta: 0.02
+noise_step: 1000
+beta_schedule_type: 'linear'
+
+# CharAttar
+mode: 2 # mode_1 : with contents, stroke, mode_2 : with contents, stroke, style #####
+sampling_chars: "괴그기깅나는늘다도디러로를만버없에우워을자점하한했"
+num_classes: 11172
+cfg_scale: 3
+
+# Set folder name
+folder_name: "self_attention420_1"
+
+# Set path
+train_dirs: '../Data//Hangul_Characters_Image64_Grayscale'
+sample_img_path: '../Data/sampling_imgs/62570_했.png'
+
+csv_path: "../Data//diffusion_font_train.csv"
+style_path: "weight/style_enc.pth"
+result_path: "results"
+
+# Wandb
+wandb: True

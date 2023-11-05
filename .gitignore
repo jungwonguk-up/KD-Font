@@ -1,4 +1,3 @@
-Tools/MakeFont/diffusion_font_train.csv
 checkpoints
 results
 hojun/wandb
@@ -20,3 +19,4 @@ image
 wandb
 *.pt
 *.engine
+diffusion_font_train.csv
