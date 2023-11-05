@@ -27,7 +27,7 @@ num_classes: 11172
 cfg_scale: 3
 
 # Set folder name
-folder_name: "self_attention420_1"
+folder_name: "self_attention445_1"
 
 # Set path
 train_dirs: '../Data//Hangul_Characters_Image64_Grayscale'

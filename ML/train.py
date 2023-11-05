@@ -1,8 +1,7 @@
-import random, os,sys
+import random, os,sys, wandb
 from time import time
 from tqdm import tqdm
 from PIL import Image
-from glob import glob
 
 import numpy as np
 import torch, torchvision
@@ -15,35 +14,10 @@ prj_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(prj_dir)
 
 from modules.diffusion import Diffusion
-from modules.utils import CharAttar, save_images, load_yaml
+from modules.utils import CharAttar, load_yaml
 from modules.datasets import DiffusionDataset, DiffusionSamplingDataset
 
 from models.utils import UNet
-
-import gc
-
-import wandb
-
-
-# # seed
-# seed = 7777
-
-# graphic number #####
-# config['gpu_num'] = 0 #####
-# config['input_size'] = 64
-# config['batch_size'] = 8 #####
-# config['num_classes'] = 11172 #####
-# config['lr'] = 3e-4 #####
-# config['n_epochs'] = 300 #####
-# config['start_epoch'] = 10
-# config['mode'] = 2 # mode_1 : with contents, stroke, mode_2 : with contents, stroke, style #####
-# config['sampling_chars'] = "괴그기깅나는늘다도디러로를만버없에우워을자점하한했"
-# config['noise_step'] = 1000
-# config['cfg_scale'] = 3
-
-
-# config['resume_train'] = False
-
 
 
 if __name__ == '__main__':
@@ -60,20 +34,22 @@ if __name__ == '__main__':
     result_image_path = os.path.join(prj_dir,config['result_path'], "images", config['folder_name'])
     result_model_path = os.path.join(prj_dir,config['result_path'], "models", config['folder_name'])
     
+    # Make result folder
     if os.path.exists(result_model_path):
         print("file_exist")
         exit()
     os.makedirs(result_image_path, exist_ok=True)
     os.makedirs(result_model_path, exist_ok=True)
 
+    # Wandb
     if config['wandb']:
-        wandb.init(project="diffusion_font_test", config={
+        wandb.init(project="diffusion_font", config={
                     "learning_rate": 0.0003,
-                    "architecture": "UNET",
-                    "dataset": "HOJUN_KOREAN_FONT64",
-                    "notes":"content, yes_stoke, non_style/ 64 x 64, 420 dataset"
+                    "architecture": "UNET-SelfAttention",
+                    "dataset": "HOJUN_KOREAN_FONT445",
+                    "notes":"content, yes_stoke, style/ 64 x 64, 445 dataset"
                     },
-                   name = "self-attetnion condtion content stroke GAP 25")
+                   name = "self-attetnion 440")
     else:
         wandb.init(mode="disabled")
 
@@ -81,9 +57,6 @@ if __name__ == '__main__':
     # Set device(GPU/CPU)
     os.environ['CUDA_VISIBLE_DEVICES'] = str(config['gpu_num'])
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-    # Set data directory
-    # train_dirs = '/home/hojun/PycharmProjects/diffusion_font/code/KoFont-Diffusion/hojun/make_font/data/Hangul_Characters_Image64_radomSampling420_GrayScale' #####
 
     # Set transform
     transforms = torchvision.transforms.Compose([
@@ -93,6 +66,7 @@ if __name__ == '__main__':
         torchvision.transforms.Normalize((0.5), (0.5))
     ])
     
+    # Set Dataset
     train_dataset = DiffusionDataset(csv_path=csv_path,transform=transforms)
     sampling_dataset = DiffusionSamplingDataset(sampling_img_path=sample_img_path,sampling_chars=config['sampling_chars'],img_size=config['input_size'],device=device,transforms=transforms )
     
@@ -103,12 +77,13 @@ if __name__ == '__main__':
     train_dataloader = DataLoader(train_dataset, batch_size=config['batch_size'], shuffle=True, num_workers=12)
     # test_dataloader = DataLoader(sampling_dataset,batch_size=config['batch_size'],shuffle=False)
     
+    # Generate sample image
     sample_img = Image.open(sample_img_path)
     sample_img = transforms(sample_img).to(device)
     sample_img = torch.unsqueeze(sample_img,1)
     sample_img = sample_img.repeat(len(config['sampling_chars']), 1, 1, 1)
 
-    
+    # Retrain or train
     if config['resume_train']:
         #Set model
         model = UNet()
@@ -145,9 +120,10 @@ if __name__ == '__main__':
                           img_size=config['input_size'],
                           device=device)
 
-
+    # Load CharAttar
     charAttar = CharAttar(num_classes=config['num_classes'],device=device,style_path=style_path)
     
+    # Train
     for epoch_id in range(config['n_epochs']):
         if config['resume_train']:
             epoch_id += config['start_epoch']
@@ -174,12 +150,12 @@ if __name__ == '__main__':
 
         train_pbar.set_postfix(MSE=loss.item())
         
+        # Sampling
         if epoch_id % 10 == 0 :
             sampled_images = diffusion.portion_sampling(model, config['sampling_chars'],charAttar=charAttar,sample_img=sample_img,batch_size=config['batch_size'])
             model.train()
             
-            # plot_images(sampled_images)
-            # save_images(sample_all_x, os.path.join(result_image_path, f"{epoch_id}.jpg"))
+            # Save Model weight & optimizer
             torch.save(model,os.path.join(result_model_path,f"model_{epoch_id}.pt"))
             torch.save(model.state_dict(), os.path.join(result_model_path, f"ckpt_{epoch_id}.pt"))
             torch.save(optimizer.state_dict(), os.path.join(result_model_path, f"optim_{epoch_id}.pt"))
