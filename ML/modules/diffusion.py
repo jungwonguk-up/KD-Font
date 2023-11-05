@@ -69,7 +69,7 @@ class Diffusion:
     def indexToChar(self,y):
         return chr(44032+y)
     
-    def portion_sampling(self, model, sampling_chars,charAttar,sample_img, cfg_scale=3):
+    def portion_sampling(self, model, sampling_chars,charAttar,sample_img,batch_size, cfg_scale=3):
         example_images = []
         model.eval()
         with torch.no_grad():
@@ -79,7 +79,6 @@ class Diffusion:
             pbar = tqdm(list(reversed(range(1, self.noise_step))),desc="sampling")
             for i in pbar:
                 dataset = TensorDataset(x_list,charAttr_list)
-                batch_size= 18
                 dataloader = DataLoader(dataset,batch_size=batch_size,shuffle=False)
                 predicted_noise = torch.tensor([]).to(self.device)
                 uncond_predicted_noise = torch.tensor([]).to(self.device)

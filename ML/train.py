@@ -1,21 +1,21 @@
-from datetime import datetime
+import random, os,sys
 from time import time
-import numpy as np
-import random, os
-from glob import glob
-import torch, torchvision
-from torch.utils.data import DataLoader
-from torch import optim
-import torch.nn as nn
-
-from torch.utils.data import random_split, Subset
-
 from tqdm import tqdm
 from PIL import Image
-from matplotlib import pyplot as plt
+from glob import glob
+
+import numpy as np
+import torch, torchvision
+from torch import optim
+import torch.nn as nn
+from torch.utils.data import DataLoader
+from torch.utils.data import Subset
+
+prj_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(prj_dir)
 
 from modules.diffusion import Diffusion
-from modules.utils import save_images, plot_images,CharAttar
+from modules.utils import CharAttar, save_images, load_yaml
 from modules.datasets import DiffusionDataset, DiffusionSamplingDataset
 
 from models.utils import UNet
@@ -40,7 +40,8 @@ mode = 2 # mode_1 : with contents, stroke, mode_2 : with contents, stroke, style
 sampling_chars = "괴그기깅나는늘다도디러로를만버없에우워을자점하한했"
 noise_step = 1000
 cfg_scale = 3
-use_amp = True
+
+
 resume_train = False
 
 train_dirs = '/home/hojun/Documents/code/cr_diffusion/KD-Font/Tools/MakeFont/Hangul_Characters_Image64_Grayscale'
@@ -52,7 +53,10 @@ style_path = "/home/hojun/Documents/code/cr_diffusion/KD-Font/ML/style_enc.pth"
 
 # torch.multiprocessing.set_start_method('forkserver',force=True)
 if __name__ == '__main__':
-    #Set save file
+    # Load config
+    config_path = os.path.join(prj_dir, 'config', 'train.yaml')
+    config = load_yaml(config_path)
+    
     file_number= "Unet64_image420_5"
     result_image_path = os.path.join("results", "images", 'font_noStrokeStyle_{}'.format(file_number))
     result_model_path = os.path.join("results", "models", 'font_noStrokeStyle_{}'.format(file_number))
