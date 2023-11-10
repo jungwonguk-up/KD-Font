@@ -55,8 +55,8 @@ def make_font_grayscale_image(font,unicodeChars,file_path):
 if __name__ == '__main__':
     # set parameter
     fonts_base_path = "/usr/share/fonts/truetype"
-    result_path = "/home/hojun/Documents/code/cr_diffusion/KD-Font/Data/Hangul_Characters_Image64_Grayscale"
-    csv_path = "/home/hojun/Documents/code/cr_diffusion/KD-Font/Data"
+    result_path = "Hangul_Characters_Image64_Grayscale"
+    csv_path = ""
     
     if os.path.isdir(result_path):
         pass

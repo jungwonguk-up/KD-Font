@@ -7,7 +7,25 @@ sys.path.append(prj_dir)
 
 from modules.diffusion import Diffusion
 from models.utils import UNet
-from modules.utils import CharAttar , load_yaml
+from modules.utils import CharAttar
+from modules.datasets import DiffusionDataset
+
+batch_size = 8 #####
+sampleImage_len = 25
+
+
+num_classes = 11172 # 이게 문제인건가?
+input_length = 100
+contents_dim = 100
+input_size = 64
+mode = "new"
+folder_name ="test_3"
+train_dirs = 'sample_data'
+sample_img_path = 'sample_img/d03fc0a9c3190dce.png'
+style_path = "/root/paper_project/ML/weight/style_enc.pth"
+csv_path = "/root/paper_project/Tools/MakeFont/diffusion_font_train.csv"
+
+sampling_chars = "괴그기깅나는늘다도디러로를만버없에우워을자점하한했"
 
 if __name__ == '__main__':
     # Load config
