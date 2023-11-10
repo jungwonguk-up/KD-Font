@@ -23,7 +23,6 @@ class PreProcess:
         resize_ratio = resize_width / w # resize_width / original_width
         resize_img = cv2.resize(image, dsize=(0,0), fx=resize_ratio, fy=resize_ratio, interpolation=cv2.INTER_LINEAR)
         return resize_img
-    
     @staticmethod
     def PIL_resize(image: Image.Image, size: int = 200) -> Image.Image:
         return image.resize((size, size), Image.Resampling.LANCZOS)
@@ -32,6 +31,16 @@ class PreProcess:
     def PIL_crop(image: Image.Image, crop_size: int = 10) -> Image.Image:
         h, w = image.size
         return image.crop((crop_size, crop_size, h-crop_size, w-crop_size))
+    
+    @staticmethod
+    def PIL_adjust_brightness(image: Image.Image, enhancce_value: float = 1.) -> Image.Image:
+        """
+        Additional brightness adjustment for pillow image
+        image (pillow image): input image
+        enhance_value : Determine brightness enhance level
+        """
+        bright_img = ImageEnhance.Brightness(image)
+        return bright_img.enhance(enhancce_value)
 
     @staticmethod
     def PIL_adjust_contrast(image: Image.Image, enhance_value: float = 1.) -> Image.Image:
@@ -76,6 +85,13 @@ class PreProcess:
 
         corners = sorted(np.concatenate(corners).tolist()) # Sorting the corners and converting them to desired shape.
         return corners
+    
+    @staticmethod
+    def sort_corner(corner: list) -> list:
+        if corner[1][1] < corner[0][1]:
+            corner[0], corner[1] = corner[1], corner[0]
+            corner[2], corner[3] = corner[3], corner[2]
+        return corner
     
     @staticmethod
     def perspective_transform(image: np.array, corners: list, size: int = 400) -> np.array:
@@ -148,7 +164,6 @@ class PreProcess:
         auto_result = cv2.convertScaleAbs(image, alpha=alpha*alpha_mul, beta=beta*beta_mul)
         return auto_result
 
-    
 
 def image_processing(image: Image.Image,
                      size: int = 200,
@@ -168,6 +183,7 @@ def image_processing(image: Image.Image,
     canny = PreProcess.detect_edge(image)
     contour = PreProcess.detect_contour(canny)
     corner = PreProcess.find_retangle_corners(contour)
+    corner = PreProcess.sort_corner(corner)
 
     # perspective_transform
     image = PreProcess.perspective_transform(image, corner, size*2)
@@ -184,9 +200,9 @@ def image_processing(image: Image.Image,
     # crop edge and resize
     image = PreProcess.PIL_crop(image, crop_size=edge_crop_size)
     image = PreProcess.PIL_resize(image, size=size)
+    image = image.rotate(270)
     return image
     
-
 
 def make_example_from_ttf(text: str,
                           background_image_path: str,
