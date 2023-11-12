@@ -96,6 +96,7 @@ src="https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=MongoDB&logoCol
 ### **Service Page**
 
 ## [너의 손글씨](https://yourhandwriting.shop/)
+그래픽카드 이슈로 11/17일부터 다시 정상 가동합니다.
 
 ---
 # Document
