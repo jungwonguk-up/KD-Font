@@ -60,7 +60,7 @@ src="https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=MongoDB&logoCol
 - [x] Korean Model
 - [x] Stroke Embedding Design
 - [x] Self-Attention Model
-- [x] ONNX, TensorRT Lightweight
+- [x] ONNX, TensorRT Lightweight (PTQ)
 - [x] Labeling Tool
 - [x] DDPM, DDIM backbone, Stroke Type Design
 
@@ -76,6 +76,7 @@ src="https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=MongoDB&logoCol
 
 ### Version2
 - [x] Cross-Attention Model
+- [ ] QAT
 - [ ] Service Page
 - [ ] Chinese Model
 - [ ] Continuous Learning
