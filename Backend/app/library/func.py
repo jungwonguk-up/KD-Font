@@ -42,7 +42,7 @@ async def read_image(file: UploadFile) -> Image.Image:
 async def save_image(image: Image.Image, path: str, format="jpeg"):
     """save image to path"""
     buffer = io.BytesIO()
-    image.save(buffer, format=format)
+    image.save(buffer, format=format, quality=100, subsampling=0)
 
     async with aiofiles.open(path, "wb") as file:
         await file.write(buffer.getbuffer())

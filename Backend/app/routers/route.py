@@ -12,7 +12,7 @@ from beanie import PydanticObjectId
 from database.db import Database
 from models.basemodel import UserRequest, UserRequestUpdate
 from library.func import get_storage_path, save_image, read_image
-from library.img_process import pre_processing, make_example_from_ttf
+from library.img_process import image_processing, make_example_from_ttf
 from library.get_config import get_config
 
 from typing import List
@@ -21,7 +21,7 @@ import time
 
 
 # 쓸 라우터랑 안쓸 라우터랑 분리하기?
-# TODO: 사용자 평가 db
+# TODO: logging
 
 INFERECE_SERVER_URL = get_config("Inference_URL")
 EXAMPLE_TEXT = get_config("example_text")
@@ -55,7 +55,7 @@ async def create_inference_request(email: str = Form(...), image_file: UploadFil
     # read image by pillow
     image_file = await read_image(image_file)
     # get crop image after pre-processing
-    cropped_image = pre_processing(image_file, brightness_adj_val=1.5, contrast_enhance_val=3)
+    cropped_image = image_processing(image_file, brightness_adj=1.5, contrast_enhance=2)
     # make path and save original & crop image
     storage_path = get_storage_path(user_id)
     image_path = storage_path / Path("ori.jpg") #TODO 확장자는 따로 지정해줘야하나?
@@ -66,9 +66,6 @@ async def create_inference_request(email: str = Form(...), image_file: UploadFil
         save_image(cropped_image, str(storage_path/"crop.jpg"))
     )
 
-    # await save_image(image_file, str(storage_path/"ori"))
-    # await save_image(cropped_image, str(storage_path/"crop"))
-    
     # create new db recode 
     user_request = UserRequest(
         id=user_id,
@@ -81,13 +78,23 @@ async def create_inference_request(email: str = Form(...), image_file: UploadFil
     print(f"Request ID {user_id[:-8]} recoded to DB sucessfully.")
 
     #TODO Request
-    # response = await request_rest(id=user_id,
-    #                               cropped_img_path=str(cropped_image_path),
-    #                               text=text)
+    response = await request_rest(id=user_id,
+                                  cropped_img_path=str(cropped_image_path),
+                                  text=EXAMPLE_TEXT)
     #TODO
-    # if response:
+    if response.status_code == 200:
+        return {"status": "success", "uuid": user_id}
+    
 
-    return {"message": "request info created sucessfully."}
+    return {"status": "fail"}
+
+    #TODO 프론트에 uuid 를 보내줘야 한다
+    # 1. 2개로 나눠줘야 한다 - 성공시, 실패시. 따로 메세지가 와야된다. 
+    # promise 에 resove 랑 reject 이라 
+    # 성공시
+    # return {"code": True, "message": "sucessfully", "uuid": uuid}
+    # # 실패시
+    # return {"code": False, "message": "ddd"}
 
 
 @user_router.get("/status/{id}")
@@ -95,19 +102,19 @@ async def get_request_status(id: str):
     user_request = await requests_database.get(id)
     
     if not user_request:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="user_request info with ID dose not exist."
-        )
+        return {"status": "fail", "message": "user_request info with ID does not exist."}
+        # raise HTTPException(
+        #     status_code=status.HTTP_404_NOT_FOUND,
+        #     detail="user_request info with ID dose not exist."
+        # )
+      
+    # TODO 성공시 return 을 생성중 / 완료 두개로 수정 -> log 로 저장
+    # 실패는 따로. 보내주고 싶으면 보내면 된다.
     
-    if user_request.cropped_image_path is None and user_request.sampling_images_path is None:
-        return {"message": "Preprocessing"}
-    elif user_request.cropped_image_path is not None and user_request.sampling_images_path is None:
-        return {"message": "Sampling"}
-    elif user_request.sampling_images_path is not None and user_request.example_image_path is None:
-        return {"message": "Postprocessing"}
-    elif user_request.example_image_path is not None:
-        return {"message": "Completed"}
+    if user_request.example_image_path is not None:
+        return {"status": "success", "message": "Completed"}
+    else:
+        return {"status": "success", "message": "processing"}
 
 
 #TODO # 샘플링 이미지 생성 완료 신호 받기
@@ -143,26 +150,29 @@ async def get_sampled_image(id: str):
 
     return 
 
+# TODO 다운로드?
 
 @user_router.get("/example_image/{id}")
 async def get_example_image(id: str):
     user_request = await requests_database.get(id)
 
     if not user_request:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="user_request info with ID dose not exist."
-        )
+        return {"status": "fail", "message": "user_request info with ID dose not exist."}
+        # raise HTTPException(
+        #     status_code=status.HTTP_404_NOT_FOUND,
+        #     detail="user_request info with ID dose not exist."
+        # )
     # get example image path from db
     example_image_path = user_request.example_image_path
 
     if not example_image_path:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Sample image path with ID dose not exist."
-        )
+        return {"status": "fail", "message": "sample image path with ID dose not exist."}
+        # raise HTTPException(
+        #     status_code=status.HTTP_404_NOT_FOUND,
+        #     detail="Sample image path with ID dose not exist."
+        # )
     
-    return FileResponse(path=example_image_path,)
+    return FileResponse(path=example_image_path)
 
 
 @user_router.get("/request/{id}", response_model=UserRequest)
