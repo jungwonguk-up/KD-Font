@@ -1,11 +1,11 @@
-gpu_num: 0
+gpu_num: 1
 
 batch_size: 8
 num_classes: 11172
 input_size: 64
 
-sample_img_path: '../Data/sampling_imgs/62570_했.png'
+sample_img_path: '../Data/Hangul_Characters_Image64_Grayscale/나눔손글씨강인한위로_쓜.png'
 style_path: 'weight/style_enc.pth'
-model_path: 'weight/ckpt_10.pt'
+model_path: '/home/hojun/Documents/code/cr_diffusion/KD-Font/ML/results/models/self_attention445_1_2/ckpt_370.pt'
 
-sampling_chars: "괴그기깅나는늘다도디러로를만버없에우워을자점하한했"
+sampling_chars: "쓜졎꿥밙껪챣릗뱅욨떰"

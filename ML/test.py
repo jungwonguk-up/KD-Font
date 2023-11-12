@@ -7,25 +7,8 @@ sys.path.append(prj_dir)
 
 from modules.diffusion import Diffusion
 from models.utils import UNet
-from modules.utils import CharAttar
+from modules.utils import CharAttar, load_yaml
 from modules.datasets import DiffusionDataset
-
-batch_size = 8 #####
-sampleImage_len = 25
-
-
-num_classes = 11172 # 이게 문제인건가?
-input_length = 100
-contents_dim = 100
-input_size = 64
-mode = "new"
-folder_name ="test_3"
-train_dirs = 'sample_data'
-sample_img_path = 'sample_img/d03fc0a9c3190dce.png'
-style_path = "/root/paper_project/ML/weight/style_enc.pth"
-csv_path = "/root/paper_project/Tools/MakeFont/diffusion_font_train.csv"
-
-sampling_chars = "괴그기깅나는늘다도디러로를만버없에우워을자점하한했"
 
 if __name__ == '__main__':
     # Load config
@@ -38,14 +21,14 @@ if __name__ == '__main__':
     model_path = os.path.join(prj_dir, config['model_path'])
     
     # Set wandb
-    # wandb.init(project="diffusion_font_test_sampling", config={
-    #             "learning_rate": 0.0003,
-    #             "architecture": "UNET",
-    #             "dataset": "HOJUN_KOREAN_FONT64",
-    #             "notes":"content, yes_stoke, non_style/ 64 x 64, 420 dataset"
-    #             },
-    #         name = "self-attetnion condtion content stroke style_sampling 나눔손글씨강인한위로_갊") #####
-    wandb.init(mode="disabled")
+    wandb.init(project="diffusion_font_test_sampling", config={
+                "learning_rate": 0.0003,
+                "architecture": "UNET",
+                "dataset": "HOJUN_KOREAN_FONT64",
+                "notes":"content, yes_stoke, non_style/ 64 x 64, 420 dataset"
+                },
+            name = "self-attetnion condtion content stroke style_sampling 나눔손글씨강인한위로_갊") #####
+    # wandb.init(mode="disabled")
     
     # Set Device
     os.environ['CUDA_VISIBLE_DEVICES'] = str(config['gpu_num'])
@@ -66,7 +49,7 @@ if __name__ == '__main__':
     
     # Set transforms
     transforms = torchvision.transforms.Compose([
-        # torchvision.transforms.Resize((input_size,input_size)),
+        # torchvision.transforms.Resize((config['input_size'],config['input_size'])),
         torchvision.transforms.Grayscale(num_output_channels=1),
         torchvision.transforms.ToTensor(),
         torchvision.transforms.Normalize((0.5), (0.5))
@@ -82,4 +65,4 @@ if __name__ == '__main__':
     charAttar = CharAttar(num_classes=config['num_classes'],device=device,style_path=style_path)
     
     # Inference
-    sampled_images = diffusion.portion_sampling(model, config['sampling_chars'], charAttar=charAttar, sample_img=sample_img,batch_size=config['batch_size'])
+    sampled_images = diffusion.portion_sampling(model, config['sampling_chars'], charAttar=charAttar, sample_img=sample_img,batch_size=config['batch_size'],cfg_scale=0)
