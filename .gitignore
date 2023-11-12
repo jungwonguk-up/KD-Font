@@ -21,3 +21,5 @@ wandb
 *.engine
 diffusion_font_train.csv
 nohup.out
+mongodb
+*.jpg
