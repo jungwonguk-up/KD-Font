@@ -5,11 +5,14 @@ import torch.nn.functional as F
 
 from matplotlib import pyplot as plt
 from PIL import Image
-import random, os
-from collections import OrderedDict
+import random, os, yaml
 from torch.utils.data import Dataset
 
 from models.style_encoder import style_enc_builder
+
+def load_yaml(path):
+	with open(path, 'r') as f:
+		return yaml.load(f, Loader=yaml.FullLoader)
 
 def save_images(images, path, **kwargs):
     for idx,image in enumerate(images):
@@ -73,12 +76,12 @@ class NumpyDataset(Dataset):
         return x, charAttr
 
 class CharAttar:
-    def __init__(self,num_classes,device):
+    def __init__(self,num_classes,device,style_path):
         self.num_classes = num_classes
         self.device = device
         self.contents_dim = 100
         self.contents_emb = nn.Embedding(num_classes, self.contents_dim)
-        self.style_enc = self.make_style_enc("/root/paper_project/weight/style_enc.pth")
+        self.style_enc = self.make_style_enc(style_path)
     
     def make_stroke(self,contents):
         strokes_list = []
@@ -108,10 +111,19 @@ class CharAttar:
         for p in sty_encoder.parameters():
             p.requires_grad = False
         return sty_encoder.to(self.device)
+    
+    def make_ch_to_index(self,contents):
+            index_list = []
+            first_letter_code = 44032
+            for content in contents:
+                content_code = ord(content)
+                index_list.append(content_code - first_letter_code)
+            index_list = torch.IntTensor(index_list)
+            return index_list
 
     # def set_charAttr_dim(mode):
     #     pass
-    def make_charAttr(self,images,contents_index, contents,mode):
+    def make_charAttr(self,images,contents_ch,mode):
         input_length = images.shape[0]
         # contents_index = [int(content_index) for content_index in contents_index]
         # style_encoder = style_enc_builder(1,32).to(self.device)
@@ -121,16 +133,15 @@ class CharAttar:
         style = None
         contents_p, stroke_p = random.random(), random.random()
         if mode == 1:
-
             if contents_p < 0.3:
                 contents_emb = torch.zeros(input_length,self.contents_dim)
             else:
-                contents_emb = torch.FloatTensor(self.contents_emb(contents_index))
+                contents_emb = torch.FloatTensor(self.contents_emb(self.make_ch_to_index(contents_ch)))
 
             if stroke_p < 0.3:
                 stroke = torch.zeros(input_length,68)
             else:
-                stroke =  torch.FloatTensor(self.make_stroke(contents))
+                stroke =  torch.FloatTensor(self.make_stroke(contents_ch))
 
             style = torch.zeros(input_length,128)
 
@@ -139,12 +150,12 @@ class CharAttar:
             if contents_p < 0.3:
                 contents_emb = torch.zeros(input_length,self.contents_dim)
             else:
-                contents_emb = torch.FloatTensor(self.contents_emb(contents_index))
+                contents_emb = torch.FloatTensor(self.contents_emb(self.make_ch_to_index(contents_ch)))
 
             if stroke_p < 0.3:
                 stroke = torch.zeros(input_length,68)
             else:
-                stroke = torch.FloatTensor(self.make_stroke(contents))
+                stroke = torch.FloatTensor(self.make_stroke(contents_ch))
 
             if contents_p < 0.3 and stroke_p < 0.3:
                 style = torch.zeros(input_length,128)
@@ -155,15 +166,15 @@ class CharAttar:
 
 
         elif mode == 3: #test
-            contents_emb = torch.FloatTensor(self.contents_emb(contents_index))
-            stroke = torch.FloatTensor(self.make_stroke(contents))
+            contents_emb = torch.FloatTensor(self.contents_emb(self.make_ch_to_index(contents_ch)))
+            stroke = torch.FloatTensor(self.make_stroke(contents_ch))
             style = self.style_enc(images)
             style = F.adaptive_avg_pool2d(style, (1, 1))
             style = style.view(input_length, -1).cpu()
             
         elif mode == 4:
-            contents_emb = torch.FloatTensor(self.contents_emb(contents_index))
-            stroke = torch.FloatTensor(self.make_stroke(contents))
+            contents_emb = torch.FloatTensor(self.contents_emb(self.make_ch_to_index(contents_ch)))
+            stroke = torch.FloatTensor(self.make_stroke(contents_ch))
             style = torch.zeros(input_length,128)
             
         return torch.cat([contents_emb,stroke,style],dim=1)

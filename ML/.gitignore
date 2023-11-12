@@ -2,7 +2,6 @@ checkpoints
 results
 hojun/wandb
 make_font/data/*
-models/*
 results/*
 checkpoints
 results

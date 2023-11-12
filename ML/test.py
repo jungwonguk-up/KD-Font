@@ -1,30 +1,26 @@
-import os
-import random
-import wandb
+import os, wandb, sys
 import torch, torchvision
-from torch.utils.data import DataLoader
-from torch.utils.data import Subset
 from PIL import Image
 
-from matplotlib import pyplot as plt
+prj_dir = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(prj_dir)
+
 from modules.diffusion import Diffusion
-from modules.utils import plot_images, test_save_images,make_stroke,stroke_to_char
 from models.utils import UNet
-from modules.utils import CharAttar
-batch_size = 8 #####
-sampleImage_len = 25
-
-
-num_classes = 420
-input_length = 100
-contents_dim = 100
-input_size = 64
-mode = "new"
-folder_name ="test_3"
-train_dirs = 'sample_data'
-sample_img_path = 'sample_img/d03fc0a9c3190dce.png'
+from modules.utils import CharAttar, load_yaml
+from modules.datasets import DiffusionDataset
 
 if __name__ == '__main__':
+    # Load config
+    config_path = os.path.join(prj_dir, 'config', 'test.yaml')
+    config = load_yaml(config_path)
+    
+    # Set path
+    sample_img_path = os.path.join(prj_dir, config['sample_img_path'])
+    style_path = os.path.join(prj_dir,config['style_path'])
+    model_path = os.path.join(prj_dir, config['model_path'])
+    
+    # Set wandb
     wandb.init(project="diffusion_font_test_sampling", config={
                 "learning_rate": 0.0003,
                 "architecture": "UNET",
@@ -32,67 +28,41 @@ if __name__ == '__main__':
                 "notes":"content, yes_stoke, non_style/ 64 x 64, 420 dataset"
                 },
             name = "self-attetnion condtion content stroke style_sampling 나눔손글씨강인한위로_갊") #####
-    os.environ['CUDA_VISIBLE_DEVICES'] = str(0)
+    # wandb.init(mode="disabled")
+    
+    # Set Device
+    os.environ['CUDA_VISIBLE_DEVICES'] = str(config['gpu_num'])
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+    # Set Model
     model = UNet().to(device)
-    ckpt = torch.load("weight/ckpt_290.pt")
+    ckpt = torch.load(model_path)
     model.load_state_dict(ckpt)
 
+    # Set diffusion
     diffusion = Diffusion(first_beta=1e-4,
                               end_beta=0.02,
                               noise_step=1000,
                               beta_schedule_type='linear',
-                              img_size=input_size,
+                              img_size=config['input_size'],
                               device=device)
     
-    # to do 데이터로더는 필요 없음 삭제! 
+    # Set transforms
     transforms = torchvision.transforms.Compose([
-        # torchvision.transforms.Resize((input_size,input_size)),
+        # torchvision.transforms.Resize((config['input_size'],config['input_size'])),
         torchvision.transforms.Grayscale(num_output_channels=1),
         torchvision.transforms.ToTensor(),
         torchvision.transforms.Normalize((0.5), (0.5))
     ])
-    dataset = torchvision.datasets.ImageFolder(train_dirs,transform=transforms)
-
-    # test set
-    n = range(0,len(dataset),1)
-    dataset = Subset(dataset, n)
-
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True,num_workers=12)
-
-    #sample_img
+    
+    # Make sample image
     sample_img = Image.open(sample_img_path)
     sample_img = transforms(sample_img).to(device)
     sample_img = torch.unsqueeze(sample_img,1)
-    sample_img = sample_img.repeat(sampleImage_len, 1, 1, 1)
+    sample_img = sample_img.repeat(len(config['sampling_chars']), 1, 1, 1)
     
-    if mode == "random":
-        contents_emb = torch.zeros(input_length,contents_dim)
-
-        first= [random.randint(0,18) for _ in range(input_length)]
-        middle = [random.randint(19,39) for _ in range(input_length)]
-        last = [random.randint(40,67) for _ in range(input_length)]
-
-        strokes = torch.Tensor([[0 for _ in range(68)] for _ in range(input_length)])
-
-        for idx in range(input_length):
-            strokes[idx][first[idx]], strokes[idx][middle[idx]], strokes[idx][last[idx]] = 1, 1, 1
-        char_list = stroke_to_char(strokes)
-
-        style_emb = torch.zeros(input_length,12288)
-
-        y = torch.cat([contents_emb, strokes, style_emb], dim=1).to(device)
-        x = diffusion.test_sampling(model, input_length, y, cfg_scale=3)
-
-    elif mode == "manual":
-        char_list = ['가,나,다,라,마,바,사,아,자,차,카,타,파,하']
-        contents_emb = torch.zeros(input_length, contents_dim)
-        strokes = make_stroke(char_list)
-        style_emb = torch.zeros(input_length, 12288)
-        y = torch.cat([contents_emb, strokes, style_emb], dim=1).to(device)
-        x = diffusion.test_sampling(model,len(strokes), y, cfg_scale=3)
-        
-    elif mode == "new":
-        charAttar = CharAttar(num_classes=num_classes,device=device)
-        sampled_images = diffusion.portion_sampling(model, n=len(dataset.dataset.classes),sampleImage_len = sampleImage_len,dataset=dataset,mode =mode,charAttar=charAttar,sample_img=sample_img)
+    # Load Condition Making Class
+    charAttar = CharAttar(num_classes=config['num_classes'],device=device,style_path=style_path)
+    
+    # Inference
+    sampled_images = diffusion.portion_sampling(model, config['sampling_chars'], charAttar=charAttar, sample_img=sample_img,batch_size=config['batch_size'],cfg_scale=0)
