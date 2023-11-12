@@ -84,13 +84,8 @@ python 02_font2image.py
 python train.py
 ```
 
-### Sampling_25Font
-```shell
-# package
-python test.py
-```
 
-### Sampling_Total_Font
+### Sampling_Font
 ```shell
 # package
 python test.py
