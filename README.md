@@ -76,7 +76,7 @@ src="https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=MongoDB&logoCol
 ### Version2
 - [x] Cross-Attention Model
 - [ ] QAT
-- [ ] Service Page
+- [ ] Service Page upgrade
 - [ ] Chinese Model
 - [ ] Continuous Learning
 - [ ] User Feedback Pipline
