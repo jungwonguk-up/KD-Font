@@ -66,5 +66,5 @@ if __name__ == "__main__":
     # argv = sys.argv
     # make_config(argv, args)
     
-    uvicorn.run("main:app", host="localhost", port=int(args.port), reload=True)
+    uvicorn.run("main:app", host="localhost", port=int(args.port),workers=5)
 
