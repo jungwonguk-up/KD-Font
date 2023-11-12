@@ -24,8 +24,10 @@ import time
 # TODO: logging
 
 INFERECE_SERVER_URL = get_config("Inference_URL")
-EXAMPLE_TEXT = get_config("example_text")
-EXAMPLE_BG_IMG = get_config("example_image_PATH")
+EXAMPLE_TEXT = ""
+EXAMPLE_BG_IMG = ""
+# EXAMPLE_TEXT = get_config("example_text")
+# EXAMPLE_BG_IMG = get_config("example_image_PATH")
 
 
 async def request_rest(id: str, cropped_img_path: str, text: str):
