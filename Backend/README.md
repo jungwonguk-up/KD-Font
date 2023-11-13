@@ -1,8 +1,8 @@
-## KD Font Backend
+## KD-Font Backend
 
 KD Font 서비스를 위한 백엔드 서버 및 서버 구축에 관한 문서입니다.
 
-## File Structures
+## \# 파일 구조
 
 ```shell
 Backend
@@ -25,7 +25,7 @@ Backend
 ```
 
 
-## Requirement
+## \# 라이브러리
 
 #### Python
 - python >= 3.10
@@ -36,11 +36,11 @@ Backend
 - pydantic >= 2.4.2
 - pydantic-settings >=2.0.3
 
-#### ETC
+#### 기타
 - opencv, pillow, imutils, numpy
 
 
-## Set-Up
+## \# 실행 방법
 
 1. Backend/app 폴더 내 `config.yaml` 파일을 생성 후 다음 내용을 작성합니다.
 

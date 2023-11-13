@@ -1,4 +1,4 @@
-# KD Font
+# KD-Font ML
 Korean_Diffusion_Font 모델 Docs 입니다. 
 
 ## \# Stroke 설계
