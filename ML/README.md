@@ -1,4 +1,4 @@
-# KD Font
+# KD-Font ML
 Korean_Diffusion_Font 모델 Docs 입니다. 
 
 ## \# Stroke 설계
@@ -85,7 +85,13 @@ python 02_font2image.py
 python train.py
 ```
 
-### Sampling Font
+### Sampling_25Font
+```shell
+# package
+python test.py
+```
+
+### Sampling_Total_Font
 ```shell
 # package
 python test.py
