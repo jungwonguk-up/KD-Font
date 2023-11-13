@@ -106,7 +106,8 @@ def handle(data,context):
         contents_ch = data["text"]
         
         sample_img = _service.preprocess(sample_img_path=sample_img_path,contents_ch=contents_ch)
-        data = _service.inference(sample_img,contents_ch,id)
+        data = _service.inference(sample_img,contents_ch,id,sample_img_path)
+        data = 
         return [data.tolist()]
         
     except Exception as e:

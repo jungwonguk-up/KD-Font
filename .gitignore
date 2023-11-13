@@ -15,3 +15,5 @@ wandb
 *.engine
 diffusion_font_train.csv
 nohup.out
+*.mar
+*log*

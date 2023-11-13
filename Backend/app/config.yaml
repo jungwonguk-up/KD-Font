@@ -1,4 +1,4 @@
-Database_URL: mongodb://localhost:27017/mongodb
-Image_storage_PATH: /home/hojun/Documents/code/cr_diffusion/KD-Font/temp
+Database_URL: mongodb://localhost/mongodb
+Image_storage_PATH: /home/hojun/Documents/code/cr_diffusion/KD-Font/Pipeline/torchserve/temp
 Inference_URL: http://192.168.0.80:9334/predictions/diffusion_serve_test
-Port: '12001'
+Port: '5432'
