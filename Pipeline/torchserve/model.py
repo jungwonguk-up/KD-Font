@@ -1,4 +1,4 @@
-import os
+import os, yaml
 from tqdm import tqdm
 import math
 import random
@@ -59,7 +59,8 @@ class DiffusionDataset(Dataset):
             
             
 
-class Diffusion:    
+class Diffusion:
+
     def __init__(self, first_beta, end_beta, beta_schedule_type, noise_step, img_size, device):
         self.first_beta = first_beta
         self.end_beta = end_beta
@@ -112,24 +113,24 @@ class Diffusion:
     def noise_images(self,x,t):
         epsilon = torch.randn_like(x)
         return torch.sqrt(self.alpha_bar_t(t)) * x + torch.sqrt(self.one_minus_alpha_bar(t)) * epsilon , epsilon
+    
+    def custom_collate_fn(batch):
+        batch_x, batch_conditions = zip(*batch)
+        return (np.array(batch_x), np.array(batch_conditions))
 
     def indexToChar(self,y):
         return chr(44032+y)
-    def portion_sampling(self, model, n,sampleImage_len,dataset,mode,charAttar,sample_img, cfg_scale=3):
+    
+    def portion_sampling(self, model, sampling_chars,charAttar,sample_img,batch_size, cfg_scale=3):
         example_images = []
         model.eval()
         with torch.no_grad():
-            x_list = torch.randn((sampleImage_len, 1, self.img_size, self.img_size)).to(self.device)
-
-            y_idx = list(range(n))[::math.floor(n/sampleImage_len)][:sampleImage_len]
-            contents_index = torch.IntTensor(y_idx)
-            contents = [dataset.label_to_y[int(content_index)] for content_index in contents_index]
-            charAttr_list = charAttar.make_charAttr(sample_img, contents_index, contents,mode=3).to(self.device)
+            x_list = torch.randn((len(sampling_chars), 1, self.img_size, self.img_size)).to(self.device)
+            charAttr_list = charAttar.make_charAttr(sample_img, sampling_chars ,mode=3).to(self.device)
 
             pbar = tqdm(list(reversed(range(1, self.noise_step))),desc="sampling")
             for i in pbar:
                 dataset = TensorDataset(x_list,charAttr_list)
-                batch_size= 18
                 dataloader = DataLoader(dataset,batch_size=batch_size,shuffle=False)
                 predicted_noise = torch.tensor([]).to(self.device)
                 uncond_predicted_noise = torch.tensor([]).to(self.device)
@@ -144,7 +145,7 @@ class Diffusion:
                 if cfg_scale > 0:
                     predicted_noise = torch.lerp(uncond_predicted_noise, predicted_noise, cfg_scale)
 
-                t = (torch.ones(sampleImage_len) * i).long()
+                t = (torch.ones(len(sampling_chars)) * i).long()
                 a_t = self.alpha_t(t)
                 aBar_t = self.alpha_bar_t(t)
                 b_t = self.beta_t(t)
@@ -157,48 +158,6 @@ class Diffusion:
                 x_list = 1 / torch.sqrt(a_t) * (
                         x_list - ((1 - a_t) / (torch.sqrt(1 - aBar_t))) * predicted_noise) + torch.sqrt(
                     b_t) * noise
-        model.train()
-        x_list = (x_list.clamp(-1, 1) + 1) / 2
-        x_list = (x_list * 255).type(torch.uint8)
-        return x_list
-
-    def test_sampling(self, model,sampleImage_len,charAttr_list,cfg_scale=3):
-        example_images = []
-        model.eval()
-        with torch.no_grad():
-            x_list = torch.randn((sampleImage_len, 1, self.img_size, self.img_size)).to(self.device)
-            pbar = tqdm(list(reversed(range(1, self.noise_step))),desc="sampling")
-            for i in pbar:
-                dataset = TensorDataset(x_list,charAttr_list)
-                batch_size= 4
-                dataloader = DataLoader(dataset,batch_size=batch_size,shuffle=False)
-                predicted_noise = torch.tensor([]).to(self.device)
-                uncond_predicted_noise = torch.tensor([]).to(self.device)
-                for batch_x, batch_conditions in dataloader:
-                    batch_t = (torch.ones(len(batch_x)) * i).long().to(self.device)
-                    batch_noise = model(batch_x, batch_t, batch_conditions)
-                    predicted_noise = torch.cat([predicted_noise,batch_noise],dim=0)
-                    #uncodition
-                    uncond_batch_noise = model(batch_x, batch_t, torch.zeros_like(batch_conditions))
-                    uncond_predicted_noise = torch.cat([uncond_predicted_noise,uncond_batch_noise],dim = 0)
-
-                if cfg_scale > 0:
-                    predicted_noise = torch.lerp(uncond_predicted_noise, predicted_noise, cfg_scale)
-
-                t = (torch.ones(sampleImage_len) * i).long()
-                a_t = self.alpha_t(t)
-                aBar_t = self.alpha_bar_t(t)
-                b_t = self.beta_t(t)
-
-                if i > 1:
-                    noise = torch.randn_like(x_list)
-                else:
-                    noise = torch.zeros_like(x_list)
-
-                x_list = 1 / torch.sqrt(a_t) * (
-                        x_list - ((1 - a_t) / (torch.sqrt(1 - aBar_t))) * predicted_noise) + torch.sqrt(
-                    b_t) * noise
-        model.train()
         x_list = (x_list.clamp(-1, 1) + 1) / 2
         x_list = (x_list * 255).type(torch.uint8)
         return x_list
@@ -926,18 +885,13 @@ def style_enc_builder(C_in, C, norm='none', activ='relu', pad_type='reflect', sk
 
     return StyleEncoder(layers, out_shape)
 
-
 class CharAttar:
     def __init__(self,num_classes,device,style_path):
         self.num_classes = num_classes
         self.device = device
         self.contents_dim = 100
         self.contents_emb = nn.Embedding(num_classes, self.contents_dim)
-        self.style_enc = self.make_style_enc(os.path.join(style_path,"style_enc.pth"))
-        self.style_conv = nn.Sequential(
-                            nn.Conv2d(128,128,16),
-                            nn.SiLU(),
-                        ).to(device)
+        self.style_enc = self.make_style_enc(style_path)
     
     def make_stroke(self,contents):
         strokes_list = []
@@ -969,17 +923,17 @@ class CharAttar:
         return sty_encoder.to(self.device)
     
     def make_ch_to_index(self,contents):
-        index_list = []
-        first_letter_code = 44032
-        for content in contents:
-            content_code = ord(content)
-            index_list.append(content_code - first_letter_code)
-        index_list = torch.IntTensor(index_list)
-        return index_list
-            
+            index_list = []
+            first_letter_code = 44032
+            for content in contents:
+                content_code = ord(content)
+                index_list.append(content_code - first_letter_code)
+            index_list = torch.IntTensor(index_list)
+            return index_list
+
     # def set_charAttr_dim(mode):
     #     pass
-    def make_charAttr(self,images, contents,mode):
+    def make_charAttr(self,images,contents_ch,mode):
         input_length = images.shape[0]
         # contents_index = [int(content_index) for content_index in contents_index]
         # style_encoder = style_enc_builder(1,32).to(self.device)
@@ -989,16 +943,15 @@ class CharAttar:
         style = None
         contents_p, stroke_p = random.random(), random.random()
         if mode == 1:
-
             if contents_p < 0.3:
                 contents_emb = torch.zeros(input_length,self.contents_dim)
             else:
-                contents_emb = torch.FloatTensor(self.contents_emb(self.make_ch_to_index(contents)))
+                contents_emb = torch.FloatTensor(self.contents_emb(self.make_ch_to_index(contents_ch)))
 
             if stroke_p < 0.3:
                 stroke = torch.zeros(input_length,68)
             else:
-                stroke =  torch.FloatTensor(self.make_stroke(contents))
+                stroke =  torch.FloatTensor(self.make_stroke(contents_ch))
 
             style = torch.zeros(input_length,128)
 
@@ -1007,34 +960,31 @@ class CharAttar:
             if contents_p < 0.3:
                 contents_emb = torch.zeros(input_length,self.contents_dim)
             else:
-                contents_emb = torch.FloatTensor(self.contents_emb(self.make_ch_to_index(contents)))
+                contents_emb = torch.FloatTensor(self.contents_emb(self.make_ch_to_index(contents_ch)))
 
             if stroke_p < 0.3:
                 stroke = torch.zeros(input_length,68)
             else:
-                stroke = torch.FloatTensor(self.make_stroke(contents))
+                stroke = torch.FloatTensor(self.make_stroke(contents_ch))
 
             if contents_p < 0.3 and stroke_p < 0.3:
                 style = torch.zeros(input_length,128)
             else:
                 style = self.style_enc(images)
                 style = F.adaptive_avg_pool2d(style, (1, 1))
-                # style = self.style_conv(style)
                 style = style.view(input_length, -1).cpu()
-                
 
 
         elif mode == 3: #test
-            contents_emb = torch.FloatTensor(self.contents_emb(self.make_ch_to_index(contents)))
-            stroke = torch.FloatTensor(self.make_stroke(contents))
+            contents_emb = torch.FloatTensor(self.contents_emb(self.make_ch_to_index(contents_ch)))
+            stroke = torch.FloatTensor(self.make_stroke(contents_ch))
             style = self.style_enc(images)
             style = F.adaptive_avg_pool2d(style, (1, 1))
-            # style = self.style_conv(style)
             style = style.view(input_length, -1).cpu()
             
         elif mode == 4:
-            contents_emb = torch.FloatTensor(self.contents_emb(self.make_ch_to_index(contents)))
-            stroke = torch.FloatTensor(self.make_stroke(contents))
+            contents_emb = torch.FloatTensor(self.contents_emb(self.make_ch_to_index(contents_ch)))
+            stroke = torch.FloatTensor(self.make_stroke(contents_ch))
             style = torch.zeros(input_length,128)
             
         return torch.cat([contents_emb,stroke,style],dim=1)

@@ -112,9 +112,6 @@ def model_training(gpu_num:int, batch_size: int, input_size : int, n_epochs : in
 
 
     from PIL import Image
-    
-    import json
-
     class DiffusionDataset(Dataset):
         def __init__(self, csv_path, transform =None):
             self.transform = transform
@@ -153,10 +150,10 @@ def model_training(gpu_num:int, batch_size: int, input_size : int, n_epochs : in
             filename = self.x_file_name[id_]
             x = Image.open(self.x_path[id_])
             transform_x = self.transform(x)
-            y_ch = self.y[id_]
+            label = self.y_labels[id_]
             
-            return transform_x, y_ch, filename
-                
+            return transform_x, label, filename
+            
             
 
     class Diffusion:    
@@ -266,7 +263,7 @@ def model_training(gpu_num:int, batch_size: int, input_size : int, n_epochs : in
             example_images = []
             model.eval()
             with torch.no_grad():
-                x_list = torch.randn((sampleImage_len, 1, self.img_size, self.img_size)).to(self.device)
+                x_list = torch.randn((sampleImage_len, 3, self.img_size, self.img_size)).to(self.device)
                 pbar = tqdm(list(reversed(range(1, self.noise_step))),desc="sampling")
                 for i in pbar:
                     dataset = TensorDataset(x_list,charAttr_list)
@@ -298,7 +295,6 @@ def model_training(gpu_num:int, batch_size: int, input_size : int, n_epochs : in
                     x_list = 1 / torch.sqrt(a_t) * (
                             x_list - ((1 - a_t) / (torch.sqrt(1 - aBar_t))) * predicted_noise) + torch.sqrt(
                         b_t) * noise
-            model.train()
             x_list = (x_list.clamp(-1, 1) + 1) / 2
             x_list = (x_list * 255).type(torch.uint8)
             return x_list
@@ -1067,19 +1063,10 @@ def model_training(gpu_num:int, batch_size: int, input_size : int, n_epochs : in
             for p in sty_encoder.parameters():
                 p.requires_grad = False
             return sty_encoder.to(self.device)
-        
-        def make_ch_to_index(self,contents):
-            index_list = []
-            first_letter_code = 44032
-            for content in contents:
-                content_code = ord(content)
-                index_list.append(content_code - first_letter_code)
-            index_list = torch.IntTensor(index_list)
-            return index_list
-                
+
         # def set_charAttr_dim(mode):
         #     pass
-        def make_charAttr(self,images, contents,mode):
+        def make_charAttr(self,images,contents_index, contents,mode):
             input_length = images.shape[0]
             # contents_index = [int(content_index) for content_index in contents_index]
             # style_encoder = style_enc_builder(1,32).to(self.device)
@@ -1089,11 +1076,11 @@ def model_training(gpu_num:int, batch_size: int, input_size : int, n_epochs : in
             style = None
             contents_p, stroke_p = random.random(), random.random()
             if mode == 1:
-    
+
                 if contents_p < 0.3:
                     contents_emb = torch.zeros(input_length,self.contents_dim)
                 else:
-                    contents_emb = torch.FloatTensor(self.contents_emb(self.make_ch_to_index(contents)))
+                    contents_emb = torch.FloatTensor(self.contents_emb(contents_index))
 
                 if stroke_p < 0.3:
                     stroke = torch.zeros(input_length,68)
@@ -1107,7 +1094,7 @@ def model_training(gpu_num:int, batch_size: int, input_size : int, n_epochs : in
                 if contents_p < 0.3:
                     contents_emb = torch.zeros(input_length,self.contents_dim)
                 else:
-                    contents_emb = torch.FloatTensor(self.contents_emb(self.make_ch_to_index(contents)))
+                    contents_emb = torch.FloatTensor(self.contents_emb(contents_index))
 
                 if stroke_p < 0.3:
                     stroke = torch.zeros(input_length,68)
@@ -1125,7 +1112,7 @@ def model_training(gpu_num:int, batch_size: int, input_size : int, n_epochs : in
 
 
             elif mode == 3: #test
-                contents_emb = torch.FloatTensor(self.contents_emb(self.make_ch_to_index(contents)))
+                contents_emb = torch.FloatTensor(self.contents_emb(contents_index))
                 stroke = torch.FloatTensor(self.make_stroke(contents))
                 style = self.style_enc(images)
                 # style = F.adaptive_avg_pool2d(style, (1, 1))
@@ -1133,7 +1120,7 @@ def model_training(gpu_num:int, batch_size: int, input_size : int, n_epochs : in
                 style = style.view(input_length, -1).cpu()
                 
             elif mode == 4:
-                contents_emb = torch.FloatTensor(self.contents_emb(self.make_ch_to_index(contents)))
+                contents_emb = torch.FloatTensor(self.contents_emb(contents_index))
                 stroke = torch.FloatTensor(self.make_stroke(contents))
                 style = torch.zeros(input_length,128)
                 
@@ -1166,13 +1153,14 @@ def model_training(gpu_num:int, batch_size: int, input_size : int, n_epochs : in
 
 
     for epoch_id in range(n_epochs):
-        for i, (images, contents_ch,filename) in enumerate(dataloader):
+        for i, (images, contents_label,filename) in enumerate(dataloader):
             images = images.to(device)
             
+            contents = [dataset.label_to_y[int(content_index)] for content_index in contents_label]
             charAttar = CharAttar(num_classes=num_classes,device=device,style_path=style_path)
             print(epoch_id)
 
-            charAttr_list = charAttar.make_charAttr(images, contents_ch,mode=mode).to(device)
+            charAttr_list = charAttar.make_charAttr(images, contents_label,contents,mode=mode).to(device)
 
             t = diffusion.sample_t(images.shape[0]).to(device)
             x_t, noise = diffusion.noise_images(images, t)
@@ -1183,88 +1171,13 @@ def model_training(gpu_num:int, batch_size: int, input_size : int, n_epochs : in
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-
-        torch.save(model,os.path.join(result_model_path,"torch_model"))
-    config = dict(
-        inference_address="http://192.168.0.80:8085",
-        management_address="http://192.168.0.80:8085",
-        metrics_address="http://192.168.0.80:8082",
-        grpc_inference_port=7070,
-        grpc_management_port=7071,
-        enable_envvars_config="true",
-        install_py_dep_per_model="true",
-        model_store="model-store",
-        model_snapshot=json.dumps({
-            "name": "startup.cfg",
-            "modelCount": 1,
-            "models": {
-                "torch-model": {  # Model Name
-                    "1.0": {
-                        "defaultVersion": "true",
-                        "marName": "torch-model.mar",
-                        "minWorkers": 1,
-                        "maxWorkers": 5,
-                        "batchSize": 1,
-                        "maxBatchDelay": 10,
-                        "responseTimeout": 60,
-                    }
-                }
-            },
-        }),
-    )
-    # creating config & config folder
-    if not os.path.exists("pvc/torch_model/config"):
-        os.mkdir("pvc/torch_model/config")
-    with open("pvc/torch_model/config/config.properties", "w") as f:
-        for i, j in config.items():
-            f.write(f"{i}={j}\n")
-        f.close()
-        
-    handel_string = '''
-    
-    
-    '''
-
-@partial(create_component_from_func,
-        base_image='python:3.10',
-        packages_to_install=['tqdm==4.65.0','pandas==2.0.0',' pillow==9.4.0','torch==2.0.0+cu118','torchvision==0.15.1+cu118'])
-def create_marfile():
-    import json
-    config = dict(
-        inference_address="http://192.168.0.80:8085",
-        management_address="http://192.168.0.80:8085",
-        metrics_address="http://192.168.0.80:8082",
-        grpc_inference_port=7070,
-        grpc_management_port=7071,
-        enable_envvars_config="true",
-        install_py_dep_per_model="true",
-        model_store="model-store",
-        model_snapshot=json.dumps({
-            "name": "startup.cfg",
-            "modelCount": 1,
-            "models": {
-                "torch-model": {  # Model Name
-                    "1.0": {
-                        "defaultVersion": "true",
-                        "marName": "torch-model.mar",
-                        "minWorkers": 1,
-                        "maxWorkers": 5,
-                        "batchSize": 1,
-                        "maxBatchDelay": 10,
-                        "responseTimeout": 60,
-                    }
-                }
-            },
-        }),
-    )
-    # creating config & config folder
-    if not os.path.exists("pvc/torch_model/config"):
-        os.mkdir("pvc/torch_model/config")
-    with open("pvc/torch_model/config/config.properties", "w") as f:
-        for i, j in config.items():
-            f.write(f"{i}={j}\n")
-        f.close()
-    
+        if epoch_id % 10 == 0:
+            labels = torch.arange(num_classes).long().to(device)
+            # sampled_images = diffusion.portion_sampling(model, n=len(dataset.labels),sampleImage_len = sampleImage_len,dataset=dataset,mode =mode,charAttar=charAttar,sample_img=sample_img)
+            # plot_images(sampled_images)
+            torch.save(model,os.path.join(result_model_path,f"model_{epoch_id}.pt"))
+            torch.save(model.state_dict(), os.path.join(result_model_path, f"ckpt_{epoch_id}.pt"))
+            torch.save(optimizer.state_dict(), os.path.join(result_model_path, f"optim_{epoch_id}.pt"))
             
 @pipeline(
    name='korea diffusion train pipeline',
@@ -1284,4 +1197,4 @@ def my_pipeline(style_url:str, fonts_url:str,image_size: int, train_string:str, 
     model.set_display_name("Training Korean Diffusion Model")
     model.after(data)
 if __name__ == "__main__": 
-    compiler.Compiler().compile(my_pipeline, "korea_diffusion_font_test.yaml")
+    compiler.Compiler().compile(my_pipeline, "KD_Font_kubeflow_first_training.yaml")

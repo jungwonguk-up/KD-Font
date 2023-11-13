@@ -25,7 +25,7 @@ import time
 # TODO: logging
 
 INFERECE_SERVER_URL = get_config("Inference_URL")
-EXAMPLE_TEXT = ""
+EXAMPLE_TEXT = "가나다라마바사"
 EXAMPLE_BG_IMG = ""
 # EXAMPLE_TEXT = get_config("example_text")
 # EXAMPLE_BG_IMG = get_config("example_image_PATH")

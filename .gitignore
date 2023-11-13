@@ -5,6 +5,15 @@ mongodb
 temp
 *.jpg
 *.pyc
-Backend
-*.png
+Hangul_Characters_Image128_Grayscale
+Hangul_Characters_Image64_GrayScale
+image
 *.ipynb
+*png
+wandb
+*.pt
+*.engine
+diffusion_font_train.csv
+nohup.out
+*.mar
+*log*
