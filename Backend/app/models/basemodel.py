@@ -47,3 +47,8 @@ class UserRequestUpdate(BaseModel):
                         "user_feedback": "0"}
         }
     }
+
+
+class CompleteSignal(BaseModel):
+    id: str
+    example_image_path: str

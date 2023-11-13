@@ -11,7 +11,7 @@ from fastapi.responses import FileResponse
 from beanie import PydanticObjectId
 
 from database.db import Database
-from models.basemodel import UserRequest, UserRequestUpdate
+from models.basemodel import UserRequest, CompleteSignal
 from library.func import get_storage_path, save_image, read_image
 from library.img_process import image_processing, make_example_from_ttf
 from library.get_config import get_config
@@ -131,11 +131,11 @@ async def get_request_status(id: str):
 
 
 
-@user_router.put("/request/{id}", response_model=UserRequest)
-async def receive_sampling_complete_signal(id: str, example_img_path: str) -> dict:
-
-    body = {"example_image_path": example_img_path}
-    user_request = await requests_database.update(id=id, body=body)
+@user_router.put("/request/{id}")
+async def receive_sampling_complete_signal(data: CompleteSignal) -> dict:
+    user_id = data.id
+    body = {"example_image_path": data.example_image_path}
+    user_request = await requests_database.update(id=user_id, body=body)
 
     if not user_request:
         return {"status": "fail"}
