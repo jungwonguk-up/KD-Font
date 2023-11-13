@@ -31,6 +31,12 @@ def get_storage_path(name="org"):
     return storage_path
 
 
+def get_filename(path: str):
+
+    filename = os.path.basename(path)
+    return filename 
+
+
 async def read_image(file: UploadFile) -> Image.Image:
     """return Pillow Image instance from uploadfile"""
     try:

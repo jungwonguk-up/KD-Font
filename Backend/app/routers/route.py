@@ -12,7 +12,7 @@ from beanie import PydanticObjectId
 
 from database.db import Database
 from models.basemodel import UserRequest, CompleteSignal
-from library.func import get_storage_path, save_image, read_image
+from library.func import get_storage_path, save_image, read_image, get_filename
 from library.img_process import image_processing, make_example_from_ttf
 from library.get_config import get_config
 
@@ -45,11 +45,6 @@ def request_rest(id: str, cropped_img_path: str, text: str):
     
     print(f"inference server response status code: {response.status_code}")
 
-    # requests.post(
-    #     inference_server_url,
-    #     json.dumps(request_dict),
-    #     headers=headers,
-    # )
 
 user_router = APIRouter()
 requests_database = Database(UserRequest)
@@ -81,13 +76,12 @@ async def create_inference_request(email: str = Form(...), image_file: UploadFil
         id=user_id,
         email=email,
         original_image_path=ori_path,
-        cropped_image_path=crop_path
+        cropped_image_path=crop_path,
+        example_image_path="C:/Users/gih54/Desktop/diffusion/KoFont-Diffusion/Backend/app/test_background.jpg"
     )
 
     await requests_database.save(user_request)
     print(f"Request ID {user_id[:-8]} recoded to DB sucessfully.")
-
-    #TODO Request
 
     threading.Thread(target=request_rest, 
                      args=(user_id, str(crop_path), EXAMPLE_TEXT)).start()
@@ -95,19 +89,8 @@ async def create_inference_request(email: str = Form(...), image_file: UploadFil
     # response = request_rest(id=user_id,
     #                               cropped_img_path=str(crop_path),
     #                               text=EXAMPLE_TEXT)
-    #TODO
-    # if response.status_code == 200:
-        # return {"status": "success", "uuid": user_id}
     
-    return {"status": "request done."}
-
-    #TODO 프론트에 uuid 를 보내줘야 한다
-    # 1. 2개로 나눠줘야 한다 - 성공시, 실패시. 따로 메세지가 와야된다. 
-    # promise 에 resove 랑 reject 이라 
-    # 성공시
-    # return {"code": True, "message": "sucessfully", "uuid": uuid}
-    # # 실패시
-    # return {"code": False, "message": "ddd"}
+    return {"status": "success", "uuid": user_id}
 
 
 @user_router.get("/status/{id}")
@@ -120,9 +103,7 @@ async def get_request_status(id: str):
         #     status_code=status.HTTP_404_NOT_FOUND,
         #     detail="user_request info with ID dose not exist."
         # )
-      
-    # TODO 성공시 return 을 생성중 / 완료 두개로 수정 -> log 로 저장
-    # 실패는 따로. 보내주고 싶으면 보내면 된다.
+
     
     if user_request.example_image_path is not None:
         return {"status": "success", "message": "Completed"}
@@ -144,19 +125,6 @@ async def receive_sampling_complete_signal(data: CompleteSignal) -> dict:
     # return user_request
 
 
-#TODO 샘플 이미지 받기
-@user_router.get("/sample_image/{id}")
-async def get_sampled_image(id: str):
-    user_request = await requests_database.get(id)
-
-
-
-    #TODO img2ttf, ttf2exmaplei
-
-    return 
-
-# TODO 다운로드?
-
 @user_router.get("/example_image/{id}")
 async def get_example_image(id: str):
     user_request = await requests_database.get(id)
@@ -176,8 +144,21 @@ async def get_example_image(id: str):
         #     status_code=status.HTTP_404_NOT_FOUND,
         #     detail="Sample image path with ID dose not exist."
         # )
+
+    filename = get_filename(example_image_path)
     
-    return FileResponse(path=example_image_path)
+    return FileResponse(path=example_image_path, filename=filename)
+
+
+@user_router.put("/feedback/{id}")
+async def feedback(id: str, feedback: str = Form(...)):
+    body = {"user_feedback": feedback}
+    user_request = await requests_database.update(id=id, body=body)
+
+    if not user_request:
+        return {"status": "fail"}
+
+    return {"status": "success"}
 
 
 @user_router.get("/request/{id}", response_model=UserRequest)

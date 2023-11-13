@@ -42,7 +42,7 @@ settings = Settings()
 
 app.include_router(user_router)
 
-origins = ['*']
+origins = ["*"]
 app.add_middleware(CORSMiddleware,
                    allow_origins=origins,
                    allow_credentials=True,
@@ -66,5 +66,4 @@ if __name__ == "__main__":
     # argv = sys.argv
     # make_config(argv, args)
     
-    uvicorn.run("main:app", host="localhost", port=int(args.port),workers=5)
-
+    uvicorn.run("main:app", host="localhost", port=int(args.port), workers=5)
