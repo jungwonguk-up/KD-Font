@@ -1,0 +1,8 @@
+
+Inference_URL: None
+Database_URL: mongodb://localhost:27017/temp_db
+
+Image_storage_PATH: ./images
+
+example_text: 괴그기깅나는늘다도디러로를만버없에우워을자점하한했
+example_image_PATH: C:/Users/gih54/Desktop/diffusion/KoFont-Diffusion/Backend/app/test_background.jpg
