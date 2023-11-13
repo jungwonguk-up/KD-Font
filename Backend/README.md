@@ -1,6 +1,28 @@
-## KoFont Diffusion Backend
+## KD Font Backend
 
-KoFont 생성 서비스를 위한 백엔드 서버 및 서버 구축
+KD Font 서비스를 위한 백엔드 서버 및 서버 구축에 관한 문서입니다.
+
+## File Structures
+
+```shell
+Backend
+├── app
+│   ├── database
+│   │   └── db.py
+│   │── library
+│   │   ├── __init__.py
+│   │   ├── func.py
+│   │   ├── get_config.py
+│   │   └── img_process.py
+│   │── models
+│   │   └── basemodel.py
+│   │── routes
+│   │   └── route.py
+│   │── main.py
+│   │── config.yaml(사용자 작성 필요)
+│   └── README.md
+
+```
 
 
 ## Requirement
@@ -35,7 +57,7 @@ KoFont 생성 서비스를 위한 백엔드 서버 및 서버 구축
     (venv)$ mongod --dbpath DB경로
     ```
 
-3. main.py 를 실행하여 FastAPI 서버를 실행합니다.
+3. main.py 를 실행하여 uvicorn 을 이용해 FastAPI 서버를 실행합니다.
 
     ```
     (venv)$ python main.py

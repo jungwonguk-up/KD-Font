@@ -27,7 +27,7 @@ def get_storage_path(id: str):
     return storage_path
 
 
-async def read_image(file: UploadFile) -> Image:
+async def read_image(file: UploadFile) -> Image.Image:
     """return Pillow Image instance from uploadfile"""
     try:
         image = Image.open(file.file).convert("RGB")
@@ -39,10 +39,10 @@ async def read_image(file: UploadFile) -> Image:
     return image
 
 
-async def save_image(image: Image, path: str, format="png"):
+async def save_image(image: Image.Image, path: str, format="jpeg"):
     """save image to path"""
     buffer = io.BytesIO()
-    image.save(buffer, format=format)
+    image.save(buffer, format=format, quality=100, subsampling=0)
 
     async with aiofiles.open(path, "wb") as file:
         await file.write(buffer.getbuffer())

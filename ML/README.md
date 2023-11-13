@@ -41,9 +41,6 @@ pip install wandb
 # font2image 데이터 생성
 python 02_font2image.py 
 ```
-
-## 훈련
-
 ```shell
 # 학습된 모델 다운 & 압축해제 & 덮어쓰기
 ├── ML
@@ -71,28 +68,34 @@ python 02_font2image.py
 │   │── test_onnx.py
 │   │── README.md
 ├── DATA
-│   ├── sampling_imgs
-│   │   └── Sampling Image
-│   │── Datasets Folder
-│   │── Train.csv
+│   ├── sampling_imgs (Make sampling images in here)
+│   │   ├── Sampling Image 1 
+│   │   ├── Sampling Image 2
+│   │   └── Sampling Image 3
+│   │── Datasets Folder (Make train images in here)
+│   │── Train.csv (Make train csv in here)
 ```
 [Download PreTrained Model](https://drive.google.com/file/d/1uLGAyY7zXUi2BHuc90-ILw-IgawVcsZ8/view?usp=sharing)
 
+
+## 훈련
 
 ```shell
 # Train
 python train.py
 ```
 
-
-### Sampling_Font
+### Sampling_25Font
 ```shell
 # package
 python test.py
 ```
 
-
-
+### Sampling_Total_Font
+```shell
+# package
+python test.py
+```
 
 
 ## \# Codes

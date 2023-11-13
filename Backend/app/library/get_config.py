@@ -10,7 +10,7 @@ def get_config(key: str,
                default_value: Optional[str] = None,
                yaml_path: str = str(BASE_DIR / "config.yaml")
                ):
-    with open(yaml_path) as f:
+    with open(yaml_path, encoding='UTF8') as f:
         configs = yaml.load(f, Loader=yaml.FullLoader)
     try:
         return configs[key]

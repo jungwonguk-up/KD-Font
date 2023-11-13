@@ -1,6 +1,5 @@
 # KD-Font (Korean Diffusion Font)
 
-**발표 영상**: 11/8 업로드 예정  
 <img src="https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white"/> <img src="https://img.shields.io/badge/PyTorch-EE4C2C?style=flat&logo=PyTorch&logoColor=white"/> <img src="https://img.shields.io/badge/FastAPI-009688?style=flat&logo=FastAPI&logoColor=white"/> <img src="https://img.shields.io/badge/TensorRT-FF6F00?style=flat&logo=TensorFlow&logoColor=white"/> <img
 src="https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white"/> <img
 src="https://img.shields.io/badge/Kubernetes-326CE5?style=flat&logo=kubernetes&logoColor=white"/> <img
@@ -60,7 +59,7 @@ src="https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=MongoDB&logoCol
 - [x] Korean Model
 - [x] Stroke Embedding Design
 - [x] Self-Attention Model
-- [x] ONNX, TensorRT Lightweight
+- [x] ONNX, TensorRT Lightweight (PTQ)
 - [x] Labeling Tool
 - [x] DDPM, DDIM backbone, Stroke Type Design
 
@@ -76,7 +75,9 @@ src="https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=MongoDB&logoCol
 
 ### Version2
 - [x] Cross-Attention Model
-- [ ] Service Page
+- [ ] QAT
+- [ ] Develop Our OCR Model
+- [ ] Service Page upgrade
 - [ ] Chinese Model
 - [ ] Continuous Learning
 - [ ] User Feedback Pipline
