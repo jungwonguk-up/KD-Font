@@ -1,11 +1,11 @@
-gpu_num: 1
+gpu_num: 0
 
 batch_size: 8
 num_classes: 11172
 input_size: 64
 
-sample_img_path: '../Data/Hangul_Characters_Image64_Grayscale/나눔손글씨강인한위로_쓜.png'
+sample_img_path: '/root/paper_project/Data/Hangul_Characters_Image64_Grayscale/8f42217bf172a009.png'
 style_path: 'weight/style_enc.pth'
-model_path: '/home/hojun/Documents/code/cr_diffusion/KD-Font/ML/results/models/self_attention445_1_2/ckpt_370.pt'
+model_path: 'weight/torch_quantization.pt'
 
-sampling_chars: "쓜졎꿥밙껪챣릗뱅욨떰"
+sampling_chars: "하늘을우러러한점버그없기를자그만디버깅에도나는괴로워했다"

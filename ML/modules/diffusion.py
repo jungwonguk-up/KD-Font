@@ -3,8 +3,8 @@ from tqdm import tqdm
 import torch
 from torch.utils.data import TensorDataset,DataLoader
 from .utils import CharAttar
-# import onnxruntime as ort
-# import onnx
+import onnxruntime as ort
+import onnx
 from .utils import NumpyDataset
 import numpy as np
 class Diffusion:
@@ -75,7 +75,7 @@ class Diffusion:
         with torch.no_grad():
             x_list = torch.randn((len(sampling_chars), 1, self.img_size, self.img_size)).to(self.device)
             charAttr_list = charAttar.make_charAttr(sample_img, sampling_chars ,mode=3).to(self.device)
-
+            
             pbar = tqdm(list(reversed(range(1, self.noise_step))),desc="sampling")
             for i in pbar:
                 dataset = TensorDataset(x_list,charAttr_list)
@@ -106,6 +106,7 @@ class Diffusion:
                 x_list = 1 / torch.sqrt(a_t) * (
                         x_list - ((1 - a_t) / (torch.sqrt(1 - aBar_t))) * predicted_noise) + torch.sqrt(
                     b_t) * noise
+                pbar.update()
         for sample_image,sample_content in zip(x_list,sampling_chars):
             example_images.append(wandb.Image(sample_image, caption=f"Sample:{sample_content}"))
         wandb.log({

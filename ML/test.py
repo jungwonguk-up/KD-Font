@@ -9,6 +9,7 @@ from modules.diffusion import Diffusion
 from models.utils import UNet
 from modules.utils import CharAttar, load_yaml
 from modules.datasets import DiffusionDataset
+import time
 
 if __name__ == '__main__':
     # Load config
@@ -16,19 +17,19 @@ if __name__ == '__main__':
     config = load_yaml(config_path)
     
     # Set path
-    sample_img_path = os.path.join(prj_dir, config['sample_img_path'])
+    sample_img_path = os.path.join(config['sample_img_path'])
     style_path = os.path.join(prj_dir,config['style_path'])
     model_path = os.path.join(prj_dir, config['model_path'])
     
     # Set wandb
-    wandb.init(project="diffusion_font_test_sampling", config={
-                "learning_rate": 0.0003,
-                "architecture": "UNET",
-                "dataset": "HOJUN_KOREAN_FONT64",
-                "notes":"content, yes_stoke, non_style/ 64 x 64, 420 dataset"
-                },
-            name = "self-attetnion condtion content stroke style_sampling 나눔손글씨강인한위로_갊") #####
-    # wandb.init(mode="disabled")
+    # wandb.init(project="diffusion_font_test_sampling", config={
+    #             "learning_rate": 0.0003,
+    #             "architecture": "UNET",
+    #             "dataset": "HOJUN_KOREAN_FONT64",
+    #             "notes":"content, yes_stoke, non_style/ 64 x 64, 420 dataset"
+    #             },
+    #         name = "self-attetnion condtion content stroke style_sampling 나눔손글씨강인한위로_갊") #####
+    wandb.init(mode="disabled")
     
     # Set Device
     os.environ['CUDA_VISIBLE_DEVICES'] = str(config['gpu_num'])
@@ -65,4 +66,9 @@ if __name__ == '__main__':
     charAttar = CharAttar(num_classes=config['num_classes'],device=device,style_path=style_path)
     
     # Inference
+    start_time = time.time()
     sampled_images = diffusion.portion_sampling(model, config['sampling_chars'], charAttar=charAttar, sample_img=sample_img,batch_size=config['batch_size'],cfg_scale=0)
+    end_time = time.time()
+    execution_time = end_time - start_time
+
+    print(f"모델 실행 시간: {execution_time}초")
