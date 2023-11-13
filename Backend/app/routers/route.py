@@ -4,6 +4,7 @@ import requests
 import uuid
 from pathlib import Path
 import asyncio
+import threading
 
 from fastapi import APIRouter, Form, UploadFile, File, HTTPException, status
 from fastapi.responses import FileResponse
@@ -30,7 +31,7 @@ EXAMPLE_BG_IMG = ""
 # EXAMPLE_BG_IMG = get_config("example_image_PATH")
 
 
-async def request_rest(id: str, cropped_img_path: str, text: str):
+def request_rest(id: str, cropped_img_path: str, text: str):
     inference_server_url = INFERECE_SERVER_URL
     headers = {"Content-Type": "application/json"}
 
@@ -41,9 +42,14 @@ async def request_rest(id: str, cropped_img_path: str, text: str):
         json.dumps(request_dict),
         headers=headers,
     )
+    
+    print(f"inference server response status code: {response.status_code}")
 
-    return response
-
+    # requests.post(
+    #     inference_server_url,
+    #     json.dumps(request_dict),
+    #     headers=headers,
+    # )
 
 user_router = APIRouter()
 requests_database = Database(UserRequest)
@@ -59,36 +65,41 @@ async def create_inference_request(email: str = Form(...), image_file: UploadFil
     # get crop image after pre-processing
     cropped_image = image_processing(image_file, brightness_adj=1.5, contrast_enhance=2)
     # make path and save original & crop image
-    storage_path = get_storage_path(user_id)
-    image_path = storage_path / Path("ori.jpg") #TODO 확장자는 따로 지정해줘야하나?
-    cropped_image_path = storage_path / Path("crop.jpg")
+    ori_img_storage_path = get_storage_path(name="org")
+    crop_img_storage_path = get_storage_path(name="crop")
+
+    ori_path = str(ori_img_storage_path / Path(f"org_{user_id}.jpg"))
+    crop_path = str(crop_img_storage_path / Path(f"crop_{user_id}.jpg"))
 
     await asyncio.gather(
-        save_image(image_file, str(storage_path/"ori.jpg")),
-        save_image(cropped_image, str(storage_path/"crop.jpg"))
+        save_image(image_file, ori_path),
+        save_image(cropped_image, crop_path)
     )
 
     # create new db recode 
     user_request = UserRequest(
         id=user_id,
         email=email,
-        original_image_path=str(image_path),
-        cropped_image_path=str(cropped_image_path)
+        original_image_path=ori_path,
+        cropped_image_path=crop_path
     )
 
     await requests_database.save(user_request)
     print(f"Request ID {user_id[:-8]} recoded to DB sucessfully.")
 
     #TODO Request
-    response = await request_rest(id=user_id,
-                                  cropped_img_path=str(cropped_image_path),
-                                  text=EXAMPLE_TEXT)
-    #TODO
-    if response.status_code == 200:
-        return {"status": "success", "uuid": user_id}
-    
 
-    return {"status": "fail"}
+    threading.Thread(target=request_rest, 
+                     args=(user_id, str(crop_path), EXAMPLE_TEXT)).start()
+    
+    # response = request_rest(id=user_id,
+    #                               cropped_img_path=str(crop_path),
+    #                               text=EXAMPLE_TEXT)
+    #TODO
+    # if response.status_code == 200:
+        # return {"status": "success", "uuid": user_id}
+    
+    return {"status": "request done."}
 
     #TODO 프론트에 uuid 를 보내줘야 한다
     # 1. 2개로 나눠줘야 한다 - 성공시, 실패시. 따로 메세지가 와야된다. 
@@ -119,26 +130,18 @@ async def get_request_status(id: str):
         return {"status": "success", "message": "processing"}
 
 
-#TODO # 샘플링 이미지 생성 완료 신호 받기
-@user_router.post("/request/{id}")
-async def receive_sampling_complete_signal(id: str) -> dict:
-    user_request = await requests_database.get(id)
-    
-    sampling_images_path_list = user_request.sampling_images_path
 
-    print(sampling_images_path_list)
+@user_router.put("/request/{id}", response_model=UserRequest)
+async def receive_sampling_complete_signal(id: str, example_img_path: str) -> dict:
 
-    #TODO make ttf
+    body = {"example_image_path": example_img_path}
+    user_request = await requests_database.update(id=id, body=body)
 
+    if not user_request:
+        return {"status": "fail"}
 
-
-    #TODO make example image and save to db
-
-    # example_image = make_example_from_ttf(text=EXAMPLE_TEXT,
-    #                                       background_image_path=EXAMPLE_BG_IMG,
-    #                                       ttf_file_path=None,)
-
-    return {"message": "signal received successfully."}
+    return {"status": "success"}
+    # return user_request
 
 
 #TODO 샘플 이미지 받기
@@ -197,18 +200,18 @@ async def get_all_requests() -> List[UserRequest]:
     return user_requests
 
 
-@user_router.put("/request/{id}", response_model=UserRequest)
-async def update_request(id: str, body: dict) -> UserRequest:
+# @user_router.put("/request/{id}", response_model=UserRequest)
+# async def update_request(id: str, body: dict) -> UserRequest:
     
-    user_request = await requests_database.update(id=id, body=body)
+#     user_request = await requests_database.update(id=id, body=body)
 
-    if not user_request:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="user_request info with ID dose not exist."
-        )
+#     if not user_request:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="user_request info with ID dose not exist."
+#         )
 
-    return user_request
+#     return user_request
 
 
 @user_router.delete("/request/{id}")

@@ -9,16 +9,20 @@ from PIL import Image
 from library.get_config import get_config
 
 
-def get_storage_path(id: str):
+image_storage_PATH = get_config("Image_storage_PATH")
+
+
+def get_storage_path(name="org"):
     """
     Return storage path. if not exsit, make new dir
     """
     # base directory
-    storage_dir = Path(get_config("Image_storage_PATH"))
+    storage_dir = Path(image_storage_PATH)
     # UUID to prevent file overwrite
-    requset_id = Path(id)
+    # requset_id = Path(id)
+    folder_dir = Path(name)
     # path concat
-    storage_path = storage_dir / requset_id
+    storage_path = storage_dir / folder_dir
 
     # check exist, or create new workspace path
     if not os.path.exists(storage_path):
