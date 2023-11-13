@@ -76,8 +76,7 @@ async def create_inference_request(email: str = Form(...), image_file: UploadFil
         id=user_id,
         email=email,
         original_image_path=ori_path,
-        cropped_image_path=crop_path,
-        example_image_path="C:/Users/gih54/Desktop/diffusion/KoFont-Diffusion/Backend/app/test_background.jpg"
+        cropped_image_path=crop_path
     )
 
     await requests_database.save(user_request)
