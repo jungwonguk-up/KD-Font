@@ -16,7 +16,8 @@
 ![Screenshot from 2023-11-14 00-15-40](https://github.com/jungwonguk/KD-Font/assets/98310175/3e314c50-7f6d-4e8d-a8a7-029dbc531efb)
 
 
+![Screenshot from 2023-11-12 19-56-32](https://github.com/jungwonguk/KD-Font/assets/98310175/a2026d00-639a-417c-b9bf-ba3db1d805f8)
+
+![post build ](https://github.com/jungwonguk/KD-Font/assets/98310175/9caa23a1-e60d-46f4-9488-64605d4bb46f)
 
 
-
-<p align="center"><img src="https://github.com/jungwonguk/KD-Font/assets/98310175/d30ade2f-c8b6-4e5f-adf3-9bf435b59d17"></p>
