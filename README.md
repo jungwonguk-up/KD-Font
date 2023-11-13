@@ -93,9 +93,10 @@ src="https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=MongoDB&logoCol
 아래의 이미지와 같이 변환된 폰트를 통해 시 문구를 **샘플이미지**로 보여줍니다.
 <p align="center"><img src="https://github.com/jungwonguk/KoFont-Diffusion/assets/98310175/2dc6ea29-f81f-438b-abbc-8cfda906c58d"></p>
 
-### **Web Demo**
+### **Service Page**
 
-11/8 업로드 예정
+## [너의 손글씨](https://yourhandwriting.shop/)
+그래픽카드 이슈로 11/17일부터 다시 정상 가동합니다.
 
 ---
 # Document
