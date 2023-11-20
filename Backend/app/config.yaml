@@ -1,4 +1,4 @@
 Database_URL: mongodb://localhost:27017/mongodb
-Image_storage_PATH: temp
+Image_storage_PATH: /KD-Font/Backend/app/temp
 Inference_URL: http://localhost:9334/predictions/diffusion_serve
 Port: '5432'

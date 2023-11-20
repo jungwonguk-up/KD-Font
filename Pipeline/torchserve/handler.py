@@ -20,6 +20,7 @@ from functools import partial
 from utils import load_yaml
 
 from PIL import Image
+import requests
 
 os.environ['CUDA_VISIBLE_DEVICES'] = str(0)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -82,7 +83,7 @@ class DiffusionFontGenerateHandler(BaseHandler):#why use BaseHandler and abc
         os.makedirs(sampling_base_path,exist_ok=True)
         for img,ch in zip(x,contents_ch):
             pillow_img = to_pil_image(img)
-            pillow_img.save(os.path.join(save_path,f"{ch}_{id}.png"))
+            pillow_img.save(os.path.join(sampling_base_path,f"{ch}.png"))
         
         return x
 
@@ -105,20 +106,21 @@ def handle(data,context):
         id = data["id"]
         port = data['port']
         contents_ch = data["text"]
-        sampling_base_path = os.path.join("/".join(sample_img_path.split("/")[-2]),"sampling")
+        print(sample_img_path)
+        sampling_base_path = os.path.join("/".join(sample_img_path.split("/")[:-2]),"sampling",id)
         print(sampling_base_path)
         
         sample_img = _service.preprocess(sample_img_path=sample_img_path,contents_ch=contents_ch)
         data = _service.inference(sample_img,contents_ch,id,sampling_base_path)
         sample_img_list = []
         for ch in contents_ch:
-            sample_img_list.append(os.path.join(sampling_base_path,f"{ch}_{id}.png"))
+            sample_img_list.append(os.path.join(sampling_base_path,f"{ch}.png"))
         headers = {
             "Content-Type": "application/json"
         }
         image_json = {"image":sample_img_list,"id":id}
-        image_json = json.dump(image_json)
-        response = requests.post("localhost:8100/",headers=headers, data=image_json)
+        image_json = json.dumps(image_json)
+        response = requests.put("http://localhost:8100/",headers=headers, data=image_json)
         
         return [data.tolist()]
     except Exception as e:

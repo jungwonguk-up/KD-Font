@@ -1,11 +1,12 @@
 from PIL import Image,ImageFont,ImageDraw
 
 def make_example_from_ttf(text: str,
+                          save_path: str,
                           background_image_path: str,
                           ttf_file_path: str,
                           text_size: int = 50,
                           text_align: str = "center",
-                          draw_coordinate: tuple = (180, 50)
+                          draw_coordinate: tuple = (180, 50),
                           ) -> Image.Image:
     """
     make example image using ttf file
@@ -17,8 +18,8 @@ def make_example_from_ttf(text: str,
     draw = ImageDraw.Draw(image)
     draw.text(draw_coordinate, text, font=selected_font, align=text_align)
     # to do
-    path = '/home/wonguk/coding/makettf/example_img'
-    image.save(f'{path}.jpg', format='jpeg', quality=100, subsampling=0)
+    
+    image.save(f'{save_path}.jpg', format='jpeg', quality=100, subsampling=0)
 
 
 

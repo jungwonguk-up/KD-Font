@@ -61,15 +61,16 @@ class FontCreator:
         self.end_unicode = end_unicode
         self.output_font = output_font
 
-    def create_font(self):
+    def create_font(self, svg_path):
         font = fontforge.font()
 
         space = font.createChar(0x20)
         space.width = 500
 
-        for unicode in range(self.start_unicode, self.end_unicode+1):         
+        for unicode in range(self.start_unicode, self.end_unicode+1):  
+            print(unicode)       
             char = font.createChar(unicode) 
-            svg_file = f"img/{unicode}.svg"
+            svg_file = os.path.join(svg_path,f"{unicode}.svg")
 
             try:
                 glyph = char.importOutlines(svg_file)
@@ -84,14 +85,16 @@ class FontCreator:
 
 
 class MakeTTF:
-    def __init__(self,path, uuid):
+    def __init__(self,path, uuid, ttf_path):
         self.path = path
         self.uuid = uuid
+        self.ttf_path = ttf_path
 
     def create_ttf(self):
         dir_path = os.path.dirname(self.path)
-        ttf_path = dir_path[:-3] + "ttf_sample"
         converter = PNGtoSVG(dir_path)
         converter.convert()
-        creator = FontCreator(0xAC00, 0xD7A3, f"{ttf_path}/{self.uuid}_sample.ttf")
-        creator.create_font()
+        creator = FontCreator(0xAC00, 0xD7A3, f"{self.ttf_path}/{self.uuid}_sample.ttf")
+        creator.create_font(dir_path)
+        return f"{self.ttf_path}/{self.uuid}_sample.ttf"
+        

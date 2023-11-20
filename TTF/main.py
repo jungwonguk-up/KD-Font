@@ -8,6 +8,7 @@ import requests
 import argparse
 from pydantic import BaseModel
 import json
+import os
 
 
 class PathModel(BaseModel):
@@ -38,17 +39,27 @@ def push_ttf(data: PathModel) -> dict:
     # sampled_img_list = user_request.sampling_images_path
     id = data.id
     path = data.image[0]   
-    new_path = '/'.join(path.split('/')[:-2])
-    MakeTTF(path,id)
+    new_path = '/'.join(path.split('/')[:-3])
+    ttf_dir_path = os.path.join(new_path,"ttf_sample")
+    os.makedirs(ttf_dir_path, exist_ok=True)
+    makefont = MakeTTF(path,id,ttf_dir_path)
+    ttf_path = makefont.create_ttf()
     background_image_path = f'{new_path}/background/img.png'
-    ttf_file_path = f'{new_path}/ttf/{id}_sample.ttf'
     text = '하늘을 우러러 \n 한 점 버그없기를 \n 자그만 디버깅에도 \n 나는 괴로워했다'
-    make_example_from_ttf(text, background_image_path,ttf_file_path)
+    save_path = os.path.join(new_path,'sample_img',id)
+    # os.makedirs(save_path,exist_ok=True)
+    make_example_from_ttf(text, save_path,background_image_path,ttf_path)
 
-    response = requests.post(
-        backend_url,
-        data=json.dumps({"id" : id, "example_image_path" : f"{new_path}/example_img/example.jpg" })
+    # response = requests.put(
+    #     os.path.join(backend_url,"request",id),
+    #     data=json.dumps({"id" : id, "example_image_path" : f"{save_path}.jpg" })
+    # )
+
+    response = requests.put(
+        os.path.join(backend_url,"request",id),
+        data=json.dumps({"id" : id, "example_image_path" : "/KD-Font/Backend/app/temp/sample_img/img2.png" })
     )
+
 
     return {"message" : "success" }
 

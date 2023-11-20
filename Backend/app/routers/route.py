@@ -26,7 +26,8 @@ import time
 
 INFERENCE_SERVER_URL = get_config("Inference_URL")
 BACKEND_PORT = get_config("Port")
-EXAMPLE_TEXT = "가나다라마바사"
+# EXAMPLE_TEXT = "괴그기깅나는늘다도디러로를만버없에우워을자점하한했"
+EXAMPLE_TEXT = "가나다라"
 EXAMPLE_BG_IMG = ""
 # EXAMPLE_TEXT = get_config("example_text")
 # EXAMPLE_BG_IMG = get_config("example_image_PATH")
