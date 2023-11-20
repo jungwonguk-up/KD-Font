@@ -33,7 +33,7 @@ app = FastAPI()
 # 포트
 
 @app.put("/")
-async def push_ttf(data: PathModel) -> dict:
+def push_ttf(data: PathModel) -> dict:
     # user_request = await requests_database.get(id)
     # sampled_img_list = user_request.sampling_images_path
     id = data.id
