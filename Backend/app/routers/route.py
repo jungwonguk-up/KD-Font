@@ -25,6 +25,7 @@ import time
 # TODO: logging
 
 INFERECE_SERVER_URL = get_config("Inference_URL")
+PORT = get_config("Port")
 EXAMPLE_TEXT = "가나다라마바사"
 EXAMPLE_BG_IMG = ""
 # EXAMPLE_TEXT = get_config("example_text")
@@ -35,7 +36,7 @@ def request_rest(id: str, cropped_img_path: str, text: str):
     inference_server_url = INFERECE_SERVER_URL
     headers = {"Content-Type": "application/json"}
 
-    request_dict = {"inputs": {"id": id, "cropped_img_path": cropped_img_path, "text": text}}
+    request_dict = {"inputs": {"id": id, "cropped_img_path": cropped_img_path, "text": text, "port": PORT}}
 
     response = requests.post(
         inference_server_url,

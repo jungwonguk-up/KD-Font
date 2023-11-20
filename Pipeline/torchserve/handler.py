@@ -112,7 +112,7 @@ def handle(data,context):
         data = _service.inference(sample_img,contents_ch,id,sampling_base_path)
         sample_img_list = []
         for ch in contents_ch:
-            sample_img_list.append(os.path.join(save_path,f"{ch}_{id}.png"))
+            sample_img_list.append(os.path.join(sampling_base_path,f"{ch}_{id}.png"))
         headers = {
             "Content-Type": "application/json"
         }
