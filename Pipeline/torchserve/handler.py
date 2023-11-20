@@ -75,15 +75,14 @@ class DiffusionFontGenerateHandler(BaseHandler):#why use BaseHandler and abc
         # print(len(sample_img))
         return sample_img
         
-    def inference(self,sample_img,contents_ch,id):
-        save_path = "./data"
+    def inference(self,sample_img,contents_ch,id,sampling_base_path):
         
         charAttar = CharAttar(num_classes=self.config['num_classes'],device=self.device,style_path=self.config['style_path'])
         x = self.diffusion.portion_sampling(model=self.model,sampling_chars=contents_ch,charAttar=charAttar,sample_img=sample_img,batch_size=4)
-        os.makedirs(save_path,exist_ok=True)
+        os.makedirs(sampling_base_path,exist_ok=True)
         for img,ch in zip(x,contents_ch):
             pillow_img = to_pil_image(img)
-            pillow_img.save(os.path.join(save_path,id)+f"_{ch}.png")
+            pillow_img.save(os.path.join(save_path,f"{ch}_{id}.png"))
         
         return x
 
@@ -98,19 +97,29 @@ def handle(data,context):
             _service.initialize(context)
         if data is None:
             return None
-        print(data)
+        print(data,str(context))
+        print(_service)
         print(data[0]['body'])
         data = data[0]['body']['inputs']
         sample_img_path = data["cropped_img_path"]
         id = data["id"]
+        port = data['port']
         contents_ch = data["text"]
+        sampling_base_path = os.path.join("/".join(sample_img_path.split("/")[-2]),"sampling")
+        print(sampling_base_path)
         
         sample_img = _service.preprocess(sample_img_path=sample_img_path,contents_ch=contents_ch)
-        data = _service.inference(sample_img,contents_ch,id,sample_img_path)
-        data = 
-        return [data.tolist()]
+        data = _service.inference(sample_img,contents_ch,id,sampling_base_path)
+        sample_img_list = []
+        for ch in contents_ch:
+            sample_img_list.append(os.path.join(save_path,f"{ch}_{id}.png"))
+        headers = {
+            "Content-Type": "application/json"
+        }
+        image_json = {"image":sample_img_list,"id":id}
+        image_json = json.dump(image_json)
+        response = requests.post("localhost:8100/",headers=headers, data=image_json)
         
+        return [data.tolist()]
     except Exception as e:
         raise e
-    
-    
