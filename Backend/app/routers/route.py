@@ -24,7 +24,8 @@ import time
 # 쓸 라우터랑 안쓸 라우터랑 분리하기?
 # TODO: logging
 
-INFERECE_SERVER_URL = get_config("Inference_URL")
+INFERENCE_SERVER_URL = get_config("Inference_URL")
+BACKEND_PORT = get_config("Port")
 EXAMPLE_TEXT = "가나다라마바사"
 EXAMPLE_BG_IMG = ""
 # EXAMPLE_TEXT = get_config("example_text")
@@ -32,10 +33,10 @@ EXAMPLE_BG_IMG = ""
 
 
 def request_rest(id: str, cropped_img_path: str, text: str):
-    inference_server_url = INFERECE_SERVER_URL
+    inference_server_url = INFERENCE_SERVER_URL
     headers = {"Content-Type": "application/json"}
 
-    request_dict = {"inputs": {"id": id, "cropped_img_path": cropped_img_path, "text": text}}
+    request_dict = {"inputs": {"id": id, "cropped_img_path": cropped_img_path, "text": text, "port": BACKEND_PORT}}
 
     response = requests.post(
         inference_server_url,
