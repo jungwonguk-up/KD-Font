@@ -1,15 +1,9 @@
-checkpoints
-results
-hojun/wandb
-make_font/data/*
-results/*
-checkpoints
-results
-Hangul_Characters_Image128
-Font-diff-main
-Ko_diff_base_chinese
-test_Data
-mxfont-main
+*.png
+*.pt
+*.csv
+mongodb
+temp
+*.jpg
 *.pyc
 Hangul_Characters_Image128_Grayscale
 Hangul_Characters_Image64_GrayScale
@@ -21,3 +15,5 @@ wandb
 *.engine
 diffusion_font_train.csv
 nohup.out
+*.mar
+*log*

@@ -10,7 +10,7 @@ def get_config(key: str,
                default_value: Optional[str] = None,
                yaml_path: str = str(BASE_DIR / "config.yaml")
                ):
-    with open(yaml_path, encoding='UTF8') as f:
+    with open(yaml_path) as f:
         configs = yaml.load(f, Loader=yaml.FullLoader)
     try:
         return configs[key]
@@ -26,4 +26,3 @@ def get_config(key: str,
 # print(INF_SERVER_URL)
 # print(DATABASE_URL)
 # print(STORAGE_PATH)
-

@@ -10,6 +10,8 @@ class UserRequest(Document):
     cropped_image_path: Optional[str] = None
     sampling_images_path: Optional[List[str]] = None
     example_image_path: Optional[str] = None
+    ttf_file_path: Optional[str] = None
+    user_feedback: Optional[str] = None
 
     model_config = {
         "json_schema_extra": {
@@ -18,7 +20,9 @@ class UserRequest(Document):
                         "original_image_path": ".../images/original_img.png",
                         "cropped_image_path": ".../images/cropped_img.png",
                         "sampling_images_path": [".../images/sample1.png", ".../images/sample2.png"],
-                        "example_image_path": ".../images/example_img.png"}
+                        "example_image_path": ".../images/example_img.png",
+                        "ttf_file_path": ".../test_font.ttf",
+                        "user_feedback": "0"}
         }
     }
 
@@ -29,6 +33,8 @@ class UserRequestUpdate(BaseModel):
     cropped_image_path: Optional[str] = None
     sampling_images_path: Optional[List[str]] = None
     example_image_path: Optional[str] = None
+    ttf_file_path: Optional[str] = None
+    user_feedback: Optional[str] = None
 
     model_config = {
         "json_schema_extra": {
@@ -36,6 +42,8 @@ class UserRequestUpdate(BaseModel):
                         "original_image_path": ".../images/original_img.png",
                         "cropped_image_path": ".../images/cropped_img.png",
                         "sampling_images_path": [".../images/sample1.png", ".../images/sample2.png"],
-                        "example_image_path": ".../images/example_img.png"}
+                        "example_image_path": ".../images/example_img.png",
+                        "ttf_file_path": ".../test_font.ttf",
+                        "user_feedback": "0"}
         }
     }
