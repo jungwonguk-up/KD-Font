@@ -4,7 +4,7 @@ batch_size: 8
 num_classes: 11172
 input_size: 64
 
-sample_img_path: '../Data/sampling_imgs/62570_했.png'
-style_path: 'style_enc.pth'
+sample_img_path: '/KD-Font/Data/hand_imgs/sampling_imgs/1.jpg'
+style_path: '/KD-Font/Pipeline/torchserve/style_enc.pth'
 
 sampling_chars: "괴그기깅나는늘다도디러로를만버없에우워을자점하한했"

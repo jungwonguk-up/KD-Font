@@ -67,7 +67,7 @@ class DiffusionFontGenerateHandler(BaseHandler):#why use BaseHandler and abc
         ])
         sampleImage_len = len(contents_ch)
 
-        # print(data)
+        # print(sample_img_path)
         sample_img = Image.open(sample_img_path)
         sample_img = transforms(sample_img).to(self.device)
         sample_img = torch.unsqueeze(sample_img,1)
@@ -76,7 +76,7 @@ class DiffusionFontGenerateHandler(BaseHandler):#why use BaseHandler and abc
         return sample_img
         
     def inference(self,sample_img,contents_ch,id):
-        save_path = "./data"
+        save_path = "/KD-Font/inference_data"
         
         charAttar = CharAttar(num_classes=self.config['num_classes'],device=self.device,style_path=self.config['style_path'])
         x = self.diffusion.portion_sampling(model=self.model,sampling_chars=contents_ch,charAttar=charAttar,sample_img=sample_img,batch_size=4)
@@ -98,16 +98,16 @@ def handle(data,context):
             _service.initialize(context)
         if data is None:
             return None
-        print(data)
-        print(data[0]['body'])
+        # print(data)
+        # print(data[0]['body'])
         data = data[0]['body']['inputs']
         sample_img_path = data["cropped_img_path"]
         id = data["id"]
         contents_ch = data["text"]
         
         sample_img = _service.preprocess(sample_img_path=sample_img_path,contents_ch=contents_ch)
-        data = _service.inference(sample_img,contents_ch,id,sample_img_path)
-        data = 
+        # data = _service.inference(sample_img,contents_ch,id,sample_img_path)
+        data = _service.inference(sample_img,contents_ch,id)
         return [data.tolist()]
         
     except Exception as e:

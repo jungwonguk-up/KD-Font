@@ -1,4 +1,4 @@
-Database_URL: null
-Image_storage_PATH: null
-Inference_URL: null
-Port: 8000
+Database_URL: mongodb://localhost/mongodb
+Image_storage_PATH: /KD-Font/Backend/app/temp
+Inference_URL: http://127.0.0.1:9334/predictions/diffusion_torchserve
+Port: '5432'
