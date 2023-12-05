@@ -41,7 +41,7 @@ n_epochs = 402
 use_amp = True
 resume_train = False
 file_num = "resblock_unet_test"
-train_dirs = "H:/data/Hangul_Characters_Image64_radomSampling420_GrayScale"
+train_dirs = "/home/wonguk/kdfont/Hangul_Characters_Image64_radomSampling420_GrayScale"
 sample_img_path = f'{train_dirs}/갊/62570_갊.png'
 stroke_text_path = "./text_weight/storke_txt.txt"
 style_enc_path = "./text_weight/style_enc.pth"
@@ -128,7 +128,7 @@ if __name__ == '__main__':
 
     if resume_train:
         #Set model
-        model = Unet(context_dim=256, device=device).to(device)
+        model = Unet(model_channels=128, context_dim=256, device=device).to(device)
         # model = TransformerUnet128(num_classes=num_classes, context_dim=256, device=device).to(device)
         # model = UNet128(num_classes=num_classes).to(device)
         wandb.watch(model)
@@ -150,7 +150,7 @@ if __name__ == '__main__':
 
     else:
         #Set model
-        model = Unet(context_dim=256, device=device).to(device)
+        model = Unet(model_channels=128, context_dim=256, device=device).to(device)
         # model = TransformerUnet128(num_classes=num_classes, context_dim=256,device = device).to(device) # 여기는 왜 256이지?
         # model = UNet128(num_classes=num_classes).to(device)
         wandb.watch(model)
