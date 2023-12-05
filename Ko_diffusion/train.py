@@ -128,7 +128,7 @@ if __name__ == '__main__':
 
     if resume_train:
         #Set model
-        model = Unet(context_dim=256, device=device).to(device)
+        model = Unet(model_channels=128, context_dim=256, device=device).to(device)
         # model = TransformerUnet128(num_classes=num_classes, context_dim=256, device=device).to(device)
         # model = UNet128(num_classes=num_classes).to(device)
         wandb.watch(model)
@@ -150,7 +150,7 @@ if __name__ == '__main__':
 
     else:
         #Set model
-        model = Unet(context_dim=256, device=device).to(device)
+        model = Unet(model_channels=128, context_dim=256, device=device).to(device)
         # model = TransformerUnet128(num_classes=num_classes, context_dim=256,device = device).to(device) # 여기는 왜 256이지?
         # model = UNet128(num_classes=num_classes).to(device)
         wandb.watch(model)
