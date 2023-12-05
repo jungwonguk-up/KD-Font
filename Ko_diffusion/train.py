@@ -78,7 +78,7 @@ if __name__ == '__main__':
     os.makedirs(result_model_path, exist_ok=True)
     
     ## wandb init
-    wandb.init(project="diffusion_font_test",
+    wandb.init(project="cross_attention_font_test",
             #    name="Label Only (Linear) + t + (Cross Attention) lr 8e-5 ~400epoch",
                name="ResBlock UNet Test",
                config={"learning_rate": 0.0001,
