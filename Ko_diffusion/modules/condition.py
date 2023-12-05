@@ -31,7 +31,7 @@ class MakeCondition:
         self.device = device
         self.dataset_classes = data_classes
         self.num_classes = num_classes
-        self.contents_dim = 60 
+        self.contents_dim = 100 
         self.contents_emb = nn.Embedding(num_classes, self.contents_dim)
         self.korean_stroke_emb = Korean_StrokeEmbedding(txt_path=stroke_text_path,classes=self.dataset_classes)
         self.style_enc = self.make_style_enc(style_enc_path)
@@ -84,10 +84,10 @@ class MakeCondition:
                 stroke =  torch.FloatTensor(self.korean_stroke_emb.embedding(indexs))
             
             if contents_p < 0.3 and stroke_p < 0.3:
-                style = torch.zeros(input_length,style_c, style_h , style_w)
+                style = torch.zeros(input_length,style_c, style_h * style_w)
             else:
-                style = self.style_enc(images).cpu()
-                # style = style.view(input_length, style_c, -1).cpu()
+                style = self.style_enc(images)
+                style = style.view(input_length, style_c, -1).cpu()
         elif mode == 2:
             if contents_p < 0.3:
                 contents = torch.zeros(input_length,self.contents_dim)
@@ -99,16 +99,15 @@ class MakeCondition:
             else:
                 stroke =  torch.FloatTensor(self.korean_stroke_emb.embedding(indexs))
             
-            style = torch.zeros(input_length,style_c, style_h , style_w)
+            style = torch.zeros(input_length,style_c, style_h * style_w)
 
 
         elif mode == 3: #test
             uni_diff_list = torch.LongTensor(self.korean_index_to_uni_diff(indexs))
             contents = torch.FloatTensor(self.contents_emb(uni_diff_list))
             stroke =  torch.FloatTensor(self.korean_stroke_emb.embedding(indexs))
-            style = self.style_enc(images).cpu()
-            
-            # style = style.view(input_length, style_c, -1).cpu()
+            style = self.style_enc(images)
+            style = style.view(input_length, style_c, -1).cpu()
         condition_dict = {}
         condition_dict["contents"] = contents.to(self.device)
         condition_dict["stroke"] = stroke.to(self.device)
