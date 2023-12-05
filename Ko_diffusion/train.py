@@ -69,7 +69,7 @@ def plot_images(images):
 
 if __name__ == '__main__':
     # # wnadb disable mode select
-    os.environ["WANDB_DISABLED"] = "True"
+    os.environ["WANDB_DISABLED"] = "False"
 
     #Set save file
     result_image_path = os.path.join("results", 'font_noStrokeStyle_{}'.format(file_num))
@@ -78,9 +78,9 @@ if __name__ == '__main__':
     os.makedirs(result_model_path, exist_ok=True)
     
     ## wandb init
-    wandb.init(project="diffusion_font_test",
+    wandb.init(project="cross_attention_font_test",
             #    name="Label Only (Linear) + t + (Cross Attention) lr 8e-5 ~400epoch",
-               name="ResBlock UNet Test",
+               name="Full Condition UNet Test",
                config={"learning_rate": 0.0001,
                        "architecture": "UNET",
                        "dataset": "HOJUN_KOREAN_FONT64",
