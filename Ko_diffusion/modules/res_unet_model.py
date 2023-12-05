@@ -109,6 +109,8 @@ class ResBlock(nn.Module):
     def forward(self, x, t):
         out = self.in_layers(x)
         # t = self.emb_layer(t).type(h.type) # original code
+        # print("x :", x.shape)
+        # print("t :", t.shape)
         t = self.emb_layer(t)[:, :, None, None].repeat(1, 1, x.shape[-2], x.shape[-1])
         
         out = out + t
@@ -211,11 +213,15 @@ class Unet(nn.Module):
             nn.Conv2d(self.model_ch, self.out_ch, kernel_size=1) # 맞나?
         )
 
-        self.label_linear = nn.Sequential(
-            nn.Linear(100, context_dim),
-            nn.GELU(),
-            nn.LayerNorm(context_dim),
-        )
+
+        self.sty_avgpool = nn.AvgPool2d(kernel_size = 16)   # batch, 128, 1
+
+
+        # self.label_linear = nn.Sequential(
+        #     nn.Linear(100, context_dim),
+        #     nn.GELU(),
+        #     nn.LayerNorm(context_dim),
+        # )
 
 
         """임시"""
@@ -328,11 +334,24 @@ class Unet(nn.Module):
 
     def forward(self, x, t, condition_dict):
         t = t.unsqueeze(-1).type(torch.float)
-        t = self.pos_encoding(t, self.context_dim)
+        t = self.pos_encoding(t, 256) # self.context_dim
         
-        label_emb_t = self.label_linear(condition_dict["contents"])
-        label_emb = label_emb_t.unsqueeze(dim=1)
-        context = label_emb
+        label_emb_t = condition_dict["contents"]
+
+        sty_emb_t = self.sty_avgpool(condition_dict["style"])
+        b,c,_,_ = sty_emb_t.shape # b,c,h,w
+        sty_emb_t = sty_emb_t.view(b,c)
+        stroke_emb_t = condition_dict["stroke"]
+        condition_emb = torch.concat([stroke_emb_t, label_emb_t, sty_emb_t], dim=1)
+
+  
+        # # stroke
+        # stroke_emb_t = self.label_linear(condition_dict["contents"])
+        # # style
+        # style_emb_t = self.label_linear(condition_dict["contents"])
+  
+        
+        context = condition_emb.unsqueeze(dim=1)
 
         """임시"""
         # enc level1
