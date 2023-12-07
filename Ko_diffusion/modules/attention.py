@@ -170,6 +170,7 @@ class TrasformerBlock(nn.Module):
                  head_dim: int = 32, 
                  context_dim: int = None,
                  depth: int = 1, 
+                 norm_num_groups: int = 8,
                  dropout: float = 0., 
                  use_spatial: bool = False,
                  ):
@@ -180,7 +181,7 @@ class TrasformerBlock(nn.Module):
             head_dim = in_channels // num_heads
 
         self.use_spatial = use_spatial
-        self.norm = nn.GroupNorm(num_groups=8, num_channels=in_channels, eps=1e-6, affine=True)
+        self.norm = nn.GroupNorm(num_groups=norm_num_groups, num_channels=in_channels, eps=1e-6, affine=True)
         self.proj_in = nn.Conv2d(in_channels, in_channels, kernel_size=1, stride=1, padding=0)
         self.proj_out = zero_module(nn.Conv2d(in_channels, in_channels, kernel_size=1, stride=1, padding=0))
 
