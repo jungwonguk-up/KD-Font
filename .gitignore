@@ -25,4 +25,5 @@ Hangul_Characters_Image64_GrayScale
 image
 *.ipynb
 *png
-Ko_diffusion/wandb
+*.jpg
+*.pt

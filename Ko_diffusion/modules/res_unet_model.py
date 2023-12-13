@@ -149,11 +149,11 @@ class BasicBlock(nn.Module):
             # self.mid_head_dim = self.mid_ch // num_heads
 
             self.res1 = ResBlock(self.in_ch, self.out_ch, emb_channels, norm_num_groups, dropout)
-            self.tf = TrasformerBlock(self.out_ch, num_heads, head_dim, context_dim, depth, dropout)
+            self.tf = TrasformerBlock(self.out_ch, num_heads, head_dim, context_dim, depth, norm_num_groups, dropout)
             self.res2 = ResBlock(self.out_ch, self.out_ch, emb_channels, norm_num_groups, dropout)
         else:
             self.res1 = ResBlock(self.in_ch, self.out_ch, emb_channels, norm_num_groups, dropout)
-            self.tf = TrasformerBlock(self.out_ch, num_heads, head_dim, context_dim, depth, dropout) if self.use_tf else None
+            self.tf = TrasformerBlock(self.out_ch, num_heads, head_dim, context_dim, depth, norm_num_groups, dropout) if self.use_tf else None
 
     def forward(self, x, t, context=None):
         if (self.use_tf is False) and (self.mid is True): # mid 일 때는 항상 transformer 사용
@@ -186,6 +186,7 @@ class Unet(nn.Module):
                  channel_mult: list = [1, 2, 4, 4],
                  num_heads: int = 4,
                  transformer_depth: int = 1,
+                 norm_num_groups: int = 8,
                  context_dim: int = None,
                  device: str = "cuda"):
         super().__init__()
@@ -201,6 +202,7 @@ class Unet(nn.Module):
         self.ch_mult = channel_mult
         self.num_heads = num_heads
         self.depth = transformer_depth
+        self.norm_num_groups = norm_num_groups
         self.context_dim = context_dim
         self.device = device
 
@@ -208,7 +210,7 @@ class Unet(nn.Module):
 
         self.input = nn.Conv2d(self.in_ch, self.model_ch, kernel_size=3, padding=1)
         self.out = nn.Sequential(
-            nn.GroupNorm(num_groups=8, num_channels=self.model_ch),
+            nn.GroupNorm(num_groups=self.norm_num_groups, num_channels=self.model_ch),
             nn.SiLU(),
             nn.Conv2d(self.model_ch, self.out_ch, kernel_size=1) # 맞나?
         )
@@ -226,45 +228,45 @@ class Unet(nn.Module):
 
         """임시"""
         # level1
-        self.enc1 = BasicBlock(self.model_ch, self.model_ch, num_heads=self.num_heads, head_dim=(self.model_ch)//num_heads, context_dim=self.context_dim, depth=self.depth)
-        self.enc2 = BasicBlock(self.model_ch, self.model_ch, num_heads=self.num_heads, head_dim=(self.model_ch)//num_heads, context_dim=self.context_dim, depth=self.depth)
+        self.enc1 = BasicBlock(self.model_ch, self.model_ch, num_heads=self.num_heads, head_dim=(self.model_ch)//num_heads, context_dim=self.context_dim, depth=self.depth, norm_num_groups=self.norm_num_groups)
+        self.enc2 = BasicBlock(self.model_ch, self.model_ch, num_heads=self.num_heads, head_dim=(self.model_ch)//num_heads, context_dim=self.context_dim, depth=self.depth, norm_num_groups=self.norm_num_groups)
         # level2
         self.down1 = DownSample(self.model_ch, self.model_ch)
-        self.enc3 = BasicBlock(self.model_ch, self.model_ch*2, num_heads=self.num_heads, head_dim=(self.model_ch*2)//num_heads, context_dim=self.context_dim, depth=self.depth)
-        self.enc4 = BasicBlock(self.model_ch*2, self.model_ch*2, num_heads=self.num_heads, head_dim=(self.model_ch*2)//num_heads, context_dim=self.context_dim, depth=self.depth)
+        self.enc3 = BasicBlock(self.model_ch, self.model_ch*2, num_heads=self.num_heads, head_dim=(self.model_ch*2)//num_heads, context_dim=self.context_dim, depth=self.depth, norm_num_groups=self.norm_num_groups)
+        self.enc4 = BasicBlock(self.model_ch*2, self.model_ch*2, num_heads=self.num_heads, head_dim=(self.model_ch*2)//num_heads, context_dim=self.context_dim, depth=self.depth, norm_num_groups=self.norm_num_groups)
         # level3
         self.down2 = DownSample(self.model_ch*2, self.model_ch*2)
-        self.enc5 = BasicBlock(self.model_ch*2, self.model_ch*4, num_heads=self.num_heads, head_dim=(self.model_ch*4)//num_heads, context_dim=self.context_dim, depth=self.depth)
-        self.enc6 = BasicBlock(self.model_ch*4, self.model_ch*4, num_heads=self.num_heads, head_dim=(self.model_ch*4)//num_heads, context_dim=self.context_dim, depth=self.depth)
+        self.enc5 = BasicBlock(self.model_ch*2, self.model_ch*4, num_heads=self.num_heads, head_dim=(self.model_ch*4)//num_heads, context_dim=self.context_dim, depth=self.depth, norm_num_groups=self.norm_num_groups)
+        self.enc6 = BasicBlock(self.model_ch*4, self.model_ch*4, num_heads=self.num_heads, head_dim=(self.model_ch*4)//num_heads, context_dim=self.context_dim, depth=self.depth, norm_num_groups=self.norm_num_groups)
         # level4
         self.down3 = DownSample(self.model_ch*4, self.model_ch*4)
-        self.enc7 = BasicBlock(self.model_ch*4, self.model_ch*4, num_heads=self.num_heads, head_dim=(self.model_ch*4)//num_heads, context_dim=self.context_dim, depth=self.depth, use_transformer_block=False)
-        self.enc8 = BasicBlock(self.model_ch*4, self.model_ch*4, num_heads=self.num_heads, head_dim=(self.model_ch*4)//num_heads, context_dim=self.context_dim, depth=self.depth, use_transformer_block=False)
+        self.enc7 = BasicBlock(self.model_ch*4, self.model_ch*4, num_heads=self.num_heads, head_dim=(self.model_ch*4)//num_heads, context_dim=self.context_dim, depth=self.depth, use_transformer_block=False, norm_num_groups=self.norm_num_groups)
+        self.enc8 = BasicBlock(self.model_ch*4, self.model_ch*4, num_heads=self.num_heads, head_dim=(self.model_ch*4)//num_heads, context_dim=self.context_dim, depth=self.depth, use_transformer_block=False, norm_num_groups=self.norm_num_groups)
         
         # mid
         # inner dim = in_ch * 2 
-        self.mid = BasicBlock(self.model_ch*4, self.model_ch*4, num_heads=self.num_heads, head_dim=(self.model_ch*4)//num_heads, context_dim=self.context_dim, depth=self.depth, mid_block=True)
+        self.mid = BasicBlock(self.model_ch*4, self.model_ch*4, num_heads=self.num_heads, head_dim=(self.model_ch*4)//num_heads, context_dim=self.context_dim, depth=self.depth, mid_block=True, norm_num_groups=self.norm_num_groups)
 
         # level4
         # in_channels = x_ch + skip_ch
-        self.dec1 = BasicBlock(self.model_ch*4 + self.model_ch*4, self.model_ch*4, num_heads=self.num_heads, head_dim=(self.model_ch*4)//num_heads, context_dim=self.context_dim, depth=self.depth, use_transformer_block=False)
-        self.dec2 = BasicBlock(self.model_ch*4 + self.model_ch*4, self.model_ch*4, num_heads=self.num_heads, head_dim=(self.model_ch*4)//num_heads, context_dim=self.context_dim, depth=self.depth, use_transformer_block=False)
-        self.dec3 = BasicBlock(self.model_ch*4 + self.model_ch*4, self.model_ch*4, num_heads=self.num_heads, head_dim=(self.model_ch*4)//num_heads, context_dim=self.context_dim, depth=self.depth, use_transformer_block=False)
+        self.dec1 = BasicBlock(self.model_ch*4 + self.model_ch*4, self.model_ch*4, num_heads=self.num_heads, head_dim=(self.model_ch*4)//num_heads, context_dim=self.context_dim, depth=self.depth, use_transformer_block=False, norm_num_groups=self.norm_num_groups)
+        self.dec2 = BasicBlock(self.model_ch*4 + self.model_ch*4, self.model_ch*4, num_heads=self.num_heads, head_dim=(self.model_ch*4)//num_heads, context_dim=self.context_dim, depth=self.depth, use_transformer_block=False, norm_num_groups=self.norm_num_groups)
+        self.dec3 = BasicBlock(self.model_ch*4 + self.model_ch*4, self.model_ch*4, num_heads=self.num_heads, head_dim=(self.model_ch*4)//num_heads, context_dim=self.context_dim, depth=self.depth, use_transformer_block=False, norm_num_groups=self.norm_num_groups)
         self.up1 = UpSample(self.model_ch*4, self.model_ch*4)
         # level3
-        self.dec4 = BasicBlock(self.model_ch*4 + self.model_ch*4, self.model_ch*4, num_heads=self.num_heads, head_dim=(self.model_ch*4)//num_heads, context_dim=self.context_dim, depth=self.depth)
-        self.dec5 = BasicBlock(self.model_ch*4 + self.model_ch*4, self.model_ch*4, num_heads=self.num_heads, head_dim=(self.model_ch*4)//num_heads, context_dim=self.context_dim, depth=self.depth)
-        self.dec6 = BasicBlock(self.model_ch*4 + self.model_ch*2, self.model_ch*4, num_heads=self.num_heads, head_dim=(self.model_ch*4)//num_heads, context_dim=self.context_dim, depth=self.depth)
+        self.dec4 = BasicBlock(self.model_ch*4 + self.model_ch*4, self.model_ch*4, num_heads=self.num_heads, head_dim=(self.model_ch*4)//num_heads, context_dim=self.context_dim, depth=self.depth, norm_num_groups=self.norm_num_groups)
+        self.dec5 = BasicBlock(self.model_ch*4 + self.model_ch*4, self.model_ch*4, num_heads=self.num_heads, head_dim=(self.model_ch*4)//num_heads, context_dim=self.context_dim, depth=self.depth, norm_num_groups=self.norm_num_groups)
+        self.dec6 = BasicBlock(self.model_ch*4 + self.model_ch*2, self.model_ch*4, num_heads=self.num_heads, head_dim=(self.model_ch*4)//num_heads, context_dim=self.context_dim, depth=self.depth, norm_num_groups=self.norm_num_groups)
         self.up2 = UpSample(self.model_ch*4, self.model_ch*4)
         # level2
-        self.dec7 = BasicBlock(self.model_ch*4 + self.model_ch*2, self.model_ch*2, num_heads=self.num_heads, head_dim=(self.model_ch*2)//num_heads, context_dim=self.context_dim, depth=self.depth)
-        self.dec8 = BasicBlock(self.model_ch*2 + self.model_ch*2, self.model_ch*2, num_heads=self.num_heads, head_dim=(self.model_ch*2)//num_heads, context_dim=self.context_dim, depth=self.depth)
-        self.dec9 = BasicBlock(self.model_ch*2 + self.model_ch, self.model_ch*2, num_heads=self.num_heads, head_dim=(self.model_ch*2)//num_heads, context_dim=self.context_dim, depth=self.depth)
+        self.dec7 = BasicBlock(self.model_ch*4 + self.model_ch*2, self.model_ch*2, num_heads=self.num_heads, head_dim=(self.model_ch*2)//num_heads, context_dim=self.context_dim, depth=self.depth, norm_num_groups=self.norm_num_groups)
+        self.dec8 = BasicBlock(self.model_ch*2 + self.model_ch*2, self.model_ch*2, num_heads=self.num_heads, head_dim=(self.model_ch*2)//num_heads, context_dim=self.context_dim, depth=self.depth, norm_num_groups=self.norm_num_groups)
+        self.dec9 = BasicBlock(self.model_ch*2 + self.model_ch, self.model_ch*2, num_heads=self.num_heads, head_dim=(self.model_ch*2)//num_heads, context_dim=self.context_dim, depth=self.depth, norm_num_groups=self.norm_num_groups)
         self.up3 = UpSample(self.model_ch*2, self.model_ch*2)
         # level1
-        self.dec10 = BasicBlock(self.model_ch*2 + self.model_ch, self.model_ch, num_heads=self.num_heads, head_dim=(self.model_ch)//num_heads, context_dim=self.context_dim, depth=self.depth)
-        self.dec11 = BasicBlock(self.model_ch + self.model_ch, self.model_ch, num_heads=self.num_heads, head_dim=(self.model_ch)//num_heads, context_dim=self.context_dim, depth=self.depth)
-        self.dec12 = BasicBlock(self.model_ch + self.model_ch, self.model_ch, num_heads=self.num_heads, head_dim=(self.model_ch)//num_heads, context_dim=self.context_dim, depth=self.depth)
+        self.dec10 = BasicBlock(self.model_ch*2 + self.model_ch, self.model_ch, num_heads=self.num_heads, head_dim=(self.model_ch)//num_heads, context_dim=self.context_dim, depth=self.depth, norm_num_groups=self.norm_num_groups)
+        self.dec11 = BasicBlock(self.model_ch + self.model_ch, self.model_ch, num_heads=self.num_heads, head_dim=(self.model_ch)//num_heads, context_dim=self.context_dim, depth=self.depth, norm_num_groups=self.norm_num_groups)
+        self.dec12 = BasicBlock(self.model_ch + self.model_ch, self.model_ch, num_heads=self.num_heads, head_dim=(self.model_ch)//num_heads, context_dim=self.context_dim, depth=self.depth, norm_num_groups=self.norm_num_groups)
 
     """TODO"""
     # method for make encoder layers
