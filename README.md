@@ -22,7 +22,7 @@ src="https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=MongoDB&logoCol
             <a href="https://github.com/jungwonguk"><strong>정원국</strong></a>
         </td>
         <td align="center" width="200px">
-            <a href="https://github.com/internationalwe"><img height="180px" width="180px" src=https://avatars.githubusercontent.com/u/46400961?v=4/></a>
+            <a href="https://github.com/internationalwe"><img height="180px" width="180px" src=https://github.com/jungwonguk/KD-Font/assets/46400961/21f165b1-fbfe-457d-87b8-ec9f9f5aac1e/></a>
             <br />
             <a href="https://github.com/internationalwe"><strong>신호준</strong></a>
         </td>
@@ -38,6 +38,7 @@ src="https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=MongoDB&logoCol
             <br/>
         </td>
         <td align="center" width="200px">
+            <a href="https://github.com/internationalwe/">Github</a>
             <a></a> 
         </td>
         <td align="center" width="200px">
