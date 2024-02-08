@@ -1,7 +1,7 @@
 import random
 import torch
 import torch.nn as nn
-from modules.style_encoder import style_enc_builder
+from modules.style_encoder import style_enc_builder, StyleEncoder2
 
 class Korean_StrokeEmbedding:
     def __init__(self,txt_path,classes):
@@ -34,22 +34,36 @@ class MakeCondition:
         self.contents_dim = 60 
         self.contents_emb = nn.Embedding(num_classes, self.contents_dim)
         self.korean_stroke_emb = Korean_StrokeEmbedding(txt_path=stroke_text_path,classes=self.dataset_classes)
-        self.style_enc = self.make_style_enc(style_enc_path)
+        # self.style_enc = self.make_style_enc(style_enc_path)
+        self.style_enc = StyleEncoder2()
         self.language = language
 
-    def make_style_enc(self,style_enc_path):
-        C ,C_in = 32, 1
-        sty_encoder = style_enc_builder(C_in, C)
+        self.load_style_weight(style_enc_path)
+
+    # def make_style_enc(self,style_enc_path):
+    #     C ,C_in = 32, 1
+    #     sty_encoder = style_enc_builder(C_in, C)
+    #     checkpoint = torch.load(style_enc_path, map_location=self.device)
+    #     tmp_dict = {}
+    #     for k, v in checkpoint.items():
+    #         if k in sty_encoder.state_dict():
+    #             tmp_dict[k] = v
+    #     sty_encoder.load_state_dict(tmp_dict)
+    #     # frozen sty_encoder
+    #     for p in sty_encoder.parameters():
+    #         p.requires_grad = False
+    #     return sty_encoder.to(self.device)
+        
+    def load_style_weight(self, style_enc_path):
         checkpoint = torch.load(style_enc_path, map_location=self.device)
         tmp_dict = {}
         for k, v in checkpoint.items():
-            if k in sty_encoder.state_dict():
+            if k in self.style_enc.state_dict():
                 tmp_dict[k] = v
-        sty_encoder.load_state_dict(tmp_dict)
-        # frozen sty_encoder
-        for p in sty_encoder.parameters():
+        self.style_enc.load_state_dict(tmp_dict)
+        # frozen sty_enc
+        for p in self.style_enc.parameters():
             p.requires_grad = False
-        return sty_encoder.to(self.device)
 
     def korean_index_to_uni_diff(self, indexs : list):
         char_list = []
@@ -62,6 +76,8 @@ class MakeCondition:
     #     pass
     def make_condition(self, images, indexs, mode):
         input_length = images.shape[0]
+        # make channel 1 to 3 to input style enc (b, 1, h, w) -> (b, 3, h, w)
+        images = images.expand(-1, 3 -1, -1)
         # contents_index = [int(content_index) for content_index in contents_index]
         # style_encoder = style_enc_builder(1,32).to(self.device)
         contents = None
