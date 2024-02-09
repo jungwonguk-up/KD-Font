@@ -181,7 +181,7 @@ if __name__ == '__main__':
     for epoch_id in range(start_epoch,n_epochs):
         print(f"Epoch {epoch_id}/{n_epochs} Train..")
         
-        pbar = tqdm(dataloader, desc=f"trian_{epoch_id}", ncols=100)
+        pbar = tqdm(dataloader, desc=f"trian_{epoch_id}", ncols=120)
         tic = time()
         for i, (image, content) in enumerate(pbar):
             # print('x1 : ', x.shape)
