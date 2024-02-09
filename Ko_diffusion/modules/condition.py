@@ -64,6 +64,8 @@ class MakeCondition:
         # frozen sty_enc
         for p in self.style_enc.parameters():
             p.requires_grad = False
+        
+        self.style_enc.to(self.device)
 
     def korean_index_to_uni_diff(self, indexs : list):
         char_list = []
@@ -77,7 +79,7 @@ class MakeCondition:
     def make_condition(self, images, indexs, mode):
         input_length = images.shape[0]
         # make channel 1 to 3 to input style enc (b, 1, h, w) -> (b, 3, h, w)
-        images = images.expand(-1, 3 -1, -1)
+        images = images.repeat(1, 3, 1, 1)
         # contents_index = [int(content_index) for content_index in contents_index]
         # style_encoder = style_enc_builder(1,32).to(self.device)
         contents = None
@@ -100,7 +102,8 @@ class MakeCondition:
                 stroke =  torch.FloatTensor(self.korean_stroke_emb.embedding(indexs))
             
             if contents_p < 0.3 and stroke_p < 0.3:
-                style = torch.zeros(input_length,style_c, style_h , style_w)
+                # style = torch.zeros(input_length,style_c, style_h , style_w)
+                style = torch.zeros(input_length, style_c)
             else:
                 style = self.style_enc(images).cpu()
                 # style = style.view(input_length, style_c, -1).cpu()
@@ -115,7 +118,8 @@ class MakeCondition:
             else:
                 stroke =  torch.FloatTensor(self.korean_stroke_emb.embedding(indexs))
             
-            style = torch.zeros(input_length,style_c, style_h , style_w)
+            # style = torch.zeros(input_length,style_c, style_h , style_w)
+            style = torch.zeros(input_length, style_c)
 
 
         elif mode == 3: #test

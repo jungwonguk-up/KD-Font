@@ -55,7 +55,7 @@ class StyleEncoder2(nn.Module):
     def __init__(self, sty_dim=128, cfg=cfg['vgg11']):
         super().__init__()
         # network layers setting
-        self.features = self.make_layers(cfg['vgg11'], True)
+        self.features = self.make_layers(cfg, True)
         self.cont = nn.Linear(512, sty_dim)
 
         self._initialize_weights()

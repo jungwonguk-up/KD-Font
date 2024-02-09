@@ -216,7 +216,7 @@ class Unet(nn.Module):
         )
 
 
-        self.sty_avgpool = nn.AvgPool2d(kernel_size = 16)   # batch, 128, 1
+        # self.sty_avgpool = nn.AvgPool2d(kernel_size = 16)   # batch, 128, 1
 
 
         # self.label_linear = nn.Sequential(
@@ -340,9 +340,11 @@ class Unet(nn.Module):
         
         label_emb_t = condition_dict["contents"]
 
-        sty_emb_t = self.sty_avgpool(condition_dict["style"])
-        b,c,_,_ = sty_emb_t.shape # b,c,h,w
-        sty_emb_t = sty_emb_t.view(b,c)
+        # sty_emb_t = self.sty_avgpool(condition_dict["style"])
+        sty_emb_t = condition_dict["style"]
+        print(f"style_emb_t shape: {sty_emb_t.shape}")
+        # b,c,_,_ = sty_emb_t.shape # b,c,h,w
+        # sty_emb_t = sty_emb_t.view(b,c)
         stroke_emb_t = condition_dict["stroke"]
         condition_emb = torch.concat([stroke_emb_t, label_emb_t, sty_emb_t], dim=1)
 
