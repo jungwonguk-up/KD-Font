@@ -111,7 +111,7 @@ class Diffusion:
             y_idx = list(range(n))[::math.floor(n/sampleImage_len)][:sampleImage_len]
             y_list = torch.Tensor(y_idx).long().to(self.device)
             print(y_idx)
-            pbar = tqdm(list(reversed(range(1, self.noise_step))),desc="sampling")
+            pbar = tqdm(list(reversed(range(1, self.noise_step))), desc="sampling", ncols=120)
             for i in pbar:
                 dataset = TensorDataset(x_list,y_list)
                 batch_size = 18

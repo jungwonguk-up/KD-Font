@@ -34,13 +34,13 @@ seed = 7777
 gpu_num = 0
 image_size = 64
 input_size = 64
-batch_size = 16
+batch_size = 12
 num_classes = 11172
 lr = 1e-4
-n_epochs = 402
+n_epochs = 802
 use_amp = True
 resume_train = False
-file_num = "style_test_1"
+file_num = "style_enc_2_sty_emb_non_stoke"
 train_dirs = "H:/data/Hangul_Characters_Image64_radomSampling420_GrayScale"
 sample_img_path = f'{train_dirs}/갊/62570_갊.png'
 stroke_text_path = "./text_weight/storke_txt.txt"
@@ -69,7 +69,7 @@ def plot_images(images):
 
 if __name__ == '__main__':
     # # wnadb disable mode select
-    os.environ["WANDB_DISABLED"] = "True"
+    os.environ["WANDB_DISABLED"] = "False"
 
     #Set save file
     result_image_path = os.path.join("results", 'font_noStrokeStyle_{}'.format(file_num))
@@ -80,7 +80,7 @@ if __name__ == '__main__':
     ## wandb init
     wandb.init(project="cross_attention_font_test",
             #    name="Label Only (Linear) + t + (Cross Attention) lr 8e-5 ~400epoch",
-               name="Full Condition UNet Test",
+               name="Style_enc_2_sty_emb_non_stoke",
                config={"learning_rate": 0.0001,
                        "architecture": "UNET",
                        "dataset": "HOJUN_KOREAN_FONT64",
@@ -118,7 +118,7 @@ if __name__ == '__main__':
     print("len : ",n)
     dataset = Subset(dataset, n)
 
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=12)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0)
     
     #sample_img
     sample_img = Image.open(sample_img_path)
@@ -128,7 +128,7 @@ if __name__ == '__main__':
 
     if resume_train:
         #Set model
-        model = Unet(model_channels=64, context_dim=256, device=device).to(device)
+        model = Unet(model_channels=128, context_dim=128, device=device).to(device)
         # model = TransformerUnet128(num_classes=num_classes, context_dim=256, device=device).to(device)
         # model = UNet128(num_classes=num_classes).to(device)
         wandb.watch(model)
@@ -137,7 +137,7 @@ if __name__ == '__main__':
         optimizer = optim.AdamW(model.parameters(), lr=lr)
 
         #load weight
-        start_epoch = 200
+        # start_epoch = 370
         model.load_state_dict(torch.load(f'./models/font_noStrokeStyle_{file_num}/ckpt_2_{start_epoch}.pt'))
 
         #load optimzer
@@ -150,7 +150,7 @@ if __name__ == '__main__':
 
     else:
         #Set model
-        model = Unet(model_channels=64, context_dim=256, device=device).to(device)
+        model = Unet(model_channels=128, context_dim=128, device=device).to(device)
         # model = TransformerUnet128(num_classes=num_classes, context_dim=256,device = device).to(device) # 여기는 왜 256이지?
         # model = UNet128(num_classes=num_classes).to(device)
         wandb.watch(model)
@@ -199,7 +199,7 @@ if __name__ == '__main__':
             loss.backward()
             optimizer.step()
         toc = time()
-        wandb.log({"train_mse_loss": loss,'train_time':toc-tic})
+        wandb.log({"train_mse_loss": loss,'train_time':toc-tic}, commit=True)
         pbar.set_postfix(MSE=loss.item())
 
 
