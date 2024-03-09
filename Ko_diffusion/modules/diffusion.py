@@ -103,9 +103,10 @@ class Diffusion:
     def indexToChar(self, y):
         return chr(44032+y)
     
-    def portion_sampling(self, model, n,sampleImage_len, cfg_scale=7, sty_img = None, make_condition = None):
+    def portion_sampling(self, model, n, sampleImage_len, cfg_scale=7, sty_img_1 = None, sty_img_2 = None, make_condition = None, step = None, log_name=None):
         example_images = []
         model.eval()
+        # sty_img_1
         with torch.no_grad():
             x_list = torch.randn((sampleImage_len, 1, self.img_size, self.img_size)).to(self.device)
             y_idx = list(range(n))[::math.floor(n/sampleImage_len)][:sampleImage_len]
@@ -114,7 +115,7 @@ class Diffusion:
             pbar = tqdm(list(reversed(range(1, self.noise_step))), desc="sampling", ncols=120)
             for i in pbar:
                 dataset = TensorDataset(x_list,y_list)
-                batch_size = 18
+                batch_size = sampleImage_len
                 dataloader = DataLoader(dataset,batch_size=batch_size,num_workers=0,shuffle=False)
                 predicted_noise = torch.tensor([]).to(self.device)
                 uncond_predicted_noise = torch.tensor([]).to(self.device)
@@ -122,7 +123,7 @@ class Diffusion:
                     batch_t = (torch.ones(len(batch_x)) * i).long().to(self.device)
                     # batch_condition = make_condition.make_condition(sty_img,batch_labels,mode=3).to(self.device)
                     # batch_noise = model(x = batch_x, condition = batch_condition, t = batch_t)
-                    condition_dict = make_condition.make_condition(images=sty_img, indexs=batch_labels, mode=3)
+                    condition_dict = make_condition.make_condition(images=sty_img_1, indexs=batch_labels, mode=3)
                     batch_noise = model(x=batch_x, t=batch_t, condition_dict= condition_dict)
 
 
@@ -150,9 +151,55 @@ class Diffusion:
                     b_t) * noise
         for sample_image,sample_y in zip(x_list,y_list):
             example_images.append(wandb.Image(sample_image, caption=f"{make_condition.dataset_classes[sample_y]}"))
-        wandb.log({
-            "Examples": example_images
-        })
+
+        # sty_img_2
+        with torch.no_grad():
+            x_list = torch.randn((sampleImage_len, 1, self.img_size, self.img_size)).to(self.device)
+            y_idx = list(range(n))[::math.floor(n/sampleImage_len)][:sampleImage_len]
+            y_list = torch.Tensor(y_idx).long().to(self.device)
+            print(y_idx)
+            pbar = tqdm(list(reversed(range(1, self.noise_step))), desc="sampling", ncols=120)
+            for i in pbar:
+                dataset = TensorDataset(x_list,y_list)
+                batch_size = sampleImage_len
+                dataloader = DataLoader(dataset,batch_size=batch_size,num_workers=0,shuffle=False)
+                predicted_noise = torch.tensor([]).to(self.device)
+                uncond_predicted_noise = torch.tensor([]).to(self.device)
+                for batch_x, batch_labels in dataloader:
+                    batch_t = (torch.ones(len(batch_x)) * i).long().to(self.device)
+                    # batch_condition = make_condition.make_condition(sty_img,batch_labels,mode=3).to(self.device)
+                    # batch_noise = model(x = batch_x, condition = batch_condition, t = batch_t)
+                    condition_dict = make_condition.make_condition(images=sty_img_2, indexs=batch_labels, mode=3)
+                    batch_noise = model(x=batch_x, t=batch_t, condition_dict= condition_dict)
+
+
+                    predicted_noise = torch.cat([predicted_noise,batch_noise],dim=0)
+                    #uncodition
+                    condition_dict['stroke'] = torch.zeros_like(condition_dict['stroke'])
+                    uncond_batch_noise = model(x = batch_x, t = batch_t, condition_dict = condition_dict)
+                    uncond_predicted_noise = torch.cat([uncond_predicted_noise,uncond_batch_noise],dim = 0)
+
+                if cfg_scale > 0:
+                    predicted_noise = torch.lerp(uncond_predicted_noise, predicted_noise, cfg_scale)
+
+                t = (torch.ones(sampleImage_len) * i).long()
+                a_t = self.alpha_t(t)
+                aBar_t = self.alpha_bar_t(t)
+                b_t = self.beta_t(t)
+
+                if i > 1:
+                    noise = torch.randn_like(x_list)
+                else:
+                    noise = torch.zeros_like(x_list)
+
+                x_list = 1 / torch.sqrt(a_t) * (
+                        x_list - ((1 - a_t) / (torch.sqrt(1 - aBar_t))) * predicted_noise) + torch.sqrt(
+                    b_t) * noise
+                
+        for sample_image,sample_y in zip(x_list,y_list):
+            example_images.append(wandb.Image(sample_image, caption=f"{make_condition.dataset_classes[sample_y]}"))
+
+        wandb.log({f"{log_name} Examples": example_images}, step=step, commit=True)
         model.train()
         x_list = (x_list.clamp(-1, 1) + 1) / 2
         x_list = (x_list * 255).type(torch.uint8)

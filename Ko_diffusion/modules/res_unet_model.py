@@ -227,9 +227,9 @@ class Unet(nn.Module):
 
 
         self.sty_linear = nn.Sequential(
-            nn.Linear(128, 512),
+            nn.Linear(128, self.context_dim*2),
             nn.SiLU(),
-            nn.Linear(512, self.context_dim),
+            nn.Linear(self.context_dim*2, self.context_dim),
         )
 
         # self.content_linear = nn.Sequential(
