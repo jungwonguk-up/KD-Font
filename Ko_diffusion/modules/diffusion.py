@@ -199,7 +199,7 @@ class Diffusion:
         for sample_image,sample_y in zip(x_list,y_list):
             example_images.append(wandb.Image(sample_image, caption=f"{make_condition.dataset_classes[sample_y]}"))
 
-        wandb.log({f"{log_name} Examples": example_images}, step=step, commit=True)
+        wandb.log({f"{log_name} Examples": example_images}, commit=True)
         model.train()
         x_list = (x_list.clamp(-1, 1) + 1) / 2
         x_list = (x_list * 255).type(torch.uint8)
