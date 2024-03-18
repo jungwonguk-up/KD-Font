@@ -225,12 +225,17 @@ class Unet(nn.Module):
         #     nn.LayerNorm(context_dim),
         # )
 
-
-        self.sty_linear = nn.Sequential(
-            nn.Linear(128, self.context_dim*2),
+        self.cond_emb_linear = nn.Sequential(
+            nn.Linear(256, self.context_dim*2),
             nn.SiLU(),
-            nn.Linear(self.context_dim*2, self.context_dim),
+            nn.Linear(self.context_dim*2, self.context_dim)
         )
+
+        # self.sty_linear = nn.Sequential(
+        #     nn.Linear(128, self.context_dim*2),
+        #     nn.SiLU(),
+        #     nn.Linear(self.context_dim*2, self.context_dim),
+        # )
 
         # self.content_linear = nn.Sequential(
         #     nn.Linear(60, self.context_dim),
@@ -357,9 +362,12 @@ class Unet(nn.Module):
         t = t.unsqueeze(-1).type(torch.float)
         t = self.pos_encoding(t, 256) # self.context_dim
         
-        # label_emb = self.content_linear(condition_dict["contents"]).unsqueeze(dim=1)
-        label_emb = condition_dict["contents"].unsqueeze(dim=1)
-        sty_emb = self.sty_linear(condition_dict["style"]).unsqueeze(dim=1)
+
+        label_emb = condition_dict["contents"]
+        sty_emb = condition_dict["style"]
+        context = torch.concat([label_emb, sty_emb], dim=1)
+        context = self.cond_emb_linear(context)
+        context = context.unsqueeze(dim=1)
         # sty_emb_t = self.sty_avgpool(condition_dict["style"])
         # b,c,_,_ = sty_emb_t.shape # b,c,h,w
         # sty_emb_t = sty_emb_t.view(b,c)
@@ -367,7 +375,7 @@ class Unet(nn.Module):
         # context = torch.concat([stroke_emb_t, label_emb_t, sty_emb_t], dim=1)
 
         # context = torch.concat([label_emb, stroke_emb, sty_emb], dim=1)
-        context = torch.concat([label_emb, sty_emb], dim=1)
+        # context = torch.concat([label_emb, sty_emb], dim=1)
 
         """임시"""
         # enc level1

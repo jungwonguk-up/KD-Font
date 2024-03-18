@@ -27,7 +27,7 @@ class Korean_StrokeEmbedding:
 
 class MakeCondition:
     # 모든 contents 이름 바꾸기
-    def __init__(self, num_classes, stroke_text_path, style_enc_path, data_classes, language, device):
+    def __init__(self, num_classes, stroke_text_path, style_enc_path, data_classes, language, random_filp, device):
         self.device = device
         self.dataset_classes = data_classes
         self.num_classes = num_classes
@@ -37,6 +37,7 @@ class MakeCondition:
         # self.style_enc = self.make_style_enc(style_enc_path)
         self.style_enc = StyleEncoder2()
         self.language = language
+        self.random_filp = random_filp
 
         self.load_style_weight(style_enc_path)
 
@@ -78,6 +79,10 @@ class MakeCondition:
     #     pass
     def make_condition(self, images, indexs, mode):
         input_length = images.shape[0]
+
+        if self.random_filp is True and random.random() < 0.5:
+            images = images.flip(-1)
+
         # make channel 1 to 3 to input style enc (b, 1, h, w) -> (b, 3, h, w)
         images = images.repeat(1, 3, 1, 1)
         # contents_index = [int(content_index) for content_index in contents_index]
