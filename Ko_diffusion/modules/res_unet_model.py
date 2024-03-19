@@ -216,13 +216,32 @@ class Unet(nn.Module):
         )
 
 
-        self.sty_avgpool = nn.AvgPool2d(kernel_size = 16)   # batch, 128, 1
+        # self.sty_avgpool = nn.AvgPool2d(kernel_size = 16)   # batch, 128, 1
 
 
         # self.label_linear = nn.Sequential(
         #     nn.Linear(100, context_dim),
         #     nn.GELU(),
         #     nn.LayerNorm(context_dim),
+        # )
+
+
+        self.sty_linear = nn.Sequential(
+            nn.Linear(128, self.context_dim*2),
+            nn.SiLU(),
+            nn.Linear(self.context_dim*2, self.context_dim),
+        )
+
+        # self.content_linear = nn.Sequential(
+        #     nn.Linear(60, self.context_dim),
+        #     nn.LayerNorm(self.context_dim),
+        #     nn.SiLU()
+        # )
+
+        # self.stroke_linear = nn.Sequential(
+        #     nn.Linear(68, self.context_dim),
+        #     nn.LayerNorm(self.context_dim),
+        #     nn.SiLU()
         # )
 
 
@@ -338,22 +357,17 @@ class Unet(nn.Module):
         t = t.unsqueeze(-1).type(torch.float)
         t = self.pos_encoding(t, 256) # self.context_dim
         
-        label_emb_t = condition_dict["contents"]
+        # label_emb = self.content_linear(condition_dict["contents"]).unsqueeze(dim=1)
+        label_emb = condition_dict["contents"].unsqueeze(dim=1)
+        sty_emb = self.sty_linear(condition_dict["style"]).unsqueeze(dim=1)
+        # sty_emb_t = self.sty_avgpool(condition_dict["style"])
+        # b,c,_,_ = sty_emb_t.shape # b,c,h,w
+        # sty_emb_t = sty_emb_t.view(b,c)
+        # stroke_emb = self.stroke_linear(condition_dict["stroke"]).unsqueeze(dim=1)
+        # context = torch.concat([stroke_emb_t, label_emb_t, sty_emb_t], dim=1)
 
-        sty_emb_t = self.sty_avgpool(condition_dict["style"])
-        b,c,_,_ = sty_emb_t.shape # b,c,h,w
-        sty_emb_t = sty_emb_t.view(b,c)
-        stroke_emb_t = condition_dict["stroke"]
-        condition_emb = torch.concat([stroke_emb_t, label_emb_t, sty_emb_t], dim=1)
-
-  
-        # # stroke
-        # stroke_emb_t = self.label_linear(condition_dict["contents"])
-        # # style
-        # style_emb_t = self.label_linear(condition_dict["contents"])
-  
-        
-        context = condition_emb.unsqueeze(dim=1)
+        # context = torch.concat([label_emb, stroke_emb, sty_emb], dim=1)
+        context = torch.concat([label_emb, sty_emb], dim=1)
 
         """임시"""
         # enc level1

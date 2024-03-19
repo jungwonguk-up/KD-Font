@@ -106,7 +106,7 @@ class make_sampling_data:
 
         return self.pick_letter_list
 
-    def cp_sampling_file(self,from_path = "./data/Hangul_Characters_Image64/", to_path = "./data/Hangul_Characters_Image64_radomSampling"):
+    def cp_sampling_file(self,from_path = "H:/data/Hangul_Characters_Image128/", to_path = "H:/data/Hangul_Characters_Image128_radomSampling"):
         os.makedirs(to_path,exist_ok=True)
         for letter in self.pick_letter_list:
             # os.makedirs(os.path.join(to_path,letter), exist_ok=True)
