@@ -142,16 +142,6 @@ class BasicTransformerBlock(nn.Module):
         return x
 
 
-class SpatialTrasformerBlock(nn.Module):
-    """
-    Trasformer block for image-like data.
-    """
-    def __init__(self, in_channels, num_head, head_dim, context_dim, depth, dropout):
-        super().__init__()
-
-    def forward(self, x, context=None):
-        return x
-    
 
 class TrasformerBlock(nn.Module):
     """
@@ -172,18 +162,28 @@ class TrasformerBlock(nn.Module):
                  depth: int = 1, 
                  norm_num_groups: int = 8,
                  dropout: float = 0., 
-                 use_spatial: bool = False,
+                 use_linear: bool = False,
                  ):
         super().__init__()
-        assert in_channels % num_heads == 0
-
-        if head_dim is None:
+        if num_heads == None and head_dim == None:
+            raise ValueError("num heads or head_dim should have a value")
+        
+        elif head_dim == None:
             head_dim = in_channels // num_heads
 
-        self.use_spatial = use_spatial
+        elif num_heads is None:
+            num_heads = in_channels // head_dim
+
+        inner_dim = num_heads * head_dim
+
         self.norm = nn.GroupNorm(num_groups=norm_num_groups, num_channels=in_channels, eps=1e-6, affine=True)
-        self.proj_in = nn.Conv2d(in_channels, in_channels, kernel_size=1, stride=1, padding=0)
-        self.proj_out = zero_module(nn.Conv2d(in_channels, in_channels, kernel_size=1, stride=1, padding=0))
+        self.use_linear = use_linear
+        if not use_linear:
+            self.proj_in = nn.Conv2d(in_channels, inner_dim, kernel_size=1, stride=1, padding=0)
+            self.proj_out = zero_module(nn.Conv2d(inner_dim, in_channels, kernel_size=1, stride=1, padding=0))
+        else:
+            self.proj_in = nn.Linear(in_channels, inner_dim)
+            self.proj_out = zero_module(nn.Linear(in_channels, inner_dim))
 
         self.transformer_block = nn.ModuleList([])
         # if use_spatial: # not use currently 
@@ -195,13 +195,26 @@ class TrasformerBlock(nn.Module):
     def forward(self, x, context=None):
         b, c, h, w = x.shape
         x_in = x
-        x = self.norm(x) 
-        x = self.proj_in(x)
+        x = self.norm(x)
+
+        if not self.use_linear: # projection_in if not use linear
+            x = self.proj_in(x)
+
         x = x.permute(0, 2, 3, 1).view(b, -1, c) # b c h w -> b (h w) c
+
+        if self.use_linear: # if use linear
+            x = self.proj_in(x)
+
         for block in self.transformer_block:
             x = block(x, context=context)
+
+        if self.use_linear:
+            x = self.proj_out(x)
+        
         x = x.view(b, h, w, c).permute(0, 3, 1, 2) # b (h w) c -> b c h w
-        x = self.proj_out(x)
-        # x = x + x_in if self.use_spatial else x
+
+        if not self.use_linear:
+            x = self.proj_out(x)
+
         x = x + x_in 
         return x
