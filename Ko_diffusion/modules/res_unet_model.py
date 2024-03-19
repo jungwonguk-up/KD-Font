@@ -226,6 +226,25 @@ class Unet(nn.Module):
         # )
 
 
+        self.sty_linear = nn.Sequential(
+            nn.Linear(128, self.context_dim*2),
+            nn.SiLU(),
+            nn.Linear(self.context_dim*2, self.context_dim),
+        )
+
+        # self.content_linear = nn.Sequential(
+        #     nn.Linear(60, self.context_dim),
+        #     nn.LayerNorm(self.context_dim),
+        #     nn.SiLU()
+        # )
+
+        # self.stroke_linear = nn.Sequential(
+        #     nn.Linear(68, self.context_dim),
+        #     nn.LayerNorm(self.context_dim),
+        #     nn.SiLU()
+        # )
+
+
         """임시"""
         # level1
         self.enc1 = BasicBlock(self.model_ch, self.model_ch, num_heads=self.num_heads, head_dim=(self.model_ch)//num_heads, context_dim=self.context_dim, depth=self.depth, norm_num_groups=self.norm_num_groups)
@@ -338,23 +357,17 @@ class Unet(nn.Module):
         t = t.unsqueeze(-1).type(torch.float)
         t = self.pos_encoding(t, 256) # self.context_dim
         
-        label_emb_t = condition_dict["contents"]
-
+        # label_emb = self.content_linear(condition_dict["contents"]).unsqueeze(dim=1)
+        label_emb = condition_dict["contents"].unsqueeze(dim=1)
+        sty_emb = self.sty_linear(condition_dict["style"]).unsqueeze(dim=1)
         # sty_emb_t = self.sty_avgpool(condition_dict["style"])
-        sty_emb_t = condition_dict["style"]
         # b,c,_,_ = sty_emb_t.shape # b,c,h,w
         # sty_emb_t = sty_emb_t.view(b,c)
-        stroke_emb_t = condition_dict["stroke"]
-        condition_emb = torch.concat([stroke_emb_t, label_emb_t, sty_emb_t], dim=1)
+        # stroke_emb = self.stroke_linear(condition_dict["stroke"]).unsqueeze(dim=1)
+        # context = torch.concat([stroke_emb_t, label_emb_t, sty_emb_t], dim=1)
 
-  
-        # # stroke
-        # stroke_emb_t = self.label_linear(condition_dict["contents"])
-        # # style
-        # style_emb_t = self.label_linear(condition_dict["contents"])
-  
-        
-        context = condition_emb.unsqueeze(dim=1)
+        # context = torch.concat([label_emb, stroke_emb, sty_emb], dim=1)
+        context = torch.concat([label_emb, sty_emb], dim=1)
 
         """임시"""
         # enc level1
