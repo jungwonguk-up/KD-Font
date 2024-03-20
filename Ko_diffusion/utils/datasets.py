@@ -51,6 +51,7 @@ class FontDataset(Dataset):
                  data_path: str,
                  image_size: int = None,
                  transform = None,
+                 sty_transform = None,
                  ):
         super().__init__()
         if not data_path:
@@ -58,6 +59,7 @@ class FontDataset(Dataset):
         self.data_path = data_path
         self.image_size = image_size # not use currently
         self.transform = transform
+        self.sty_transform = sty_transform
         
         # find all files path
         all_files = list_image_files_recursively(data_path)
@@ -104,7 +106,8 @@ class FontDataset(Dataset):
 
         if self.transform is not None:
             pil_image = self.transform(pil_image)
-            sty_pil_image = self.transform(sty_pil_image)
+        if self.sty_transform is not None:
+            sty_pil_image = self.sty_transform(sty_pil_image)
 
         return label, pil_image, sty_pil_image
 
@@ -133,6 +136,7 @@ class CharDataset(Dataset):
                  data_path: str,
                  image_size: int = None,
                  transform = None,
+                 sty_transform = None,
                  ):
         super().__init__()
         if not data_path:
@@ -140,6 +144,7 @@ class CharDataset(Dataset):
         self.data_path = data_path
         self.image_size = image_size # not use currently
         self.transform = transform
+        self.sty_transform = sty_transform
         
         # find all files path
         all_files = list_image_files_recursively(data_path)
@@ -186,7 +191,8 @@ class CharDataset(Dataset):
 
         if self.transform is not None:
             pil_image = self.transform(pil_image)
-            sty_pil_image = self.transform(sty_pil_image)
+        if self.sty_transform is not None:
+            sty_pil_image = self.sty_transform(sty_pil_image)
 
         return label, pil_image, sty_pil_image
 

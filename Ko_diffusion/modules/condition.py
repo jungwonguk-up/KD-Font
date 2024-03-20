@@ -78,8 +78,6 @@ class MakeCondition:
     #     pass
     def make_condition(self, images, indexs, mode):
         input_length = images.shape[0]
-        # make channel 1 to 3 to input style enc (b, 1, h, w) -> (b, 3, h, w)
-        images = images.repeat(1, 3, 1, 1)
         # contents_index = [int(content_index) for content_index in contents_index]
         # style_encoder = style_enc_builder(1,32).to(self.device)
         contents = None

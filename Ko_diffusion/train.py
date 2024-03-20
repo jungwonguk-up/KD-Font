@@ -109,15 +109,19 @@ if __name__ == '__main__':
     # train_dirs = "H:/data/hangle_image64_gray_small"
 
     # Set transform
-    transforms = torchvision.transforms.Compose([
-        # torchvision.transforms.Resize((input_size,input_size)),
+    img_transforms = torchvision.transforms.Compose([
         torchvision.transforms.Grayscale(num_output_channels=1),
-    # # #     torchvision.transforms.RandomResizedCrop(input_size, scale=(0.8, 1.0)),
         torchvision.transforms.ToTensor(),
         torchvision.transforms.Normalize((0.5), (0.5))
     ])
+    # Set sty_transform
+    sty_transforms = torchvision.transforms.Compose([
+        torchvision.transforms.RandomHorizontalFlip(0.5),
+        torchvision.transforms.ToTensor(),
+        torchvision.transforms.Normalize((0.5), (0.5)),
+    ])
     # dataset = torchvision.datasets.ImageFolder(train_dirs,transform=transforms)
-    dataset = FontDataset(train_dirs, transform=transforms)
+    dataset = FontDataset(train_dirs, transform=img_transforms, sty_transform=sty_transforms)
 
     #test set
     n = range(0,len(dataset),10)
@@ -128,7 +132,7 @@ if __name__ == '__main__':
     
     #sample_img
     sample_img_1, sample_img_2 = Image.open(sample_img_path_1), Image.open(sample_img_path_2)
-    sample_img_1, sample_img_2 = transforms(sample_img_1).to(device), transforms(sample_img_2).to(device)
+    sample_img_1, sample_img_2 = img_transforms(sample_img_1).to(device), img_transforms(sample_img_2).to(device)
     sample_img_1, sample_img_2 = torch.unsqueeze(sample_img_1, 1), torch.unsqueeze(sample_img_2, 1)
     sample_img_1, sample_img_2 = sample_img_1.repeat(8, 1, 1, 1), sample_img_2.repeat(8, 1, 1, 1)
 
