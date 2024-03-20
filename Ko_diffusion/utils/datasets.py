@@ -24,14 +24,14 @@ def _list_image_files_recursively(data_path):
 class FontDataset(Dataset):
     def __init__(self,
                  data_path: str,
-                 image_size: int,
+                 image_size: int = None,
                  transform = None,
                  ):
         super().__init__()
         if not data_path:
             raise ValueError("data path not exist.")
         self.data_path = data_path
-        self.image_size = image_size
+        self.image_size = image_size # not use currently
         self.transform = transform
         
         # find all files path

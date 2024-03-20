@@ -4,11 +4,10 @@ import numpy as np
 import random, os
 from glob import glob
 import torch, torchvision
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
 from torch import optim
 import torch.nn as nn
 
-from torch.utils.data import random_split, Subset
 from torch.optim.swa_utils import AveragedModel
 
 from tqdm import tqdm
@@ -16,13 +15,12 @@ from PIL import Image
 from matplotlib import pyplot as plt
 
 from modules.diffusion import Diffusion
-from modules.model import UNet128,TransformerUnet128
-
 from modules.res_unet_model import Unet
 
 from modules.condition import MakeCondition
 from modules.style_encoder import style_enc_builder
 
+from utils.datasets import FontDataset
 from utils.scheduler import get_cosine_schedule_with_warmup, get_constant_schedule_with_warmup
 # import albumentations as A
 # from albumentations.pytorch import ToTensorV2
@@ -43,10 +41,13 @@ lr = 1e-5
 n_epochs = 802
 use_amp = True
 resume_train = False
-file_num = "style_enc_2_ema_lr"
-train_dirs = "H:/data/Hangul_Characters_Image64_radomSampling420_GrayScale"
-sample_img_path_1 = f'{train_dirs}/갊/62570_갊.png'
-sample_img_path_2 = f'{train_dirs}/갊/나눔손글씨김유이체_갊.png'
+file_num = "fontdataset"
+# train_dirs = "H:/data/Hangul_Characters_Image64_radomSampling420_GrayScale"
+train_dirs = "H:/data/Hangul_Chars_64_420_Gray_font"
+# sample_img_path_1 = f'{train_dirs}/갊/62570_갊.png'
+# sample_img_path_2 = f'{train_dirs}/갊/나눔손글씨김유이체_갊.png'
+sample_img_path_1 = f"{train_dirs}/NanumGothicBold/NanumGothicBold_갊.png"
+sample_img_path_2 = f"{train_dirs}/나눔손글씨김유이체/나눔손글씨김유이체_갊.png"
 stroke_text_path = "./text_weight/storke_txt.txt"
 style_enc_path = "./text_weight/korean_styenc.ckpt"
 
@@ -115,7 +116,8 @@ if __name__ == '__main__':
         torchvision.transforms.ToTensor(),
         torchvision.transforms.Normalize((0.5), (0.5))
     ])
-    dataset = torchvision.datasets.ImageFolder(train_dirs,transform=transforms)
+    # dataset = torchvision.datasets.ImageFolder(train_dirs,transform=transforms)
+    dataset = FontDataset(train_dirs, transform=transforms)
 
     #test set
     n = range(0,len(dataset),10)
@@ -192,11 +194,12 @@ if __name__ == '__main__':
         
         pbar = tqdm(dataloader, desc=f"trian_{epoch_id}", ncols=120)
         tic = time()
-        for i, (image, content) in enumerate(pbar):
+        # for i, (image, content) in enumerate(pbar):
+        for content, image, sty_image in pbar:
             # print('x1 : ', x.shape)
-            image = image.to(device)
+            image, sty_image = image.to(device), sty_image.to(device)
             # condition = make_condition.make_condition(images = image,indexs = content,mode=1).to(device)
-            condition_dict = make_condition.make_condition(images=image, indexs=content, mode=cond_mode)
+            condition_dict = make_condition.make_condition(images=sty_image, indexs=content, mode=cond_mode)
             
             t = diffusion.sample_t(image.shape[0]).to(device)
             image_t, noise = diffusion.noise_images(image, t)
