@@ -2,6 +2,8 @@ import torch
 import torch.nn.functional as F
 from torch import nn, einsum
 
+from utils.checkpoint import checkpoint
+
 # torch >= 2.0.0
 # from torch.backends.cuda import sdp_kernel
 
@@ -117,6 +119,7 @@ class BasicTransformerBlock(nn.Module):
                  ff_dim_mult: int = 4,
                  use_GEGLU: bool = True,
                  dropout: float = 0.,
+                 use_checkpoint: bool = False,
                  ):
         super().__init__()
         ff_inner_dim = int(dim * ff_dim_mult)
@@ -135,7 +138,12 @@ class BasicTransformerBlock(nn.Module):
         self.norm2 = nn.LayerNorm(dim)
         self.norm3 = nn.LayerNorm(dim)
 
+        self.checkpoint = use_checkpoint
+
     def forward(self, x, context=None):
+        return checkpoint(self._forward, (x, context), self.parameters(), self.checkpoint)
+
+    def _forward(self, x, context=None):
         x = self.attn1(self.norm1(x)) + x
         x = self.attn2(self.norm2(x), context=context) + x
         x = self.ff(self.norm3(x)) + x
@@ -163,6 +171,7 @@ class TrasformerBlock(nn.Module):
                  norm_num_groups: int = 8,
                  dropout: float = 0., 
                  use_linear: bool = False,
+                 use_checkpoint: bool = False
                  ):
         super().__init__()
         if num_heads == None and head_dim == None:
@@ -178,6 +187,7 @@ class TrasformerBlock(nn.Module):
 
         self.norm = nn.GroupNorm(num_groups=norm_num_groups, num_channels=in_channels, eps=1e-6, affine=True)
         self.use_linear = use_linear
+
         if not use_linear:
             self.proj_in = nn.Conv2d(in_channels, inner_dim, kernel_size=1, stride=1, padding=0)
             self.proj_out = zero_module(nn.Conv2d(inner_dim, in_channels, kernel_size=1, stride=1, padding=0))
@@ -190,7 +200,7 @@ class TrasformerBlock(nn.Module):
         #     self.trasformer_block.append(SpatialTrasformerBlock(in_channels=in_channels, num_head=num_heads, head_dim=head_dim, context_dim=context_dim, depth=depth, dropout=dropout))
         # else:
         for _ in range(depth):
-            self.transformer_block.append(BasicTransformerBlock(dim=in_channels, num_heads=num_heads, head_dim=head_dim, context_dim=context_dim, dropout=dropout))
+            self.transformer_block.append(BasicTransformerBlock(dim=in_channels, num_heads=num_heads, head_dim=head_dim, context_dim=context_dim, dropout=dropout, use_checkpoint=use_checkpoint))
 
     def forward(self, x, context=None):
         b, c, h, w = x.shape
