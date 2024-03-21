@@ -41,7 +41,7 @@ lr = 1e-5
 n_epochs = 802
 use_amp = True
 resume_train = False
-file_num = "fontdataset"
+test_name = "font_dataset_test"
 # train_dirs = "H:/data/Hangul_Characters_Image64_radomSampling420_GrayScale"
 train_dirs = "H:/data/Hangul_Chars_64_420_Gray_font"
 # sample_img_path_1 = f'{train_dirs}/갊/62570_갊.png'
@@ -77,16 +77,16 @@ if __name__ == '__main__':
     os.environ["WANDB_DISABLED"] = "False"
 
     #Set save file
-    result_image_path = os.path.join("results", 'font_noStrokeStyle_{}'.format(file_num))
-    result_model_path = os.path.join("models", 'font_noStrokeStyle_{}'.format(file_num))
+    result_image_path = os.path.join("results", 'font_{}'.format(test_name))
+    result_model_path = os.path.join("models", 'font_{}'.format(test_name))
     os.makedirs(result_image_path, exist_ok=True)
     os.makedirs(result_model_path, exist_ok=True)
     
     ## wandb init
     wandb.init(project="cross_attention_font_test",
             #    name="Label Only (Linear) + t + (Cross Attention) lr 8e-5 ~400epoch",
-               name="style_enc_2_ema_lr",
-               config={"learning_rate": 0.00001,
+               name=f"{test_name}",
+               config={"learning_rate": lr,
                        "architecture": "UNET",
                        "dataset": "HOJUN_KOREAN_FONT64",
                        "notes":"content, non_stoke, non_style/ 32 x 32"})
@@ -120,20 +120,25 @@ if __name__ == '__main__':
         torchvision.transforms.ToTensor(),
         torchvision.transforms.Normalize((0.5), (0.5)),
     ])
+    # Set Sample transform
+    sample_transforms = torchvision.transforms.Compose([
+        torchvision.transforms.ToTensor(),
+        torchvision.transforms.Normalize((0.5), (0.5)),
+    ])
     # dataset = torchvision.datasets.ImageFolder(train_dirs,transform=transforms)
     dataset = FontDataset(train_dirs, transform=img_transforms, sty_transform=sty_transforms)
 
     #test set
-    n = range(0,len(dataset),10)
-    print("len : ",n)
-    dataset = Subset(dataset, n)
+    # n = range(0,len(dataset),10)
+    # print("len : ",n)
+    # dataset = Subset(dataset, n)
 
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0)
     
     #sample_img
-    sample_img_1, sample_img_2 = Image.open(sample_img_path_1), Image.open(sample_img_path_2)
-    sample_img_1, sample_img_2 = img_transforms(sample_img_1).to(device), img_transforms(sample_img_2).to(device)
-    sample_img_1, sample_img_2 = torch.unsqueeze(sample_img_1, 1), torch.unsqueeze(sample_img_2, 1)
+    sample_img_1, sample_img_2 = Image.open(sample_img_path_1).convert("RGB"), Image.open(sample_img_path_2).convert("RGB")
+    sample_img_1, sample_img_2 = sample_transforms(sample_img_1).to(device), sample_transforms(sample_img_2).to(device)
+    sample_img_1, sample_img_2 = sample_img_1.unsqueeze(dim=0), sample_img_1.unsqueeze(dim=0)
     sample_img_1, sample_img_2 = sample_img_1.repeat(8, 1, 1, 1), sample_img_2.repeat(8, 1, 1, 1)
 
 
@@ -153,11 +158,11 @@ if __name__ == '__main__':
 
     if resume_train:
         #load weight
-        model.load_state_dict(torch.load(f'./models/font_noStrokeStyle_{file_num}/ckpt_2_{start_epoch}.pt'))
-        ema_model.load_state_dict(torch.load(f'./models/font_noStrokeStyle_{file_num}/ema_ckpt_2_{start_epoch}.pt.pt'))
+        model.load_state_dict(torch.load(f'./models/font_{test_name}/ckpt_2_{start_epoch}.pt'))
+        ema_model.load_state_dict(torch.load(f'./models/font_{test_name}/ema_ckpt_2_{start_epoch}.pt.pt'))
 
         #load optimzer
-        optimizer.load_state_dict(torch.load(f'./models/font_noStrokeStyle_{file_num}/optim_2_{start_epoch}.pt'))
+        optimizer.load_state_dict(torch.load(f'./models/font_{test_name}/optim_2_{start_epoch}.pt'))
         for state in optimizer.state.values():
             for k, v in state.items():
                 if isinstance(v, torch.Tensor):
