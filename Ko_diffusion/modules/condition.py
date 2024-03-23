@@ -101,6 +101,12 @@ class MakeCondition:
         style = self.style_enc(images)
         zero_style = torch.zeros(input_length, style_c)
 
+        if mode == 0:
+            if contents_p < 0.1:
+                contents = zero_contents
+                stroke = zero_stroke
+                style = zero_style
+
         if mode == 1:
             if contents_p < 0.3:
                 contents = zero_contents

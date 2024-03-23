@@ -54,6 +54,7 @@ style_enc_path = "./text_weight/korean_styenc.ckpt"
 
 start_epoch = 0
 change_cond_mode = n_epochs // 2
+use_subset = False
 
 # os
 os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
@@ -128,9 +129,12 @@ if __name__ == '__main__':
     dataset = FontDataset(train_dirs, transform=img_transforms, sty_transform=sty_transforms)
 
     #test set
-    # n = range(0,len(dataset),10)
-    # print("len : ",n)
-    # dataset = Subset(dataset, n)
+    if use_subset:
+        n = range(0,len(dataset),10)
+        print("len : ",n)
+        dataset = Subset(dataset, n)
+    dataset_classes = dataset.dataset.classes if use_subset else dataset.classes
+
 
     dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, num_workers=0)
     
@@ -179,7 +183,7 @@ if __name__ == '__main__':
     make_condition = MakeCondition(num_classes=num_classes,
                                     stroke_text_path=stroke_text_path,
                                     style_enc_path=style_enc_path,
-                                    data_classes=dataset.classes,
+                                    data_classes=dataset_classes,
                                     language='korean',
                                     device=device
                                 )
@@ -192,7 +196,7 @@ if __name__ == '__main__':
                           img_size=input_size,
                           device=device)
     
-    cond_mode = 3
+    cond_mode = 0
     
     for epoch_id in range(start_epoch,n_epochs):
         print(f"Epoch {epoch_id}/{n_epochs} Train..")
@@ -232,8 +236,8 @@ if __name__ == '__main__':
         # if epoch_id % 10 == 0 :
         # Save
         labels = torch.arange(num_classes).long().to(device)
-        sampled_images1 = diffusion.portion_sampling(ema_model, n=len(dataset.classes), sampleImage_len=sample_img_len, sty_img_1=sample_img_1, sty_img_2=sample_img_2, make_condition=make_condition, log_name="EMA")
-        sampled_images2 = diffusion.portion_sampling(model, n=len(dataset.classes), sampleImage_len=sample_img_len, sty_img_1=sample_img_1, sty_img_2=sample_img_2, make_condition=make_condition, log_name="None-EMA")
+        sampled_images1 = diffusion.portion_sampling(ema_model, n=len(dataset_classes), sampleImage_len=sample_img_len, sty_img_1=sample_img_1, sty_img_2=sample_img_2, make_condition=make_condition, log_name="EMA")
+        sampled_images2 = diffusion.portion_sampling(model, n=len(dataset_classes), sampleImage_len=sample_img_len, sty_img_1=sample_img_1, sty_img_2=sample_img_2, make_condition=make_condition, log_name="None-EMA")
         # plot_images(sampled_images)
         save_images(sampled_images1, os.path.join(result_image_path, f"{epoch_id}.jpg"))
         save_images(sampled_images2, os.path.join(result_image_path, f"{epoch_id}.jpg"))
