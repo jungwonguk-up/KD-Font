@@ -373,7 +373,7 @@ class Unet(nn.Module):
         t = self.pos_encoding(t, 256) # self.context_dim
         
         # label_emb = self.content_linear(condition_dict["contents"]).unsqueeze(dim=1)
-        label_emb = condition_dict["contents"].unsqueeze(dim=1)
+        label_emb = condition_dict["label"].unsqueeze(dim=1)
         sty_emb = self.sty_linear(condition_dict["style"]).unsqueeze(dim=1)
         # sty_emb_t = self.sty_avgpool(condition_dict["style"])
         # b,c,_,_ = sty_emb_t.shape # b,c,h,w

@@ -50,6 +50,7 @@ class FontDataset(Dataset):
     def __init__(self,
                  data_path: str,
                  image_size: int = None,
+                 cfg_mode: int = 1,
                  transform = None,
                  sty_transform = None,
                  ):
@@ -58,6 +59,7 @@ class FontDataset(Dataset):
             raise ValueError("data path not exist.")
         self.data_path = data_path
         self.image_size = image_size # not use currently
+        self.cfg_mode = cfg_mode
         self.transform = transform
         self.sty_transform = sty_transform
         
@@ -109,7 +111,15 @@ class FontDataset(Dataset):
         if self.sty_transform is not None:
             sty_pil_image = self.sty_transform(sty_pil_image)
 
-        return label, pil_image, sty_pil_image
+        label_p, stroke_p, style_p = np.random.random(), np.random.random(), np.random.random()
+
+        mask = True
+
+        if self.cfg_mode == 1:
+            if label_p < 0.1:
+                mask = False
+        
+        return label, pil_image, sty_pil_image, mask
 
 
 class CharDataset(Dataset):
@@ -135,6 +145,7 @@ class CharDataset(Dataset):
     def __init__(self,
                  data_path: str,
                  image_size: int = None,
+                 cfg_mode: int = 1,
                  transform = None,
                  sty_transform = None,
                  ):
@@ -143,6 +154,7 @@ class CharDataset(Dataset):
             raise ValueError("data path not exist.")
         self.data_path = data_path
         self.image_size = image_size # not use currently
+        self.cfg_mode = cfg_mode
         self.transform = transform
         self.sty_transform = sty_transform
         
@@ -193,6 +205,15 @@ class CharDataset(Dataset):
             pil_image = self.transform(pil_image)
         if self.sty_transform is not None:
             sty_pil_image = self.sty_transform(sty_pil_image)
+
+        label_p, stroke_p, style_p = np.random.random(), np.random.random(), np.random.random()
+
+        mask = True
+
+        if self.cfg_mode == 1:
+            if label_p < 0.1:
+                mask = False
+        
 
         return label, pil_image, sty_pil_image
 

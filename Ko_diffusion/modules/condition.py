@@ -26,7 +26,7 @@ class Korean_StrokeEmbedding:
         return stroke_embedding
 
 class MakeCondition:
-    # 모든 contents 이름 바꾸기
+    # 모든 label 이름 바꾸기
     def __init__(self, num_classes, stroke_text_path, style_enc_path, data_classes, language, device):
         self.device = device
         self.dataset_classes = data_classes
@@ -76,11 +76,11 @@ class MakeCondition:
 
     # def set_charAttr_dim(mode):
     #     pass
-    def make_condition(self, images, indexs, mode):
+    def make_condition(self, images, indexs, mask=None):
         input_length = images.shape[0]
         # contents_index = [int(content_index) for content_index in contents_index]
         # style_encoder = style_enc_builder(1,32).to(self.device)
-        contents = None
+        label = None
         stroke =  None
         style = None
         style_c = 128
@@ -90,86 +90,29 @@ class MakeCondition:
 
         # content
         uni_diff_list = torch.LongTensor(self.korean_index_to_uni_diff(indexs))
-        contents = torch.FloatTensor(self.contents_emb(uni_diff_list))
-        zero_contents = torch.zeros(input_length,self.contents_dim)
+        label = torch.FloatTensor(self.contents_emb(uni_diff_list))
+        label = label.to(self.device)
 
         # stroke
         stroke = torch.FloatTensor(self.korean_stroke_emb.embedding(indexs))
-        zero_stroke = torch.zeros(input_length,68)
+        stroke = stroke.to(self.device)
 
         # style
         style = self.style_enc(images)
-        zero_style = torch.zeros(input_length, style_c)
+        style = style.to(self.device)
 
-        if mode == 0:
-            if contents_p < 0.1:
-                contents = zero_contents
-                stroke = zero_stroke
-                style = zero_style
-
-        if mode == 1:
-            if contents_p < 0.3:
-                contents = zero_contents
-
-            if stroke_p < 0.3:
-                stroke = zero_stroke
-
-            if contents_p < 0.3 and stroke_p < 0.3:
-                style = zero_style
-        
-        if mode == 2:
-            if contents_p < 0.3:
-                contents = zero_contents
-
-            if stroke_p < 0.3:
-                stroke = zero_stroke
-
-            style = zero_style
-        
-        # if mode == 1:
-        #     if contents_p < 0.3:
-        #         contents = torch.zeros(input_length,self.contents_dim)
-        #     else:
-        #         uni_diff_list = torch.LongTensor(self.korean_index_to_uni_diff(indexs))
-        #         contents = torch.FloatTensor(self.contents_emb(uni_diff_list))
-
-        #     if stroke_p < 0.3:
-        #         stroke = torch.zeros(input_length,68)
-        #     else:
-        #         stroke =  torch.FloatTensor(self.korean_stroke_emb.embedding(indexs))
-            
-        #     if contents_p < 0.3 and stroke_p < 0.3:
-        #         # style = torch.zeros(input_length,style_c, style_h , style_w)
-        #         style = torch.zeros(input_length, style_c)
-        #     else:
-        #         style = self.style_enc(images).cpu()
-        #         # style = style.view(input_length, style_c, -1).cpu()
-        # elif mode == 2:
-        #     if contents_p < 0.3:
-        #         contents = torch.zeros(input_length,self.contents_dim)
-        #     else:
-        #         contents = torch.FloatTensor(self.korean_index_to_uni_diff(indexs))
-
-        #     if stroke_p < 0.3:
-        #         stroke = torch.zeros(input_length,68)
-        #     else:
-        #         stroke =  torch.FloatTensor(self.korean_stroke_emb.embedding(indexs))
-            
-        #     # style = torch.zeros(input_length,style_c, style_h , style_w)
-        #     style = torch.zeros(input_length, style_c)
+        # cal mask
+        if mask is not None:
+            mask = mask.unsqueeze(dim=-1).to(self.device)
+            label = label * mask
+            stroke = stroke * mask
+            style = style * mask
 
 
-        # elif mode == 3: #test
-        #     uni_diff_list = torch.LongTensor(self.korean_index_to_uni_diff(indexs))
-        #     contents = torch.FloatTensor(self.contents_emb(uni_diff_list))
-        #     stroke =  torch.FloatTensor(self.korean_stroke_emb.embedding(indexs))
-        #     style = self.style_enc(images).cpu()
-            
-            # style = style.view(input_length, style_c, -1).cpu()
         condition_dict = {}
-        condition_dict["contents"] = contents.to(self.device)
-        condition_dict["stroke"] = stroke.to(self.device)
-        condition_dict['style'] = style.to(self.device)
+        condition_dict["label"] = label
+        condition_dict["stroke"] = stroke
+        condition_dict['style'] = style
 
         return condition_dict
     

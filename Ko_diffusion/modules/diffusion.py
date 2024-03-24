@@ -123,13 +123,15 @@ class Diffusion:
                     batch_t = (torch.ones(len(batch_x)) * i).long().to(self.device)
                     # batch_condition = make_condition.make_condition(sty_img,batch_labels,mode=3).to(self.device)
                     # batch_noise = model(x = batch_x, condition = batch_condition, t = batch_t)
-                    condition_dict = make_condition.make_condition(images=sty_img_1, indexs=batch_labels, mode=3)
+                    condition_dict = make_condition.make_condition(images=sty_img_1, indexs=batch_labels, mask=None)
                     batch_noise = model(x=batch_x, t=batch_t, condition_dict= condition_dict)
 
 
                     predicted_noise = torch.cat([predicted_noise,batch_noise],dim=0)
                     #uncodition
+                    condition_dict['label'] = torch.zeros_like(condition_dict['label'])
                     condition_dict['stroke'] = torch.zeros_like(condition_dict['stroke'])
+                    condition_dict['style'] = torch.zeros_like(condition_dict['style'])
                     uncond_batch_noise = model(x = batch_x, t = batch_t, condition_dict = condition_dict)
                     uncond_predicted_noise = torch.cat([uncond_predicted_noise,uncond_batch_noise],dim = 0)
 
@@ -169,13 +171,15 @@ class Diffusion:
                     batch_t = (torch.ones(len(batch_x)) * i).long().to(self.device)
                     # batch_condition = make_condition.make_condition(sty_img,batch_labels,mode=3).to(self.device)
                     # batch_noise = model(x = batch_x, condition = batch_condition, t = batch_t)
-                    condition_dict = make_condition.make_condition(images=sty_img_2, indexs=batch_labels, mode=3)
+                    condition_dict = make_condition.make_condition(images=sty_img_2, indexs=batch_labels, mask=None)
                     batch_noise = model(x=batch_x, t=batch_t, condition_dict= condition_dict)
 
 
                     predicted_noise = torch.cat([predicted_noise,batch_noise],dim=0)
                     #uncodition
+                    condition_dict['label'] = torch.zeros_like(condition_dict['label'])
                     condition_dict['stroke'] = torch.zeros_like(condition_dict['stroke'])
+                    condition_dict['style'] = torch.zeros_like(condition_dict['style'])
                     uncond_batch_noise = model(x = batch_x, t = batch_t, condition_dict = condition_dict)
                     uncond_predicted_noise = torch.cat([uncond_predicted_noise,uncond_batch_noise],dim = 0)
 

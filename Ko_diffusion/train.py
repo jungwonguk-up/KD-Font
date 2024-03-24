@@ -41,7 +41,7 @@ lr = 1e-4
 n_epochs = 81
 use_amp = True
 resume_train = False
-test_name = "font_dataset_test"
+test_name = "font_dataset_cfg_test"
 # train_dirs = "H:/data/Hangul_Characters_Image64_radomSampling420_GrayScale"
 train_dirs = "H:/data/Hangul_Chars_64_420_Gray_font"
 # sample_img_path_1 = f'{train_dirs}/갊/62570_갊.png'
@@ -53,7 +53,7 @@ stroke_text_path = "./text_weight/storke_txt.txt"
 style_enc_path = "./text_weight/korean_styenc.ckpt"
 
 start_epoch = 0
-change_cond_mode = n_epochs // 2
+
 use_subset = False
 
 # os
@@ -92,7 +92,7 @@ if __name__ == '__main__':
                config={"learning_rate": lr,
                        "architecture": "UNET",
                        "dataset": "HOJUN_KOREAN_FONT64",
-                       "notes":"content, non_stoke, non_style/ 32 x 32"})
+                       "notes":"label, non_stoke, non_style/ 32 x 32"})
     # wandb.init(mode = "disabled")
     # Set random seed, deterministic
     torch.cuda.manual_seed(seed)
@@ -195,23 +195,19 @@ if __name__ == '__main__':
                           beta_schedule_type='cosine', # stable diffusion 확인
                           img_size=input_size,
                           device=device)
-    
-    cond_mode = 0
+
     
     for epoch_id in range(start_epoch,n_epochs):
         print(f"Epoch {epoch_id}/{n_epochs} Train..")
 
-        if cond_mode == 3 and epoch_id > change_cond_mode:
-            cond_mode = 1
-        
         pbar = tqdm(dataloader, desc=f"trian_{epoch_id}", ncols=120)
         tic = time()
-        # for i, (image, content) in enumerate(pbar):
-        for i, (content, image, sty_image) in enumerate(pbar):
+        # for i, (image, label) in enumerate(pbar):
+        for i, (label, image, sty_image, mask) in enumerate(pbar):
             # print('x1 : ', x.shape)
             image, sty_image = image.to(device), sty_image.to(device)
-            # condition = make_condition.make_condition(images = image,indexs = content,mode=1).to(device)
-            condition_dict = make_condition.make_condition(images=sty_image, indexs=content, mode=cond_mode)
+            # condition = make_condition.make_condition(images = image,indexs = label,mode=1).to(device)
+            condition_dict = make_condition.make_condition(images=sty_image, indexs=label, mask=mask)
             
             t = diffusion.sample_t(image.shape[0]).to(device)
             image_t, noise = diffusion.noise_images(image, t)
